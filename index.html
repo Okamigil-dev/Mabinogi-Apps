@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mabi-Apps Hub - v2.4</title>
-    <!-- Firebase Legacy SDKs -->
+    <title>Mabi-Apps Hub - v2.5</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -20,6 +19,8 @@
             --border: rgba(255,255,255,0.05);
             --text-main: #d0d0d0;
             --text-dim: #444;
+            --neon-yellow: #ffff00;
+            --neon-cyan: #00ffff;
         }
 
         body {
@@ -31,205 +32,79 @@
             height: 100vh;
             overflow: hidden;
             font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
-        /* --- AUTH OVERLAY --- */
+        body.ready { opacity: 1; }
+
+        /* --- AUTH OVERLAY (MODAL STYLE) --- */
         #auth-overlay {
-            position: fixed;
-            inset: 0;
-            background: var(--bg);
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999;
+            display: none; align-items: center; justify-content: center; padding: 20px;
+            backdrop-filter: blur(5px);
         }
-
         .auth-card {
-            background: var(--card-bg);
-            padding: 25px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            width: 100%;
-            max-width: 320px;
-            text-align: center;
-            box-shadow: 0 10px 50px rgba(0,0,0,0.8);
+            background: var(--card-bg); padding: 25px; border-radius: 8px;
+            border: 1px solid var(--accent); width: 100%; max-width: 320px;
+            text-align: center; box-shadow: 0 0 50px rgba(0,255,136,0.1);
         }
-
-        .inp-s {
-            background: #111;
-            border: 1px solid #222;
-            color: #fff;
-            padding: 12px;
-            border-radius: 2px;
-            font-size: 16px;
-            width: 100%;
-            margin-bottom: 12px;
-            box-sizing: border-box;
-        }
-
-        .tab-btn {
-            padding: 4px 10px;
-            border: none;
-            background: none;
-            color: var(--text-dim);
-            font-size: 10px;
-            font-weight: 900;
-            cursor: pointer;
-            border-radius: 3px;
-            text-transform: uppercase;
-        }
-
-            .tab-btn.active {
-                background: #222;
-                color: #fff;
-            }
+        .inp-s { background: #111; border: 1px solid #222; color: #fff; padding: 12px; border-radius: 2px; font-size: 16px; width: 100%; margin-bottom: 12px; box-sizing: border-box; }
+        .tab-btn { padding: 4px 10px; border: none; background: none; color: var(--text-dim); font-size: 10px; font-weight: 900; cursor: pointer; border-radius: 3px; text-transform: uppercase; }
+        .tab-btn.active { background: #222; color: #fff; }
+        .tab-btn.login-trigger { color: var(--accent); border: 1px solid var(--accent); padding: 8px; width: 100%; margin-top: 10px; }
 
         /* --- SIDEBAR --- */
         #sidebar {
-            width: 220px;
-            background: var(--sidebar-bg);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            padding: 12px;
-            gap: 12px;
-            flex-shrink: 0;
-            height: 100%;
+            width: 220px; background: var(--sidebar-bg); border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; padding: 12px; gap: 12px; flex-shrink: 0; height: 100%;
         }
-
-        .sidebar-header {
-            font-size: 9px;
-            font-weight: 900;
-            letter-spacing: 1px;
-            color: #333;
-            text-transform: uppercase;
-        }
-
-        .timer-card {
-            background: rgba(255,255,255,0.02);
-            padding: 6px;
-            border-radius: 4px;
-            border-left: 2px solid var(--accent);
-            margin-bottom: 4px;
-            text-align: left;
-        }
-
-            .timer-card.thu {
-                border-left-color: var(--thu);
-            }
-
-            .timer-card.sat {
-                border-left-color: var(--sat);
-            }
-
-        .t-label {
-            font-size: 8px;
-            color: var(--text-dim);
-            text-transform: uppercase;
-        }
-
-        .t-val {
-            font-family: 'JetBrains Mono';
-            font-size: 12px;
-            color: #eee;
-        }
+        .sidebar-header { font-size: 9px; font-weight: 900; letter-spacing: 1px; color: #333; text-transform: uppercase; }
+        .timer-card { background: rgba(255,255,255,0.02); padding: 6px; border-radius: 4px; border-left: 2px solid var(--accent); margin-bottom: 4px; text-align: left; opacity: 0.3; }
+        .timer-card.active { opacity: 1; }
+        .timer-card.thu { border-left-color: var(--thu); }
+        .timer-card.sat { border-left-color: var(--sat); }
+        .t-label { font-size: 8px; color: var(--text-dim); text-transform: uppercase; }
+        .t-val { font-family: 'JetBrains Mono'; font-size: 12px; color: #eee; }
 
         /* --- HUB CONTENT --- */
         .hub-container {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-            overflow-y: auto;
+            flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; overflow-y: auto;
         }
-
-        .hub-header {
-            font-size: 14px;
-            font-weight: 900;
-            letter-spacing: 4px;
-            color: var(--accent);
-            text-transform: uppercase;
-            margin-bottom: 40px;
-            opacity: 0.9;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 15px;
-            width: 100%;
-            max-width: 500px;
-        }
-
+        .hub-header { font-size: 14px; font-weight: 900; letter-spacing: 4px; color: var(--accent); text-transform: uppercase; margin-bottom: 40px; opacity: 0.9; }
+        .grid { display: grid; grid-template-columns: 1fr; gap: 15px; width: 100%; max-width: 500px; }
         .hub-link {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-left: 1px solid var(--border);
-            padding: 25px;
-            border-radius: 8px;
-            text-decoration: none;
-            color: var(--text-main);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            transition: all 0.2s ease;
+            background: var(--card-bg); border: 1px solid var(--border); border-left: 1px solid var(--border);
+            padding: 25px; border-radius: 8px; text-decoration: none; color: var(--text-main);
+            display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;
         }
+        .hub-link:hover { background: #161616; transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
+        
+        .hub-link.tracker:hover { border-color: var(--accent); border-left: 3px solid var(--accent); }
+        .hub-link.commerce:hover { border-color: var(--neon-yellow); border-left: 3px solid var(--neon-yellow); }
+        .hub-link.barter:hover { border-color: var(--neon-cyan); border-left: 3px solid var(--neon-cyan); }
+        
+        .link-title { font-size: 18px; font-weight: 700; display: block; margin-bottom: 4px; color: #fff; transition: color 0.2s; }
+        
+        .hub-link.tracker:hover .link-title { color: var(--accent); }
+        .hub-link.commerce:hover .link-title { color: var(--neon-yellow); }
+        .hub-link.barter:hover .link-title { color: var(--neon-cyan); }
 
-            .hub-link:hover {
-                background: #161616;
-                transform: translateY(-2px);
-                border-left: 3px solid var(--accent);
-                border-color: var(--accent);
-            }
+        .link-desc { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
 
-            .hub-link.tracker:hover {
-                border-color: #00ff88;
-                border-left-color: #00ff88;
-            }
+        .footer { margin-top: 50px; font-family: 'JetBrains Mono'; font-size: 10px; color: #333; }
 
-            .hub-link.commerce:hover {
-                border-color: #ffd700;
-                border-left-color: #ffd700;
-            }
-
-        .link-title {
-            font-size: 18px;
-            font-weight: 700;
-            display: block;
-            margin-bottom: 4px;
-            color: #fff;
-        }
-
-        .link-desc {
-            font-size: 11px;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 600;
-        }
-
-        .footer {
-            margin-top: 50px;
-            font-family: 'JetBrains Mono';
-            font-size: 10px;
-            color: #333;
-        }
-
-        @media (max-width: 600px) {
-            #sidebar {
-                display: none;
-            }
-        }
+        @media (max-width: 600px) { #sidebar { display: none; } }
     </style>
 </head>
 <body>
 
     <div id="auth-overlay">
         <div class="auth-card">
-            <h2 style="font-size:11px; letter-spacing:2px; color:var(--accent); margin-bottom:20px;">MABI HUB SECURE</h2>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2 style="font-size:11px; letter-spacing:2px; color:var(--accent); margin:0;">SECURE ACCESS</h2>
+                <button onclick="toggleAuthModal(false)" style="background:none; border:none; color:#444; cursor:pointer; font-size:20px;">&times;</button>
+            </div>
             <form id="login-form" onsubmit="handleAuth(event, 'login')">
                 <input type="email" id="email" class="inp-s" placeholder="Email" required autocomplete="email">
                 <input type="password" id="password" class="inp-s" placeholder="Password" required autocomplete="current-password">
@@ -242,20 +117,25 @@
         </div>
     </div>
 
-    <div id="sidebar" style="display: none;">
-        <div class="sidebar-header">USER</div>
-        <div id="user-info" style="font-size:10px; color:var(--accent); overflow:hidden; text-overflow:ellipsis;">...</div>
-        <button onclick="firebase.auth().signOut()" class="tab-btn" style="padding:0; text-align:left; font-size:8px; margin-top:5px;">[ LOGOUT ]</button>
+    <div id="sidebar">
+        <div class="sidebar-header">USER_IDENTITY</div>
+        <div id="user-info" style="font-size:10px; color:var(--accent); overflow:hidden; text-overflow:ellipsis;">GUEST_MODE</div>
+        
+        <div id="auth-ui-stack">
+            <button id="login-btn" onclick="toggleAuthModal(true)" class="tab-btn login-trigger">[ SECURE_LOGIN ]</button>
+            <button id="logout-btn" onclick="firebase.auth().signOut()" class="tab-btn" style="display:none; padding:0; text-align:left; font-size:8px; margin-top:5px;">[ TERMINATE_SESSION ]</button>
+        </div>
+
         <hr style="border:0; border-top:1px solid #111; margin:10px 0;">
-        <div class="sidebar-header">RESETS</div>
-        <div class="timer-card"><div class="t-label">Daily</div><div id="timer-daily" class="t-val">00:00:00</div></div>
-        <div class="timer-card thu"><div class="t-label">Thu</div><div id="timer-thu" class="t-val">00:00:00</div></div>
-        <div class="timer-card sat"><div class="t-label">Sat</div><div id="timer-sat" class="t-val">00:00:00</div></div>
+        <div class="sidebar-header">SYSTEM_RESETS</div>
+        <div class="timer-card" id="card-daily"><div class="t-label">Daily</div><div id="timer-daily" class="t-val">00:00:00</div></div>
+        <div class="timer-card thu" id="card-thu"><div class="t-label">Thu</div><div id="timer-thu" class="t-val">00:00:00</div></div>
+        <div class="timer-card sat" id="card-sat"><div class="t-label">Sat</div><div id="timer-sat" class="t-val">00:00:00</div></div>
     </div>
 
     <div class="hub-container">
         <div class="hub-header">Mabinogi_Apps_Portal</div>
-
+        
         <div class="grid">
             <a href="tracker.html" class="hub-link tracker">
                 <div class="link-info">
@@ -264,16 +144,23 @@
                 </div>
             </a>
 
-            <a href="#" class="hub-link commerce" style="opacity: 0.5;">
+            <a href="commerce.html" class="hub-link commerce">
                 <div class="link-info">
                     <span class="link-title">TRADING POST</span>
-                    <span class="link-desc">Coming Soon</span>
+                    <span class="link-desc">Commerce Routes & Profit Sync</span>
+                </div>
+            </a>
+
+            <a href="barter.html" class="hub-link barter">
+                <div class="link-info">
+                    <span class="link-title">BARTER TRACKER</span>
+                    <span class="link-desc">Weekly Materials & Stock management</span>
                 </div>
             </a>
         </div>
 
         <div class="footer">
-            V_SYSTEM.2.4 // SESSION_ACTIVE
+            V_SYSTEM.2.5 // PORTAL_READY
         </div>
     </div>
 
@@ -282,16 +169,35 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
 
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
         auth.onAuthStateChanged(user => {
+            const uInfo = document.getElementById('user-info');
+            const loginBtn = document.getElementById('login-btn');
+            const logoutBtn = document.getElementById('logout-btn');
+            const cards = document.querySelectorAll('.timer-card');
+
             if (user) {
-                document.getElementById('auth-overlay').style.display = 'none';
-                document.getElementById('sidebar').style.display = 'flex';
-                document.getElementById('user-info').innerText = user.email;
+                uInfo.innerText = user.email;
+                uInfo.style.color = "var(--accent)";
+                loginBtn.style.display = 'none';
+                logoutBtn.style.display = 'block';
+                cards.forEach(c => c.classList.add('active'));
+                toggleAuthModal(false);
             } else {
-                document.getElementById('auth-overlay').style.display = 'flex';
-                document.getElementById('sidebar').style.display = 'none';
+                uInfo.innerText = "GUEST_MODE";
+                uInfo.style.color = "#444";
+                loginBtn.style.display = 'block';
+                logoutBtn.style.display = 'none';
+                cards.forEach(c => c.classList.remove('active'));
             }
+            document.body.classList.add('ready');
         });
+
+        function toggleAuthModal(show) {
+            document.getElementById('auth-overlay').style.display = show ? 'flex' : 'none';
+            if(!show) document.getElementById('auth-error').innerText = "";
+        }
 
         function handleAuth(event, mode) {
             if (event) event.preventDefault();
@@ -299,7 +205,7 @@
             const pass = document.getElementById('password').value;
             const err = document.getElementById('auth-error');
             if (!email || !pass) { err.innerText = "Enter credentials"; return; }
-            err.innerText = "Authenticating...";
+            err.innerText = "Connecting...";
             const action = mode === 'login' ? auth.signInWithEmailAndPassword(email, pass) : auth.createUserWithEmailAndPassword(email, pass);
             action.catch(e => err.innerText = e.message);
         }
