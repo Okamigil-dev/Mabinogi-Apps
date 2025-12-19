@@ -424,36 +424,59 @@
         let currentCargo = [], ownedInventory = {}, activeBuffs = { gm: false, william: false, alpaca: false }, weekMult = 1, selectedTown = "Karu Forest", targetDest = "None", publicPrices = {}, debounceTimer = null;
         const DEBOUNCE_DELAY = 1500;
 
-        // --- 3. FIREBASE CORE ---
+        // --- 3. FIREBASE CORE (SAFELY INITIALIZED) ---
         const { initializeApp, getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken, getFirestore, doc, setDoc, onSnapshot } = window.mabiFirebase;
-        const fbConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(fbConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'mabinogi-tracker';
+        
+        // Safety check for Github/External hosting
+        let app, auth, db, appId;
+        try {
+            const fbConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { 
+                apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM",
+                authDomain: "mabinogi-tracker.firebaseapp.com",
+                databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com",
+                projectId: "mabinogi-tracker",
+                storageBucket: "mabinogi-tracker.firebasestorage.app",
+                messagingSenderId: "267690802644",
+                appId: "1:267690802644:web:fccdd005d5c8990504ea41",
+                measurementId: "G-VBDBKQ3M1B"
+            };
+            app = initializeApp(fbConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            appId = typeof __app_id !== 'undefined' ? __app_id : 'mabinogi-tracker';
+        } catch (e) {
+            console.warn("Firebase Init Skipped: Missing config for cloud sync.");
+        }
 
         let user = null, isSaving = false;
 
-        onAuthStateChanged(auth, (u) => {
-            user = u;
-            if (user) {
-                document.getElementById('user-display').textContent = user.isAnonymous ? "GUEST_SESSION" : `AUTH_ID: ${user.uid}`;
-                document.getElementById('sync-status').textContent = 'CONNECTED';
-                document.getElementById('sync-status').classList.add('active');
-                
-                onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'barterState'), (snap) => {
-                    if (snap.exists() && !isSaving && !debounceTimer) {
-                        loadFromCloud(snap.data());
-                    }
-                }, (err) => console.error("Firestore Read Error", err));
-            }
-        });
+        if (auth) {
+            onAuthStateChanged(auth, (u) => {
+                user = u;
+                if (user) {
+                    document.getElementById('user-display').textContent = user.isAnonymous ? "GUEST_SESSION" : `AUTH_ID: ${user.uid}`;
+                    document.getElementById('sync-status').textContent = 'CONNECTED';
+                    document.getElementById('sync-status').classList.add('active');
+                    
+                    onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'barterState'), (snap) => {
+                        if (snap.exists() && !isSaving && !debounceTimer) {
+                            loadFromCloud(snap.data());
+                        }
+                    }, (err) => console.error("Firestore Read Error", err));
+                }
+            });
+        }
 
         const initAuth = async () => {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token).catch(() => signInAnonymously(auth));
-            } else {
-                await signInAnonymously(auth);
+            if (!auth) return;
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token).catch(() => signInAnonymously(auth));
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (e) {
+                console.error("Auth failed:", e);
             }
         };
 
@@ -480,7 +503,7 @@
         }
 
         const saveToCloudDebounced = () => {
-            if (!user) return;
+            if (!user || !db) return;
             document.getElementById('sync-status').textContent = 'PENDING_SAVE';
             document.getElementById('sync-status').className = 'sync-indicator saving';
             clearTimeout(debounceTimer);
@@ -752,10 +775,8 @@
             [...tbody.rows].forEach(r => { if (r.id && !activeRows.has(r.id)) r.remove(); });
         }
 
-        // --- MISSING FUNCTIONS FIX ---
         function updateTransportLabels() {
             const stats = getModifiedStats();
-            // This ensures weight labels and slot labels stay current
             document.getElementById('weight-label').textContent = `0 / ${stats.weight} kg`;
             document.getElementById('slot-label').textContent = `0 / ${stats.slots} Slots`;
         }
@@ -808,12 +829,18 @@
             };
         });
 
+        // REVISED ONLOAD: Run UI code immediately, then handle Auth
         window.onload = async () => { 
+            // 1. Load basic local UI
             loadLocalPrefs();
-            await initAuth(); 
             renderCatalog(); 
             updateTransportLabels(); 
             calculateLoadout(); 
+            
+            // 2. Start Cloud Session (if possible)
+            if (typeof initAuth !== 'undefined') {
+                await initAuth();
+            }
         };
     </script>
 </body>
