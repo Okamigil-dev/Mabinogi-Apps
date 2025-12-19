@@ -20,7 +20,7 @@
             --bg: #050505;
             --sidebar-bg: #0a0a0a;
             --card-bg: #111;
-            --accent: #00f3ff; /* Neon Cyan */
+            --accent: #00f3ff;
             --yellow: #ffd700;
             --border: rgba(255,255,255,0.05);
             --text-main: #d0d0d0;
@@ -40,7 +40,6 @@
             height: 100vh;
         }
 
-        /* --- Header --- */
         .header-bar { background: var(--sidebar-bg); border-bottom: 1px solid var(--border); height: 65px; flex-shrink: 0; }
         .neon-line { height: 2px; background: var(--accent); box-shadow: 0 0 15px var(--accent); width: 100%; }
         .title-section { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; }
@@ -57,7 +56,6 @@
         }
         .hub-btn:hover { background: var(--accent); color: #000; box-shadow: 0 0 12px var(--accent); border-color: var(--accent); }
 
-        /* --- Layout Grid --- */
         .interface-grid {
             display: grid;
             grid-template-columns: 320px 1fr 380px;
@@ -76,7 +74,6 @@
 
         .scroll-area { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
 
-        /* --- HUB STYLE TOGGLES --- */
         .buff-row-side { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; flex-shrink: 0; }
         .toggle-container {
             display: flex; align-items: center; gap: 8px; cursor: pointer;
@@ -95,7 +92,6 @@
         .toggle-input:checked + .toggle-slider { background: rgba(0, 243, 255, 0.15); border-color: var(--accent); }
         .toggle-input:checked + .toggle-slider::after { transform: translateX(12px); background: var(--accent); box-shadow: 0 0 5px var(--accent); }
 
-        /* --- Catalog --- */
         .town-header-container { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; flex-shrink: 0; }
         .town-visual-box {
             width: 44px; height: 44px; background: #000; border: 1px solid var(--accent);
@@ -120,9 +116,9 @@
         .icon-square {
             width: 32px; height: 32px; background: #000; border: 1px solid #222;
             flex-shrink: 0; background-size: contain; background-repeat: no-repeat; background-position: center;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><rect width="32" height="32" fill="%23000"/><path d="M8 8h16v16H8z" fill="none" stroke="%23222"/></svg>');
         }
 
-        /* --- Inventory & Logistics HUD --- */
         .inventory-window { 
             background: #000; border: 1px solid var(--border); 
             padding: 15px; position: relative; flex-grow: 1; 
@@ -137,7 +133,11 @@
             position: relative; display: flex; align-items: center; justify-content: center;
         }
         .slot.filled { border-color: rgba(0, 243, 255, 0.3); background: #111; }
-        .item-icon { width: 48px; height: 48px; background-size: contain; background-repeat: no-repeat; background-position: center; cursor: pointer; position: relative; }
+        .item-icon { 
+            width: 48px; height: 48px; background-size: contain; background-repeat: no-repeat; background-position: center; 
+            cursor: pointer; position: relative;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><rect width="48" height="48" fill="none"/><path d="M14 14 h20 v20 h-20 z" fill="none" stroke="%23222" stroke-width="1"/></svg>');
+        }
         .stack-label { position: absolute; bottom: 2px; right: 4px; font-family: 'JetBrains Mono'; font-size: 10px; font-weight: 900; color: #fff; text-shadow: 1px 1px 2px #000; pointer-events: none; }
 
         .logistics-hud {
@@ -154,7 +154,6 @@
             padding: 8px; font-family: 'JetBrains Mono'; font-size: 10px; color: var(--accent); line-height: 1.6;
         }
 
-        /* --- Materials (Center) --- */
         .materials-dual-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex-grow: 1; overflow: hidden; }
         .table-container { display: flex; flex-direction: column; overflow: hidden; }
         .data-table { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono'; font-size: 11px; margin-bottom: 20px;}
@@ -166,9 +165,12 @@
         .status-cell { font-weight: 900; }
         .status-cell.deficit { color: #ff4444; }
         .status-cell.ready { color: #00ff88; }
-        .icon-small { width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 5px; background-size: contain; background-repeat: no-repeat; }
+        .icon-small { 
+            width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 5px; 
+            background-size: contain; background-repeat: no-repeat; 
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><rect width="16" height="16" fill="none" stroke="%23333" stroke-width="1"/></svg>');
+        }
 
-        /* --- Tooltip --- */
         #item-tooltip {
             position: fixed; z-index: 10000; background: rgba(0, 0, 0, 0.95); border: 1px solid var(--accent); padding: 10px;
             pointer-events: none; display: none; box-shadow: 0 0 15px rgba(0, 243, 255, 0.2); min-width: 160px;
@@ -203,9 +205,8 @@
     </div>
 
     <div class="interface-grid">
-        <!-- LEFT: CATALOG -->
         <div class="panel">
-            <div class="panel-header">NPC Location</div>
+            <div class="panel-header">Trade Posts</div>
             <div class="town-header-container">
                 <div class="town-visual-box" id="town-icon-box"></div>
                 <select id="town-select" class="search-input" style="margin:0">
@@ -221,7 +222,6 @@
             </div>
         </div>
 
-        <!-- CENTER: MATERIALS -->
         <div class="panel" style="background: #080808;">
             <div class="panel-header">Logistics Config</div>
             <div style="display: flex; gap: 15px; margin-bottom: 25px; flex-shrink: 0;">
@@ -281,7 +281,6 @@
             </div>
         </div>
 
-        <!-- RIGHT: UNIT & LOGISTICS -->
         <div class="panel">
             <div class="panel-header">Transport selection</div>
             <select id="transport-select" class="search-input">
@@ -331,29 +330,60 @@
     </div>
 
     <script type="module">
-        // --- 1. DATASETS ---
+        // --- 1. DATASETS & ASSETS ---
+        const getIconUrl = (name, category = 'items', townKey = '') => {
+            const cleanName = name.replace(/\s+/g, '_');
+            
+            // Trade Post Icons
+            if (category === 'towns') {
+                return `images/tradeposts/Commerce_${cleanName}_Icon.png`;
+            }
+            
+            // Barter Specific Items
+            if (category === 'barter') {
+                // Map full town names to their specific folder names (strictly lowercase)
+                const townSubfolderMap = {
+                    "Karu Forest": "karu",
+                    "Oasis": "oasis",
+                    "Lake Calida": "calida",
+                    "Pera Volcano": "pera"
+                };
+                const subfolder = townSubfolderMap[townKey] || 'items';
+                return `images/tradeposts/barter/${subfolder}/${cleanName}_Icon.png`;
+            }
+            
+            // Default Ingredients/Raw
+            return `images/tradeposts/items/${cleanName}_Icon.png`;
+        };
+
         const barterDb = [
-            { town: "Pera Volcano", item: "Mud Pack", weight: 15, stack: 10, limit: 25, mats: { "Copper Plate": 2, "Mysterious Herb Powder": 3 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/pera/Volcanic_Mud_Pack_Icon.png" },
-            { town: "Pera Volcano", item: "Magma Stone", weight: 15, stack: 7, limit: 15, mats: { "Mythril Plate": 2, "Barley Flour": 3 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/pera/Magma_Stone_Icon.png" },
-            { town: "Pera Volcano", item: "Ixion Horn", weight: 20, stack: 7, limit: 10, mats: { "Marionette 500 Potion": 3, "Gold Plate": 5 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/pera/Ixion_Horn_Icon.png" },
-            { town: "Pera Volcano", item: "Lizard Egg", weight: 25, stack: 7, limit: 8, mats: { "Glittering Paper": 5, "Finest Fabric": 5, "HP 500 Potion": 2 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/pera/Volcano_Lizard_Egg_Icon.png" },
-            { town: "Pera Volcano", item: "Leopard Leather", weight: 30, stack: 5, limit: 3, mats: { "Mutant": 1, "Harmonious Cosmos Perfume": 2, "Special Firewood": 3 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/pera/Raspa_Black_Leopard_Leather_Icon.png" },
-            { town: "Oasis", item: "Fine Sand", weight: 15, stack: 10, limit: 25, mats: { "Stamina 500 Potion": 3, "Braid": 2 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/oasis/Fine_Sand_Icon.png" },
-            { town: "Oasis", item: "Prison Ghost Wings", weight: 15, stack: 7, limit: 15, mats: { "Cotton Cushion Stuffing": 1, "Finest Silk": 2 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/oasis/Prison_Ghost_Wings_Icon.png" },
-            { town: "Oasis", item: "Oasis Painting", weight: 20, stack: 7, limit: 10, mats: { "Finest Leather Strap": 1, "Tough Thread": 3 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/oasis/Oasis_Painting_Icon.png" },
-            { town: "Oasis", item: "Cactus Flower", weight: 25, stack: 7, limit: 8, mats: { "Spirit Liqueur": 1, "Silver Plate": 2, "Fine Fabric": 4 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/oasis/Cactus_Flower_Icon.png" },
-            { town: "Oasis", item: "Giant Canine Fossil", weight: 30, stack: 5, limit: 3, mats: { "Pet Playset": 1, "Hay Bale": 3, "Enchanted Firewood": 5 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/oasis/Giant_Canine_Fossil_Icon.png" },
-            { town: "Lake Calida", item: "Elvan Egg", weight: 15, stack: 10, limit: 25, mats: { "MP 500 Potion": 1, "Fine Firewood": 2 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/calida/Elvan_Egg_Icon.png" },
-            { town: "Lake Calida", item: "Salmon", weight: 15, stack: 7, limit: 15, mats: { "Energy Converter": 1, "Purified Rabbit Foot": 1 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/calida/Calida_Salmon_Icon.png" },
-            { town: "Lake Calida", item: "Bath Bomb", weight: 20, stack: 7, limit: 10, mats: { "Sundew": 3, "Finest Vanilla Scented Candle": 2 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/calida/Hot_Spring_Bath_Bomb_Icon.png" },
-            { town: "Lake Calida", item: "Large Tent", weight: 25, stack: 7, limit: 8, mats: { "Artificial Turf": 1, "Emerald Fuse": 1, "Fine Leather Strap": 5 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/calida/Large_Camping_Tent_Icon.png" },
-            { town: "Lake Calida", item: "Pink Salt", weight: 30, stack: 5, limit: 3, mats: { "Large Mythril Nail": 3, "Poison Tip Wyvern Ballista Bolt": 3, "Finest Firewood": 3 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/calida/Pink_Salt_Icon.png" },
-            { town: "Karu Forest", item: "Wooden Table", weight: 15, stack: 10, limit: 25, mats: { "Shrimp Taming Bait": 4, "Shyllien": 2 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/karu/Wooden_Table_Icon.png" },
-            { town: "Karu Forest", item: "Wooden Craft", weight: 15, stack: 7, limit: 15, mats: { "Magic Parchment": 1, "Tough String": 2 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/karu/Wooden_Craft_Icon.png" },
-            { town: "Karu Forest", item: "Stone Horse Statue", weight: 20, stack: 7, limit: 10, mats: { "Hillwen Alloy": 2, "Wheat Flour": 5 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/karu/Stone_Horse_Statue_Icon.png" },
-            { town: "Karu Forest", item: "Karu Mushroom", weight: 25, stack: 7, limit: 8, mats: { "Average Firewood": 5, "Fine Silk": 4 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/karu/Karu_Shiitake_Mushroom_Icon.png" },
-            { town: "Karu Forest", item: "Shellfish Fossil", weight: 30, stack: 5, limit: 3, mats: { "Energy Amplifier": 2, "Sturdy Loop": 1, "Magic Quill Pen": 5 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/karu/Shellfish_Fossil_Icon.png" }
+            { town: "Pera Volcano", item: "Volcanic Mud Pack", weight: 15, stack: 10, limit: 25, mats: { "Copper Plate": 2, "Mysterious Herb Powder": 3 } },
+            { town: "Pera Volcano", item: "Magma Stone", weight: 15, stack: 7, limit: 15, mats: { "Mythril Plate": 2, "Barley Flour": 3 } },
+            { town: "Pera Volcano", item: "Ixion Horn", weight: 20, stack: 7, limit: 10, mats: { "Marionette 500 Potion": 3, "Gold Plate": 5 } },
+            { town: "Pera Volcano", item: "Volcano Lizard Egg", weight: 25, stack: 7, limit: 8, mats: { "Glittering Paper": 5, "Finest Fabric": 5, "HP 500 Potion": 2 } },
+            { town: "Pera Volcano", item: "Raspa Black Leopard Leather", weight: 30, stack: 5, limit: 3, mats: { "Mutant": 1, "Harmonious Cosmos Perfume": 2, "Special Firewood": 3 } },
+            
+            { town: "Oasis", item: "Fine Sand", weight: 15, stack: 10, limit: 25, mats: { "Stamina 500 Potion": 3, "Braid": 2 } },
+            { town: "Oasis", item: "Prison Ghost Wings", weight: 15, stack: 7, limit: 15, mats: { "Cotton Cushion Stuffing": 1, "Finest Silk": 2 } },
+            { town: "Oasis", item: "Oasis Painting", weight: 20, stack: 7, limit: 10, mats: { "Finest Leather Strap": 1, "Tough Thread": 3 } },
+            { town: "Oasis", item: "Cactus Flower", weight: 25, stack: 7, limit: 8, mats: { "Spirit Liqueur": 1, "Silver Plate": 2, "Fine Fabric": 4 } },
+            { town: "Oasis", item: "Giant Canine Fossil", weight: 30, stack: 5, limit: 3, mats: { "Pet Playset": 1, "Hay Bale": 3, "Enchanted Firewood": 5 } },
+            
+            { town: "Lake Calida", item: "Elvan Egg", weight: 15, stack: 10, limit: 25, mats: { "MP 500 Potion": 1, "Fine Firewood": 2 } },
+            { town: "Lake Calida", item: "Calida Salmon", weight: 15, stack: 7, limit: 15, mats: { "Energy Converter": 1, "Purified Rabbit Foot": 1 } },
+            { town: "Lake Calida", item: "Hot Spring Bath Bomb", weight: 20, stack: 7, limit: 10, mats: { "Sundew": 3, "Finest Vanilla Scented Candle": 2 } },
+            { town: "Lake Calida", item: "Large Camping Tent", weight: 25, stack: 7, limit: 8, mats: { "Artificial Turf": 1, "Emerald Fuse": 1, "Fine Leather Strap": 5 } },
+            { town: "Lake Calida", item: "Pink Salt", weight: 30, stack: 5, limit: 3, mats: { "Large Mythril Nail": 3, "Poison Tip Wyvern Ballista Bolt": 3, "Finest Firewood": 3 } },
+            
+            { town: "Karu Forest", item: "Wooden Table", weight: 15, stack: 10, limit: 25, mats: { "Shrimp Taming Bait": 4, "Shyllien": 2 } },
+            { town: "Karu Forest", item: "Wooden Craft", weight: 15, stack: 7, limit: 15, mats: { "Magic Parchment": 1, "Tough String": 2 } },
+            { town: "Karu Forest", item: "Stone Horse Statue", weight: 20, stack: 7, limit: 10, mats: { "Hillwen Alloy": 2, "Wheat Flour": 5 } },
+            { town: "Karu Forest", item: "Karu Shiitake Mushroom", weight: 25, stack: 7, limit: 8, mats: { "Average Firewood": 5, "Fine Silk": 4 } },
+            { town: "Karu Forest", item: "Shellfish Fossil", weight: 30, stack: 5, limit: 3, mats: { "Energy Amplifier": 2, "Sturdy Loop": 1, "Magic Quill Pen": 5 } }
         ];
+
+        // Apply pathing to database
+        barterDb.forEach(b => b.img = getIconUrl(b.item, 'barter', b.town));
 
         const recipeDb = [
             { item: "Artificial Turf", mats: { "Fresh Grass": 20, "Bundle of Flowers": 5 } },
@@ -414,20 +444,19 @@
         };
 
         const townIcons = {
-            "Pera Volcano": "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/tradeposts/Commerce_Pera_Icon.png",
-            "Oasis": "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/tradeposts/Commerce_Oasis_Icon.png",
-            "Lake Calida": "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/tradeposts/Commerce_Calida_Icon.png",
-            "Karu Forest": "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/tradeposts/Commerce_Karu_Forest_Icon.png"
+            "Pera Volcano": getIconUrl("Pera", "towns"),
+            "Oasis": getIconUrl("Oasis", "towns"),
+            "Lake Calida": getIconUrl("Calida", "towns"),
+            "Karu Forest": getIconUrl("Karu Forest", "towns")
         };
 
         // --- 2. STATE ---
         let currentCargo = [], ownedInventory = {}, activeBuffs = { gm: false, william: false, alpaca: false }, weekMult = 1, selectedTown = "Karu Forest", targetDest = "None", publicPrices = {}, debounceTimer = null;
         const DEBOUNCE_DELAY = 1500;
 
-        // --- 3. FIREBASE CORE (SAFELY INITIALIZED) ---
+        // --- 3. FIREBASE CORE ---
         const { initializeApp, getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken, getFirestore, doc, setDoc, onSnapshot } = window.mabiFirebase;
         
-        // Safety check for Github/External hosting
         let app, auth, db, appId;
         try {
             const fbConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { 
@@ -445,7 +474,7 @@
             db = getFirestore(app);
             appId = typeof __app_id !== 'undefined' ? __app_id : 'mabinogi-tracker';
         } catch (e) {
-            console.warn("Firebase Init Skipped: Missing config for cloud sync.");
+            console.warn("Firebase Init Skipped: Local only mode.");
         }
 
         let user = null, isSaving = false;
@@ -462,7 +491,7 @@
                         if (snap.exists() && !isSaving && !debounceTimer) {
                             loadFromCloud(snap.data());
                         }
-                    }, (err) => console.error("Firestore Read Error", err));
+                    }, (err) => console.error("Firestore Error:", err));
                 }
             });
         }
@@ -475,9 +504,7 @@
                 } else {
                     await signInAnonymously(auth);
                 }
-            } catch (e) {
-                console.error("Auth failed:", e);
-            }
+            } catch (e) { console.error("Auth failed:", e); }
         };
 
         // --- 4. PERSISTENCE ---
@@ -524,9 +551,7 @@
                 } catch (e) { 
                     console.error(e); 
                     document.getElementById('sync-status').textContent = 'ERROR';
-                } finally { 
-                    setTimeout(() => isSaving = false, 500); 
-                }
+                } finally { setTimeout(() => isSaving = false, 500); }
             }, DEBOUNCE_DELAY);
         };
 
@@ -644,13 +669,16 @@
             const town = document.getElementById('town-select').value;
             const container = document.getElementById('catalog-container');
             const iconBox = document.getElementById('town-icon-box');
+            
             iconBox.style.backgroundImage = `url('${townIcons[town]}')`;
             container.innerHTML = '';
+            
             barterDb.filter(b => b.town === town).forEach(b => {
                 const totalInManifest = currentCargo.filter(c => c.item === b.item).length;
                 const isAtLimit = totalInManifest >= b.limit;
                 const div = document.createElement('div');
                 div.className = 'item-entry' + (isAtLimit ? ' at-limit' : '');
+                
                 div.innerHTML = `
                     <div class="icon-square" style="background-image: url('${b.img}')"></div>
                     <div style="flex-grow:1;"><div class="item-name">${b.item}</div><div class="item-limit-tag">LIMIT: ${totalInManifest}/${b.limit}</div></div>
@@ -689,26 +717,21 @@
             weekMult = parseInt(document.getElementById('week-mult').value) || 1;
             const bIngredients = {}, rawRes = {}, tempOwned = JSON.parse(JSON.stringify(ownedInventory));
             
-            // First pass: What components do we need for the manifest?
             currentCargo.forEach(c => { 
                 for (const [m, q] of Object.entries(c.mats)) {
                     bIngredients[m] = (bIngredients[m] || 0) + (q * weekMult); 
                 }
             });
 
-            // Recursive function to resolve components to raws
             function resolve(n, need) {
                 const r = recipeDb.find(x => x.item === n);
                 if (!r) { 
                     rawRes[n] = (rawRes[n] || 0) + need; 
                     return; 
                 }
-                for (const [m, a] of Object.entries(r.mats)) {
-                    resolve(m, a * need);
-                }
+                for (const [m, a] of Object.entries(r.mats)) { resolve(m, a * need); }
             }
 
-            // Second pass: Subtract what we already own from the components and resolve the rest
             Object.entries(bIngredients).forEach(([n, c]) => {
                 const deficit = Math.max(0, c - (tempOwned[n] || 0));
                 if (deficit > 0) resolve(n, deficit);
@@ -752,9 +775,11 @@
                     };
                 }
                 
+                const iconEl = tr.querySelector('.icon-small');
+                iconEl.style.backgroundImage = `url('${getIconUrl(item)}')`;
+                
                 tr.querySelector('.item-name-cell').textContent = item;
                 tr.querySelector('.item-name-cell').style.color = needed > 0 ? '#eee' : '#444';
-                tr.querySelector('.icon-small').style.backgroundImage = `url('https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/tradeposts/items/${item.replace(/\s+/g, '_')}_Icon.png')`;
                 
                 if (document.activeElement !== tr.querySelector('.owned-input')) {
                     tr.querySelector('.owned-input').value = ownedInventory[item] || 0;
@@ -762,10 +787,8 @@
                 
                 tr.querySelector('.need-qty').textContent = needed > 0 ? Math.ceil(needed).toLocaleString() : '-';
                 const sCell = tr.querySelector('.status-cell');
-                if (needed === 0) { 
-                    sCell.textContent = ''; 
-                    sCell.className = 'status-cell'; 
-                } else { 
+                if (needed === 0) { sCell.textContent = ''; sCell.className = 'status-cell'; } 
+                else { 
                     sCell.textContent = deficit <= 0 ? 'READY' : deficit.toLocaleString(); 
                     sCell.className = `status-cell ${deficit <= 0 ? 'ready' : 'deficit'}`; 
                 }
@@ -781,9 +804,7 @@
             document.getElementById('slot-label').textContent = `0 / ${stats.slots} Slots`;
         }
 
-        function syncLocalPrefs() {
-            saveLocalPrefs();
-        }
+        function syncLocalPrefs() { saveLocalPrefs(); }
 
         // --- 7. LISTENERS ---
         document.getElementById('town-select').onchange = (e) => {
@@ -829,18 +850,12 @@
             };
         });
 
-        // REVISED ONLOAD: Run UI code immediately, then handle Auth
         window.onload = async () => { 
-            // 1. Load basic local UI
             loadLocalPrefs();
             renderCatalog(); 
             updateTransportLabels(); 
             calculateLoadout(); 
-            
-            // 2. Start Cloud Session (if possible)
-            if (typeof initAuth !== 'undefined') {
-                await initAuth();
-            }
+            if (typeof initAuth !== 'undefined') await initAuth();
         };
     </script>
 </body>
