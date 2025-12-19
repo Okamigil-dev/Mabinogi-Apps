@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trading Post Interface</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <style>
+        :root {
+            --bg: #050505;
+            --sidebar-bg: #0a0a0a;
+            --card-bg: #111;
+            --accent: #ffd700; /* Neon Yellow */
+            --border: rgba(255,255,255,0.05);
+            --text-main: #d0d0d0;
+            --text-dim: #444;
+        }
+
+        * {
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            font-size: 12px;
+            overflow-x: hidden;
+        }
+
+        /* --- Layout --- */
+        .interface-container {
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            background: var(--bg);
+            border: 1px solid var(--border);
+        }
+
+        .header-bar {
+            background: var(--sidebar-bg);
+        }
+
+        .decorative-border {
+            height: 2px;
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        .title-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+        }
+
+        .main-title {
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--accent);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .sub-title {
+            font-size: 9px;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+
+        /* HUB BUTTON */
+        .hub-btn {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 900;
+            font-size: 10px;
+            background: #1a1a1a;
+            border: 1px solid var(--border);
+            padding: 5px 10px;
+            transition: 0.2s;
+        }
+
+            .hub-btn:hover {
+                background: var(--accent);
+                color: #000;
+                box-shadow: 0 0 8px var(--accent);
+            }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 320px 1fr 320px;
+            gap: 1px;
+            background: var(--border);
+        }
+
+        .left-panel, .center-panel, .right-panel {
+            background: var(--card-bg);
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Left Panel --- */
+        .commerce-type-section {
+            padding: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .air-travel-row {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            border-top: 1px solid #222;
+            padding-top: 8px;
+        }
+
+        .air-travel-label {
+            color: var(--accent);
+            font-weight: bold;
+            font-size: 10px;
+            cursor: pointer;
+        }
+
+        .player-info {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(0,0,0,0.2);
+        }
+
+        .player-avatar {
+            width: 48px;
+            height: 48px;
+            background-color: #000;
+            border: 1px solid #333;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .buff-row-inline {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(0,0,0,0.4);
+            justify-content: center;
+        }
+
+        .buff-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 10px;
+            color: var(--text-dim);
+        }
+
+        #market-items-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            background: #080808;
+        }
+
+        .inventory-item {
+            display: flex;
+            gap: 10px;
+            padding: 8px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            align-items: center;
+            transition: 0.1s;
+        }
+
+            .inventory-item:hover {
+                background: rgba(255,255,255,0.03);
+            }
+
+        .selected-item {
+            border-left: 3px solid var(--accent);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .item-list-icon-box {
+            width: 44px;
+            height: 44px;
+            background-color: #000;
+            border: 1px solid #333;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            flex-shrink: 0;
+        }
+
+        .item-list-content {
+            flex-grow: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .item-name {
+            font-weight: 700;
+            font-size: 11px;
+            color: #eee;
+        }
+
+        .stock-input-row {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 50px;
+        }
+
+        /* --- Center Panel --- */
+        .item-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            background: rgba(0,0,0,0.4);
+        }
+
+        .item-icon-container {
+            width: 84px;
+            height: 84px;
+            border: 1px solid var(--border);
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .item-icon {
+            width: 80px;
+            height: 80px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .item-title {
+            font-size: 18px;
+            font-weight: 900;
+            color: var(--accent);
+            text-transform: uppercase;
+        }
+
+        .item-inventory {
+            font-family: 'JetBrains Mono';
+            font-size: 10px;
+            color: var(--text-dim);
+        }
+
+        .market-list-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #profit-list {
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .market-row {
+            display: grid;
+            grid-template-columns: 1fr 100px 80px;
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+        }
+
+            .market-row.header {
+                background: rgba(255,255,255,0.02);
+                font-weight: 900;
+                color: var(--text-dim);
+                font-size: 10px;
+            }
+
+        .market-left {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-right: 10px;
+        }
+
+        .profit-val {
+            font-family: 'JetBrains Mono';
+            font-weight: bold;
+            text-align: right;
+            color: var(--accent);
+            font-size: 13px;
+        }
+
+            .profit-val.negative {
+                color: #ff4444;
+            }
+
+        .season-val {
+            font-family: 'JetBrains Mono';
+            text-align: right;
+            color: var(--text-dim);
+            font-size: 11px;
+        }
+
+        /* --- Right Panel / Manifest --- */
+        .buff-row-side {
+            padding: 15px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+        }
+
+        .partner-info {
+            padding: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .partner-name {
+            font-size: 10px;
+            font-weight: 900;
+            color: var(--text-dim);
+            margin-bottom: 5px;
+        }
+
+        .weight-bar-container {
+            padding: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .weight-label-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: var(--text-dim);
+            font-weight: 900;
+        }
+
+        .weight-bar-bg {
+            width: 100%;
+            height: 10px;
+            background: #000;
+            border: 1px solid #222;
+            margin: 5px 0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .weight-bar-fill {
+            height: 100%;
+            background: var(--accent);
+            transition: width 0.3s;
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        .weight-limit {
+            font-size: 10px;
+            color: #666;
+            text-align: right;
+        }
+
+        .recommendation-box {
+            margin: 15px;
+            padding: 15px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--accent);
+            border-radius: 4px;
+            box-shadow: 0 0 15px rgba(255,255,255,0.05);
+        }
+
+        .rec-title {
+            color: var(--accent);
+            font-weight: 900;
+            font-size: 11px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+
+        /* Manifest Slots */
+        .manifest-slot {
+            width: 44px;
+            height: 44px;
+            border: 1px solid #333;
+            display: inline-block;
+            margin: 2px;
+            background-color: #000;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            position: relative;
+            cursor: pointer;
+        }
+
+            .manifest-slot.filled {
+                border-color: var(--accent);
+            }
+
+                .manifest-slot.filled:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 0 10px rgba(255,255,255,0.2);
+                    z-index: 10;
+                }
+
+            .manifest-slot.empty {
+                opacity: 0.1;
+                border-style: dashed;
+            }
+
+        .slot-badge {
+            position: absolute;
+            bottom: -4px;
+            right: -4px;
+            background: var(--accent);
+            color: #000;
+            font-size: 9px;
+            font-weight: 900;
+            padding: 1px 4px;
+            border-radius: 3px;
+            line-height: 1;
+        }
+
+        .manifest-footer {
+            margin-top: 10px;
+            border-top: 1px solid #333;
+            padding-top: 5px;
+            font-weight: 900;
+            color: #fff;
+            font-family: 'JetBrains Mono';
+        }
+
+        /* Inputs */
+        .city-dropdown, .custom-dropdown, .price-input, .qty-input-compact, .qty-input {
+            background: #000;
+            border: 1px solid #333;
+            color: var(--accent);
+            font-family: 'JetBrains Mono';
+            font-size: 11px;
+            padding: 4px;
+        }
+
+        .price-input {
+            width: 70px;
+            text-align: right;
+        }
+
+        .panel-small-label {
+            font-size: 9px;
+            font-weight: 900;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .qty-input-compact {
+            width: 40px;
+            text-align: center;
+        }
+
+        /* Import Box Styles */
+        #import-section {
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            background: #0a0a0a;
+            margin-top: 20px;
+        }
+
+        #import-area {
+            width: 100%;
+            height: 100px;
+            background: #000;
+            color: var(--accent);
+            border: 1px solid #333;
+            font-family: monospace;
+            font-size: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #1a1a1a;
+            border-radius: 10px;
+        }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: var(--accent);
+            }
+
+        @media (max-width: 1000px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .interface-container {
+                border: none;
+            }
+
+            .left-panel, .right-panel {
+                min-height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="interface-container">
+        <div class="header-bar">
+            <div class="decorative-border"></div>
+            <div class="title-section">
+                <a href="index.html" class="hub-btn">← HUB</a>
+                <div style="text-align:center;">
+                    <span class="main-title">Trading Post</span>
+                    <span class="sub-title">COMMERCE_NETWORK_SYNC</span>
+                </div>
+                <div style="width:80px;"></div>
+            </div>
+            <div class="decorative-border"></div>
+        </div>
+
+        <div class="content-grid">
+            <!-- Left Panel -->
+            <div class="left-panel">
+                <div class="commerce-type-section">
+                    <label class="panel-small-label">System Mode</label>
+                    <select id="commerce-type-select" class="city-dropdown">
+                        <option value="Normal">Normal Commerce</option>
+                        <option value="Barter">Bartering</option>
+                        <option value="Group">Group Commerce</option>
+                    </select>
+
+                    <div class="air-travel-row">
+                        <input type="checkbox" id="air-travel-check" onchange="handleAirShipAvailability()">
+                        <label for="air-travel-check" class="air-travel-label">ENABLE_AIR_TRAVEL</label>
+                    </div>
+                </div>
+
+                <div class="player-info">
+                    <div class="player-avatar" id="origin-town-icon"></div>
+                    <div style="display: flex; flex-direction: column; flex-grow: 1;">
+                        <label class="panel-small-label">Origin Node</label>
+                        <select class="city-dropdown" id="city-select"></select>
+                    </div>
+                    <div style="display: flex; flex-direction: column; width: 50px;">
+                        <label class="panel-small-label">Rank</label>
+                        <select id="merchant-rating-select" class="city-dropdown">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="buff-row-inline">
+                    <div class="buff-item">
+                        <label>Trader</label>
+                        <input type="number" id="trader-qty" min="0" max="2" value="0" class="qty-input-compact">
+                    </div>
+                    <div class="buff-item">
+                        <label>Trust</label>
+                        <input type="number" id="trustworthy-qty" min="0" max="2" value="0" class="qty-input-compact">
+                    </div>
+                </div>
+                <div id="market-items-container"></div>
+            </div>
+
+            <!-- Center Panel -->
+            <div class="center-panel">
+                <div class="item-header">
+                    <div class="item-icon-container">
+                        <div class="item-icon" id="center-item-icon"></div>
+                    </div>
+                    <div class="item-title-box">
+                        <div class="item-title" id="center-item-title">Initializing...</div>
+                        <div class="item-inventory" id="max-inventory-display">Select an item to begin.</div>
+                    </div>
+                </div>
+                <div class="market-list-container">
+                    <div class="market-row header">
+                        <div class="market-left">TARGET / PRICE_INPUT</div>
+                        <div class="market-profit-col">PROFIT</div>
+                        <div class="market-score-col">SCORE</div>
+                    </div>
+                    <div id="profit-list"></div>
+                </div>
+            </div>
+
+            <!-- Right Panel -->
+            <div class="right-panel">
+                <div class="buff-row-side">
+                    <label class="buff-item"><input type="checkbox" id="gm-check"> Grandmaster</label>
+                    <label class="buff-item"><input type="checkbox" id="william-check"> William</label>
+                    <label class="buff-item"><input type="checkbox" id="alpaca-check"> Alpaca</label>
+                </div>
+
+                <div class="partner-info">
+                    <div class="partner-name">Transport Unit</div>
+                    <select id="transport-dropdown" class="custom-dropdown">
+                        <option value="Back Pack">Back Pack</option>
+                        <option value="Hand Cart">Hand Cart</option>
+                        <option value="Wagon">Wagon</option>
+                        <option value="Elephant" selected>Elephant</option>
+                        <option value="Husky">Husky</option>
+                        <option value="Camel">Camel</option>
+                        <option value="Skiff">Skiff</option>
+                        <option value="Air Ship">Air Ship</option>
+                    </select>
+                </div>
+
+                <div class="weight-bar-container">
+                    <div class="weight-label-row">
+                        <span class="panel-small-label">Payload</span>
+                        <span id="w-limit-text" class="weight-label">0 / 0</span>
+                    </div>
+                    <div class="weight-bar-bg"><div id="w-fill" class="weight-bar-fill"></div></div>
+                    <div class="weight-limit">Max Quantity: <span id="max-qty-total">0</span></div>
+                </div>
+
+                <!-- MANIFEST AREA -->
+                <div class="recommendation-box" id="manifest-box" style="display:none;">
+                    <div class="rec-title">Best Local Route</div>
+                    <div id="manifest-list"></div>
+                    <div id="manifest-total" class="manifest-footer"></div>
+                </div>
+
+                <div id="global-manifest-anchor"></div>
+
+            </div>
+        </div>
+
+        <!-- NEW IMPORT SECTION -->
+        <div id="import-section">
+            <div style="color:var(--accent); font-weight:bold; margin-bottom:5px;">DATA IMPORT TOOL (GOOGLE SHEETS)</div>
+            <div style="color:#aaa; font-size:10px; margin-bottom:10px;">Paste your full sheet data here (Columns: Item | Town1 | Town2 ...). No Headers.</div>
+            <textarea id="import-area" placeholder="Paste data here..."></textarea>
+            <button class="hub-btn" onclick="runImport()">START IMPORT</button>
+            <div id="import-status" style="margin-top:5px; color:#fff;"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- FIREBASE CONFIG ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM",
+            databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        /**
+         * Image Path Helper
+         */
+        function getImagePath(path) {
+            if (!path) return "";
+            if (path.startsWith('images/') || path.startsWith('http')) return path;
+            return `images/${path}`;
+        }
+
+        const townIcons = {
+            "Tir Chonaill": "tradeposts/Commerce_Tir_Chonaill_Icon.png",
+            "Dunbarton": "tradeposts/Commerce_Dunbarton_Icon.png",
+            "Bangor": "tradeposts/Commerce_Bangor_Icon.png",
+            "Emain Macha": "tradeposts/Commerce_Emain_Macha_Icon.png",
+            "Taillteann": "tradeposts/Commerce_Taillteann_Icon.png",
+            "Tara": "tradeposts/Commerce_Tara_Icon.png",
+            "Cobh": "tradeposts/Commerce_Port_Cobh_Icon.png",
+            "Belvast": "tradeposts/Commerce_Commonwealth_of_Belvast_Icon.png",
+            "Qilla": "tradeposts/Commerce_Qilla_Icon.png",
+            "Cor": "tradeposts/Commerce_Cor_Icon.png",
+            "Vales": "tradeposts/Commerce_Vales_Icon.png",
+            "Filia": "tradeposts/Commerce_Filia_Icon.png",
+            "Karu Forest": "tradeposts/Commerce_Karu_Forest_Icon.png",
+            "Oasis": "tradeposts/Commerce_Oasis_Icon.png",
+            "Lake Calida": "tradeposts/Commerce_Calida_Icon.png",
+            "Pera Volcano": "tradeposts/Commerce_Pera_Icon.png",
+            "Scathach Beach": "tradeposts/Commerce_Beach_of_Scathach_Icon.png"
+        };
+
+        const transportData = {
+            "Back Pack": { slots: 4, weight: 400, speed: 0.91 },
+            "Hand Cart": { slots: 6, weight: 800, speed: 1.00 },
+            "Wagon": { slots: 8, weight: 900, speed: 1.90 },
+            "Elephant": { slots: 7, weight: 1700, speed: 1.37 },
+            "Husky": { slots: 11, weight: 700, speed: 1.86 },
+            "Camel": { slots: 7, weight: 1400, speed: 2.15 },
+            "Skiff": { slots: 8, weight: 1200, speed: 2.40 },
+            "Air Ship": { slots: 18, weight: 2500, speed: 2.40 }
+        };
+
+        const citiesByType = {
+            "Normal": ["Tir Chonaill", "Dunbarton", "Bangor", "Emain Macha", "Taillteann", "Tara", "Cobh", "Belvast", "Qilla", "Cor", "Vales", "Filia"],
+            "Barter": ["Karu Forest", "Oasis", "Lake Calida", "Pera Volcano", "Scathach Beach"],
+            "Group": ["Qilla", "Filia", "Cor", "Vales"]
+        };
+
+        // FULL MARKET DATA
+        const marketData = {
+            "Normal": {
+                "Tir Chonaill": [
+                    { name: "Baby Potion", buy: 11, weight: 1, max: 35, limit: Infinity, img: "tradeposts/normal/tir/Baby_Potion_Icon.png" },
+                    { name: "Diet Potion", buy: 27, weight: 1, max: 30, limit: Infinity, img: "tradeposts/normal/tir/Diet_Potion_Icon.png" },
+                    { name: "Snore Potion", buy: 64, weight: 2, max: 26, limit: Infinity, img: "tradeposts/normal/tir/Snore_Prevention_Potion_Icon.png" },
+                    { name: "Ginseng", buy: 134, weight: 3, max: 22, limit: Infinity, img: "tradeposts/normal/tir/Wild_Ginseng_Potion_Icon.png" },
+                    { name: "Lovely Potion", buy: 150, weight: 3, max: 25, limit: Infinity, img: "tradeposts/normal/tir/Lovely_Potion_Icon.png" }
+                ],
+                "Dunbarton": [
+                    { name: "Spider Gloves", buy: 47, weight: 4, max: 14, limit: Infinity, img: "tradeposts/normal/dunbarton/Spider_Gloves_Icon.png" },
+                    { name: "Wool Boots", buy: 164, weight: 8, max: 10, limit: Infinity, img: "tradeposts/normal/dunbarton/Wool_Boots_Icon.png" },
+                    { name: "Ogre Mask", buy: 92, weight: 4, max: 26, limit: Infinity, img: "tradeposts/normal/dunbarton/Ogre_Executioner_Mask_Icon.png" },
+                    { name: "Incubus Suit", buy: 531, weight: 25, max: 5, limit: Infinity, img: "tradeposts/normal/dunbarton/Incubus_Suit_Icon.png" },
+                    { name: "Succubus Swimsuit", buy: 655, weight: 6, max: 5, limit: Infinity, img: "tradeposts/normal/dunbarton/Succubus_Swimsuit_Icon.png" }
+                ],
+                "Bangor": [
+                    { name: "Bangor Coal", buy: 49, weight: 8, max: 10, limit: Infinity, img: "tradeposts/normal/bangor/Bangor_Coal_Icon.png" },
+                    { name: "Marble", buy: 309, weight: 20, max: 10, limit: Infinity, img: "tradeposts/normal/bangor/Marble_icon.png" },
+                    { name: "Topaz", buy: 387, weight: 18, max: 12, limit: Infinity, img: "tradeposts/normal/bangor/Topaz_icon.png" },
+                    { name: "Highlander Ore", buy: 814, weight: 25, max: 8, limit: Infinity, img: "tradeposts/normal/bangor/Highlander_Ore_icon.png" },
+                    { name: "Lead", buy: 802, weight: 18, max: 16, limit: Infinity, img: "tradeposts/normal/bangor/Lead_Icon.png" }
+                ],
+                "Emain Macha": [
+                    { name: "Berry Granola", buy: 11, weight: 3, max: 25, limit: Infinity, img: "tradeposts/normal/emain/Berry_Granola_Icon.png" },
+                    { name: "Butter Beer", buy: 51, weight: 4, max: 30, limit: Infinity, img: "tradeposts/normal/emain/Butter_Beer_Icon.png" },
+                    { name: "Smoked Animal", buy: 195, weight: 10, max: 40, limit: Infinity, img: "tradeposts/normal/emain/Smoked_Wild_Animal_Icon.png" },
+                    { name: "Triple Pasta", buy: 96, weight: 4, max: 32, limit: Infinity, img: "tradeposts/normal/emain/Triple_Pasta_Icon.png" },
+                    { name: "Whole BBQ", buy: 630, weight: 14, max: 12, limit: Infinity, img: "tradeposts/normal/emain/Whole_BBQ_Bear_Icon.png" }
+                ],
+                "Taillteann": [
+                    { name: "Heat Crystal", buy: 11, weight: 2, max: 33, limit: Infinity, img: "tradeposts/normal/taillteann/Heat_Crystal_icon.png" },
+                    { name: "Music Box Stone", buy: 38, weight: 3, max: 24, limit: Infinity, img: "tradeposts/normal/taillteann/Music_Box_Preservation_Stone_Icon.png" },
+                    { name: "Palala Crystal", buy: 131, weight: 6, max: 38, limit: Infinity, img: "tradeposts/normal/taillteann/Palala_Crystal_icon.png" },
+                    { name: "Circle Barrier Spikes", buy: 127, weight: 3, max: 30, limit: Infinity, img: "tradeposts/normal/taillteann/Circle_Barrier_Spike_Crystal_Icon.png" },
+                    { name: "Alchemy Crystal", buy: 693, weight: 5, max: 8, limit: Infinity, img: "tradeposts/normal/taillteann/Alchemy_Crystal_icon.png" }
+                ],
+                "Tara": [
+                    { name: "Mini Dressing Table", buy: 203, weight: 15, max: 10, limit: Infinity, img: "tradeposts/normal/tara/Mini_Dressing_Table_icon.png" },
+                    { name: "Tea Table", buy: 910, weight: 38, max: 3, limit: Infinity, img: "tradeposts/normal/tara/Tea_Table_icon.png" },
+                    { name: "Rocking Chair", buy: 900, weight: 25, max: 5, limit: Infinity, img: "tradeposts/normal/tara/Rocking_Chair_icon.png" },
+                    { name: "Bunk Bed", buy: 3768, weight: 60, max: 3, limit: Infinity, img: "tradeposts/normal/tara/Bunk_Bed_icon.png" },
+                    { name: "Giant Wine Rack", buy: 8429, weight: 90, max: 2, limit: Infinity, img: "tradeposts/normal/tara/Giant_Wine_Rack_icon.png" }
+                ],
+                "Cobh": [
+                    { name: "Cobh Seaweed", buy: 12, weight: 2, max: 32, limit: Infinity, img: "tradeposts/normal/cobh/Cobh_Seaweed_icon.png" },
+                    { name: "Cobh Oyster", buy: 47, weight: 3, max: 26, limit: Infinity, img: "tradeposts/normal/cobh/Cobh_Oyster_icon.png" },
+                    { name: "Shark Fin", buy: 266, weight: 10, max: 25, limit: Infinity, img: "tradeposts/normal/cobh/Shark_Fin_icon.png" },
+                    { name: "Jellyfish", buy: 200, weight: 6, max: 30, limit: Infinity, img: "tradeposts/normal/cobh/Jelly_Fish_Icon.png" },
+                    { name: "Neid Scale", buy: 187, weight: 2, max: 28, limit: Infinity, img: "tradeposts/normal/cobh/Neid_Scales_Icon.png" }
+                ],
+                "Belvast": [
+                    { name: "Iron Whip", buy: 117, weight: 8, max: 15, limit: Infinity, img: "tradeposts/normal/belvast/Iron_Whip_icon.png" },
+                    { name: "Dark Sword", buy: 494, weight: 12, max: 10, limit: Infinity, img: "tradeposts/normal/belvast/Dark_Sword_icon.png" },
+                    { name: "Safe", buy: 10051, weight: 90, max: 2, limit: Infinity, img: "tradeposts/normal/belvast/Safe_icon.png" },
+                    { name: "Skeleton Armour", buy: 16193, weight: 115, max: 1, limit: Infinity, img: "tradeposts/normal/belvast/Skeleton_Ogre_Armor_Icon.png" },
+                    { name: "Fake Helmet", buy: 4736, weight: 30, max: 6, limit: Infinity, img: "tradeposts/normal/belvast/Fake_Morgant_Helmet_Icon.png" }
+                ],
+                "Qilla": [
+                    { name: "Mint Chocolate Powder", buy: 35, weight: 1, max: 60, limit: Infinity, img: "tradeposts/normal/qilla/Mint_Chocolate_Powder_icon.png" },
+                    { name: "Pomegranate", buy: 58, weight: 2, max: 50, limit: Infinity, img: "tradeposts/normal/qilla/Fresh_Pomegranate_Icon.png" },
+                    { name: "Mana Tunnel Figure", buy: 102, weight: 2, max: 65, limit: Infinity, img: "tradeposts/normal/qilla/Mana_Tunnel_Figure_icon.png" },
+                    { name: "Exploration Rescue Kit", buy: 247, weight: 3, max: 38, limit: Infinity, img: "tradeposts/normal/qilla/Exploration_Rescue_Kit_icon.png" },
+                    { name: "Kaypi Cactus Essence", buy: 566, weight: 2, max: 26, limit: Infinity, img: "tradeposts/normal/qilla/Kaypi_Cactus_Essence_icon.png" }
+                ],
+                "Filia": [
+                    { name: "Small Glass Chunk", buy: 72, weight: 10, max: 60, limit: Infinity, img: "tradeposts/normal/filia/Small_Glass_Chunk_icon.png" },
+                    { name: "Cinnamon Perfume", buy: 564, weight: 22, max: 15, limit: Infinity, img: "tradeposts/normal/filia/Cinnamon_Perfume_icon.png" },
+                    { name: "Dried Saffron", buy: 906, weight: 25, max: 10, limit: Infinity, img: "tradeposts/normal/filia/Dried_Saffron_icon.png" },
+                    { name: "Longa Rock Salt", buy: 2342, weight: 40, max: 5, limit: Infinity, img: "tradeposts/normal/filia/Longa_Natural_Rock_Salt_Icon.png" },
+                    { name: "Filia Jerky", buy: 1567, weight: 20, max: 12, limit: Infinity, img: "tradeposts/normal/filia/Filia_Jerky_icon.png" }
+                ],
+                "Cor": [
+                    { name: "Courcle Ruins Souvenir", buy: 8, weight: 2, max: 50, limit: Infinity, img: "tradeposts/normal/cor/Courcle_Ruins_Souvenir_icon.png" },
+                    { name: "Large Ritual Mask", buy: 61, weight: 3, max: 40, limit: Infinity, img: "tradeposts/normal/cor/Large_Ritual_Mask_icon.png" },
+                    { name: "La Terra Raspberry", buy: 56, weight: 2, max: 60, limit: Infinity, img: "tradeposts/normal/cor/La_Terra_Raspberry_icon.png" },
+                    { name: "Artifact Rest. Tool", buy: 81, weight: 2, max: 70, limit: Infinity, img: "tradeposts/normal/cor/Artifact_Restoration_Tool_Set_Icon.png" },
+                    { name: "Courcle Natural Rubber", buy: 935, weight: 5, max: 8, limit: Infinity, img: "tradeposts/normal/cor/Courcle_Natural_Rubber_icon.png" }
+                ],
+                "Vales": [
+                    { name: "Vales Coat", buy: 30, weight: 1, max: 50, limit: Infinity, img: "tradeposts/normal/vales/Vales_Padded_Coat_Icon.png" },
+                    { name: "Glacial Water", buy: 118, weight: 2, max: 35, limit: Infinity, img: "tradeposts/normal/vales/Natural_Glacial_Water_Icon.png" },
+                    { name: "Ice Skates", buy: 216, weight: 1, max: 50, limit: Infinity, img: "tradeposts/normal/vales/Ice_Skates_icon.png" },
+                    { name: "Snowboard", buy: 1079, weight: 3, max: 20, limit: Infinity, img: "tradeposts/normal/vales/Snowboard_icon.png" },
+                    { name: "Vales Vodka", buy: 1204, weight: 2, max: 16, limit: Infinity, img: "tradeposts/normal/vales/Vales_Vodka_icon.png" }
+                ]
+            },
+            "Barter": {
+                "Karu Forest": [
+                    { name: "Wooden Table", buy: 0, weight: 15, max: 10, limit: 25, img: "tradeposts/barter/karu/Wooden_Table_Icon.png" },
+                    { name: "Wooden Craft", buy: 0, weight: 15, max: 7, limit: 15, img: "tradeposts/barter/karu/Wooden_Craft_Icon.png" },
+                    { name: "Stone Horse Statue", buy: 0, weight: 20, max: 7, limit: 10, img: "tradeposts/barter/karu/Stone_Horse_Statue_Icon.png" },
+                    { name: "Karu Mushroom", buy: 0, weight: 25, max: 7, limit: 8, img: "tradeposts/barter/karu/Karu_Shiitake_Mushroom_Icon.png" },
+                    { name: "Shellfish Fossil", buy: 0, weight: 30, max: 5, limit: 3, img: "tradeposts/barter/karu/Shellfish_Fossil_Icon.png" }
+                ],
+                "Oasis": [
+                    { name: "Fine Sand", buy: 0, weight: 15, max: 10, limit: 25, img: "tradeposts/barter/oasis/Fine_Sand_Icon.png" },
+                    { name: "Prison Ghost Wings", buy: 0, weight: 15, max: 7, limit: 15, img: "tradeposts/barter/oasis/Prison_Ghost_Wings_Icon.png" },
+                    { name: "Oasis Painting", buy: 0, weight: 20, max: 7, limit: 10, img: "tradeposts/barter/oasis/Oasis_Painting_Icon.png" },
+                    { name: "Cactus Flower", buy: 0, weight: 25, max: 7, limit: 8, img: "tradeposts/barter/oasis/Cactus_Flower_Icon.png" },
+                    { name: "Giant Canine Fossil", buy: 0, weight: 30, max: 5, limit: 3, img: "tradeposts/barter/oasis/Giant_Canine_Fossil_Icon.png" }
+                ],
+                "Lake Calida": [
+                    { name: "Elvan Egg", buy: 0, weight: 15, max: 10, limit: 25, img: "tradeposts/barter/calida/Elvan_Egg_Icon.png" },
+                    { name: "Salmon", buy: 0, weight: 15, max: 7, limit: 15, img: "tradeposts/barter/calida/Calida_Salmon_Icon.png" },
+                    { name: "Bath Bomb", buy: 0, weight: 20, max: 7, limit: 10, img: "tradeposts/barter/calida/Hot_Spring_Bath_Bomb_Icon.png" },
+                    { name: "Large Tent", buy: 0, weight: 25, max: 7, limit: 8, img: "tradeposts/barter/calida/Large_Camping_Tent_Icon.png" },
+                    { name: "Pink Salt", buy: 0, weight: 30, max: 5, limit: 3, img: "tradeposts/barter/calida/Pink_Salt_Icon.png" }
+                ],
+                "Pera Volcano": [
+                    { name: "Mud Pack", buy: 0, weight: 15, max: 10, limit: 25, img: "tradeposts/barter/pera/Volcanic_Mud_Pack_Icon.png" },
+                    { name: "Magma Stone", buy: 0, weight: 15, max: 7, limit: 15, img: "tradeposts/barter/pera/Magma_Stone_Icon.png" },
+                    { name: "Ixion Horn", buy: 0, weight: 20, max: 7, limit: 10, img: "tradeposts/barter/pera/Ixion_Horn_Icon.png" },
+                    { name: "Lizard Egg", buy: 0, weight: 25, max: 7, limit: 8, img: "tradeposts/barter/pera/Volcano_Lizard_Egg_Icon.png" },
+                    { name: "Leopard Leather", buy: 0, weight: 30, max: 5, limit: 3, img: "tradeposts/barter/pera/Raspa_Black_Leopard_Leather_Icon.png" }
+                ],
+                "Scathach Beach": [
+                    { name: "Ocean Tear", buy: 0, weight: 7, max: 15, limit: 100, img: "tradeposts/barter/scathach/Ocean_Tear.png" },
+                    { name: "Alluring Stem", buy: 0, weight: 15, max: 10, limit: 100, img: "tradeposts/barter/scathach/Allure_Stem.png" },
+                    { name: "Abyss Crystal", buy: 0, weight: 5, max: 15, limit: 100, img: "tradeposts/barter/scathach/Abyss_Crystal.png" },
+                    { name: "Sage Crystal", buy: 0, weight: 10, max: 15, limit: 100, img: "tradeposts/barter/scathach/Sage_Crystal.png" },
+                    { name: "River's Source", buy: 0, weight: 25, max: 10, limit: 100, img: "tradeposts/barter/scathach/River_Source.png" },
+                    { name: "Night Leather", buy: 0, weight: 4, max: 30, limit: 100, img: "tradeposts/barter/scathach/Night_Sky_Leather.png" },
+                    { name: "Fish", buy: 0, weight: 5, max: 20, limit: 100, img: "tradeposts/barter/scathach/Unidentified_Fish.png" },
+                    { name: "Crystal Blade", buy: 0, weight: 15, max: 10, limit: 100, img: "tradeposts/barter/scathach/Crystal_Blade.png" }
+                ]
+            },
+            "Group": {
+                "Qilla": [
+                    { name: "Building Lumber", buy: 571, weight: 15, max: 8, limit: 144, img: "tradeposts/group/qilla/Building_Lumber_Icon.png" },
+                    { name: "Ancient Fossil Specimen", buy: 550, weight: 8, max: 10, limit: 180, img: "tradeposts/group/qilla/Ancient_Fossil_Specimen_Icon.png" },
+                    { name: "Personal Camping Tent", buy: 951, weight: 20, max: 7, limit: 125, img: "tradeposts/group/qilla/Personal_Camping_Tent_Icon.png" },
+                    { name: "Lutra Freshwater Eel", buy: 657, weight: 7, max: 11, limit: 198, img: "tradeposts/group/qilla/Lutra_Freshwater_Eel_Icon.png" },
+                    { name: "Kaypi Red Clay", buy: 919, weight: 6, max: 8, limit: 144, img: "tradeposts/group/qilla/Kaypi_Red_Clay_Icon.png" }
+                ],
+                "Filia": [
+                    { name: "Sun Hourglass", buy: 2003, weight: 70, max: 12, limit: 35, img: "tradeposts/group/filia/Sun_Hourglass_Icon.png" },
+                    { name: "Shyllien Icebox", buy: 3724, weight: 120, max: 5, limit: 20, img: "tradeposts/group/filia/Shyllien_Icebox_Icon.png" },
+                    { name: "Desert-Terrain Wheel", buy: 3078, weight: 90, max: 7, limit: 25, img: "tradeposts/group/filia/Desert-Terrain_Wheel_Icon.png" },
+                    { name: "Filia Traditional Carpet", buy: 1486, weight: 35, max: 20, limit: 71, img: "tradeposts/group/filia/Filia_Traditional_Carpet_Icon.png" },
+                    { name: "Gem Parasol", buy: 905, weight: 20, max: 25, limit: 125, img: "tradeposts/group/filia/Gem_Parasol_Icon.png" }
+                ],
+                "Cor": [
+                    { name: "Lipai Pattern Textile", buy: 342, weight: 6, max: 15, limit: 270, img: "tradeposts/group/cor/Lipai_Pattern_Textile_Icon.png" },
+                    { name: "Cor Honeycomb", buy: 474, weight: 12, max: 13, limit: 208, img: "tradeposts/group/cor/Cor_Honeycomb_Icon.png" },
+                    { name: "Swamp Ash", buy: 717, weight: 18, max: 9, limit: 138, img: "tradeposts/group/cor/Swamp_Ash_Icon.png" },
+                    { name: "Rosewood", buy: 1084, weight: 25, max: 10, limit: 100, img: "tradeposts/group/cor/Rosewood_Icon.png" },
+                    { name: "Ebony", buy: 1358, weight: 28, max: 8, limit: 89, img: "tradeposts/group/cor/Ebony_Icon.png" }
+                ],
+                "Vales": [
+                    { name: "Calida Flint", buy: 503, weight: 5, max: 10, limit: 180, img: "tradeposts/group/vales/Calida_Flint_Icon.png" },
+                    { name: "Physis Sled", buy: 1238, weight: 10, max: 5, limit: 90, img: "tradeposts/group/vales/Physis_Sled_Icon.png" },
+                    { name: "Portable Hand Warmer", buy: 723, weight: 2, max: 10, limit: 180, img: "tradeposts/group/vales/Portable_Hand_Warmer_Icon.png" },
+                    { name: "Ice Statue", buy: 982, weight: 8, max: 8, limit: 144, img: "tradeposts/group/vales/Ice_Statue_Icon.png" },
+                    { name: "Hillwen Commemorative Coin", buy: 604, weight: 4, max: 15, limit: 270, img: "tradeposts/group/vales/Hillwen_Commemorative_Coin_Icon.png" }
+                ]
+            }
+        };
+
+        let currentItem = null;
+
+        // --- FIREBASE SYNC LOGIC ---
+        function startGlobalSync() {
+            console.log("Initializing Global Firebase Sync...");
+            db.ref('public_commerce/prices').on('value', (snapshot) => {
+                const remotePrices = snapshot.val() || {};
+                const localPrices = JSON.parse(localStorage.getItem('mabi_p')) || {};
+
+                // Merge remote prices into local storage
+                const merged = { ...localPrices, ...remotePrices };
+                localStorage.setItem('mabi_p', JSON.stringify(merged));
+
+                // Refresh UI
+                showPrices();
+                runManifest();
+                runManifestAllOrigins();
+            }, (error) => {
+                console.error("Firebase Sync Error:", error);
+            });
+        }
+
+        function updatePrice(city, val) {
+            if (!currentItem) return;
+            const sellVal = parseInt(val, 10) || 0;
+            const priceKey = `${currentItem.name}_${city}`.replace(/[.#$[\]]/g, "_");
+
+            // 1. Save to Firebase (Remote)
+            db.ref(`public_commerce/prices/${priceKey}`).set(sellVal);
+
+            // 2. Save to Local Memory immediately (Instant UI update)
+            const localPrices = JSON.parse(localStorage.getItem('mabi_p')) || {};
+            localPrices[priceKey] = sellVal;
+            localStorage.setItem('mabi_p', JSON.stringify(localPrices));
+
+            // Immediate redraw
+            showPrices();
+            runManifest();
+            runManifestAllOrigins();
+        }
+
+        // --- IMPORT LOGIC ---
+        async function runImport() {
+            const raw = document.getElementById('import-area').value;
+            const status = document.getElementById('import-status');
+
+            // Define the town order exactly as they appear in your Google Sheet columns (left to right)
+            const townOrder = [
+                "Tir Chonaill", "Dunbarton", "Bangor", "Emain Macha", "Taillteann",
+                "Tara", "Cobh", "Belvast", "Qilla", "Filia", "Cor", "Vales"
+            ];
+
+            if (!raw) return status.textContent = "Please paste data first.";
+
+            const rows = raw.trim().split('\n');
+            status.textContent = `Processing ${rows.length} rows...`;
+
+            let count = 0;
+            for (let i = 0; i < rows.length; i++) {
+                const cols = rows[i].split('\t'); // Sheets uses Tabs
+
+                // Col 0 is Item Name
+                const item = cols[0].trim();
+                if (!item) continue;
+
+                // Loop through price columns (Col 1 to End)
+                for (let j = 1; j < cols.length; j++) {
+                    const townIndex = j - 1; // Town index maps to townOrder
+                    if (townIndex >= townOrder.length) break;
+
+                    const town = townOrder[townIndex];
+                    const priceRaw = cols[j];
+
+                    // Skip empty cells or invalid prices
+                    if (!priceRaw || priceRaw.trim() === "") continue;
+
+                    const price = parseInt(priceRaw.replace(/,/g, '').trim(), 10);
+                    if (isNaN(price)) continue;
+
+                    const key = `${item}_${town}`.replace(/[.#$[\]]/g, "_");
+
+                    // Fire and forget (don't await to speed up)
+                    db.ref('public_commerce/prices/' + key).set(price);
+                    count++;
+                }
+            }
+            status.textContent = `Done! Imported ${count} prices. Refreshing...`;
+
+            // Delay refresh slightly to allow Firebase to catch up
+            setTimeout(() => {
+                const localPrices = JSON.parse(localStorage.getItem('mabi_p')) || {};
+                localStorage.setItem('mabi_p', JSON.stringify(localPrices));
+                showPrices();
+                runManifest();
+                runManifestAllOrigins();
+            }, 1000);
+        }
+
+        // --- UI REFRESH & IMAGE LOGIC ---
+        function updatePreview() {
+            if (!currentItem) return;
+            const iconDiv = document.getElementById('center-item-icon');
+            const titleDiv = document.getElementById('center-item-title');
+            const statsDiv = document.getElementById('max-inventory-display');
+
+            const fullImgPath = getImagePath(currentItem.img);
+
+            if (iconDiv) iconDiv.style.backgroundImage = `url('${fullImgPath}')`;
+            if (titleDiv) titleDiv.textContent = currentItem.name;
+            if (statsDiv) {
+                statsDiv.textContent = `W: ${currentItem.weight} • Slots: ${currentItem.max} • Base: ${currentItem.buy} Ducats`;
+            }
+        }
+
+        function selectItemByName(itemName) {
+            const type = document.getElementById('commerce-type-select').value;
+            const city = document.getElementById('city-select').value;
+            const items = (marketData[type] && marketData[type][city]) || [];
+            const found = items.find(i => i.name === itemName);
+            if (found) {
+                currentItem = found;
+                updateMarketItems();
+                showPrices();
+                updatePreview();
+                updateRecommendationAndStats();
+            }
+        }
+
+        function updateRecommendationAndStats() {
+            const transportEl = document.getElementById('transport-dropdown');
+            const mName = transportEl ? transportEl.value : null;
+            if (!mName || !currentItem) return;
+            const stats = getModifiedStats(mName);
+
+            const load = Math.min(Math.floor(stats.weight / currentItem.weight), stats.slots * currentItem.max, currentItem.limit);
+            const curW = load * currentItem.weight;
+
+            const wLimitEl = document.getElementById('w-limit-text');
+            if (wLimitEl) wLimitEl.textContent = `${curW} / ${stats.weight}`;
+
+            const wFillEl = document.getElementById('w-fill');
+            if (wFillEl) wFillEl.style.width = `${Math.min(100, (curW / stats.weight) * 100)}%`;
+
+            const maxQtyEl = document.getElementById('max-qty-total');
+            if (maxQtyEl) maxQtyEl.textContent = load;
+        }
+
+        function updateMarketItems() {
+            const container = document.getElementById('market-items-container');
+            if (!container) return;
+            container.innerHTML = '';
+            const type = document.getElementById('commerce-type-select').value;
+            const city = document.getElementById('city-select').value;
+            const items = (marketData[type] && marketData[type][city]) || [];
+
+            if (items.length > 0 && (!currentItem || !items.find(i => i.name === currentItem.name))) {
+                currentItem = items[0];
+                updatePreview();
+            }
+
+            items.forEach(item => {
+                const savedStock = getStock(item.name);
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'inventory-item' + (currentItem && currentItem.name === item.name ? ' selected-item' : '');
+
+                const iconBox = document.createElement('div');
+                iconBox.className = 'item-list-icon-box';
+                iconBox.style.backgroundImage = `url('${getImagePath(item.img)}')`;
+
+                const content = document.createElement('div');
+                content.className = 'item-list-content';
+                content.innerHTML = `
+                    <div>
+                        <span class="item-name">${item.name}</span>
+                    </div>
+                    <div class="stock-input-row">
+                        <span style="font-size:9px; color:#aaa;">STOCK</span>
+                        <input type="number" class="qty-input" value="${savedStock || ''}"
+                        style="width:40px; height:18px; padding:0; text-align:center;"
+                        onclick="event.stopPropagation()"
+                        onchange="updateStock('${item.name}', this.value)">
+                    </div>
+                `;
+
+                itemDiv.appendChild(iconBox);
+                itemDiv.appendChild(content);
+                itemDiv.addEventListener('click', () => {
+                    currentItem = item;
+                    updateMarketItems();
+                    showPrices();
+                    updatePreview();
+                });
+                container.appendChild(itemDiv);
+            });
+        }
+
+        function showPrices() {
+            const list = document.getElementById('profit-list');
+            if (!list || !currentItem) return;
+            list.innerHTML = '';
+
+            const type = document.getElementById('commerce-type-select').value;
+            const origin = document.getElementById('city-select').value;
+            const saved = JSON.parse(localStorage.getItem('mabi_p')) || {};
+            const dBuy = getDiscountedBuyPrice(currentItem.buy);
+            const stats = getModifiedStats(document.getElementById('transport-dropdown').value);
+            const load = Math.min(Math.floor(stats.weight / currentItem.weight), stats.slots * currentItem.max);
+
+            const divisor = (type === "Barter") ? 34 : 17;
+            let targetPool = (type === "Barter") ? citiesByType["Normal"] : citiesByType[type];
+
+            targetPool.filter(c => c !== origin).forEach(city => {
+                const priceKey = `${currentItem.name}_${city}`.replace(/[.#$[\]]/g, "_");
+                const sellVal = parseInt(saved[priceKey], 10) || 0;
+                const profit = sellVal ? (sellVal - dBuy) * load : 0;
+                const score = Math.max(0, Math.floor(((sellVal - (currentItem.buy || 0)) * load) / divisor));
+                const profitClass = profit < 0 ? 'profit-val negative' : 'profit-val';
+
+                const row = document.createElement('div');
+                row.className = 'market-row';
+                row.innerHTML = `
+                    <div class="market-left">
+                        <b>${city}</b>
+                        <input type="number" class="price-input" value="${sellVal || ''}" oninput="updatePrice('${city}', this.value)">
+                    </div>
+                    <div class="market-profit-col">
+                        <span class="${profitClass}">${profit.toLocaleString()}</span>
+                    </div>
+                    <div class="market-score-col">
+                        <span class="season-val">${score.toLocaleString()}</span>
+                    </div>
+                `;
+                list.appendChild(row);
+            });
+            updateRecommendationAndStats();
+        }
+
+        // --- MANIFEST LOGIC ---
+        function runManifest() {
+            const type = document.getElementById('commerce-type-select').value;
+            const origin = document.getElementById('city-select').value;
+            const savedPrices = JSON.parse(localStorage.getItem('mabi_p')) || {};
+            const originItems = marketData[type] && marketData[type][origin] ? marketData[type][origin] : [];
+
+            let bestTrip = null;
+            let maxProfit = -1;
+
+            let targetPool = (type === "Barter") ? citiesByType["Normal"] : citiesByType[type];
+            let targets = targetPool.filter(c => c !== origin);
+
+            targets.forEach(targetCity => {
+                Object.keys(transportData).forEach(mKey => {
+                    if (mKey === "Air Ship" && type !== "Group") return;
+                    const stats = getModifiedStats(mKey);
+                    let remWeight = stats.weight, remSlots = stats.slots, totalP = 0, itemsToBuy = [];
+
+                    const potential = originItems.map(item => {
+                        const priceKey = `${item.name}_${targetCity}`.replace(/[.#$[\]]/g, "_");
+                        const sell = parseInt(savedPrices[priceKey]) || 0;
+                        const buy = getDiscountedBuyPrice(item.buy);
+                        return { ...item, unitP: sell - buy, eff: (sell - buy) / item.weight };
+                    }).filter(i => i.unitP > 0).sort((a, b) => b.eff - a.eff);
+
+                    potential.forEach(item => {
+                        const stockAvailable = getStock(item.name) || 0;
+                        let qty = Math.min(Math.floor(remWeight / item.weight), remSlots * item.max, item.limit, stockAvailable);
+                        if (qty <= 0) return;
+                        let slotsNeeded = Math.ceil(qty / item.max);
+                        itemsToBuy.push({ n: item.name, q: qty, p: qty * item.unitP, img: item.img, s: slotsNeeded, maxPerSlot: item.max });
+                        remWeight -= (qty * item.weight); remSlots -= slotsNeeded; totalP += (qty * item.unitP);
+                    });
+
+                    if (totalP > maxProfit) {
+                        maxProfit = totalP;
+                        bestTrip = { dest: targetCity, mount: mKey, items: itemsToBuy, profit: totalP, maxSlots: stats.slots };
+                    }
+                });
+            });
+
+            const box = document.getElementById('manifest-box');
+            if (!bestTrip || maxProfit <= 0) {
+                 box.style.display = 'block';
+                 document.getElementById('manifest-list').innerHTML = `<div style="color:#aaa; font-size:10px; padding:10px; text-align:center;">NO PROFITABLE ROUTES<br>CHECK STOCK & PRICES</div>`;
+                 document.getElementById('manifest-total').textContent = `PROFIT: 0`;
+                 return;
+            }
+            box.style.display = 'block';
+
+            let slotHtml = '<div style="display: flex; flex-wrap: wrap; gap: 4px;">';
+            let filled = 0;
+            bestTrip.items.forEach(item => {
+                let rem = item.q;
+                for (let i = 0; i < item.s; i++) {
+                    const sqty = Math.min(item.maxPerSlot, rem); rem -= sqty;
+                    slotHtml += `<div class="manifest-slot filled" style="background-image: url('${getImagePath(item.img)}');"><span class="slot-badge">${sqty}</span></div>`;
+                    filled++;
+                }
+            });
+            for (let i = filled; i < bestTrip.maxSlots; i++) slotHtml += `<div class="manifest-slot empty"></div>`;
+            slotHtml += '</div>';
+
+            document.getElementById('manifest-list').innerHTML = `
+                <div style="color:var(--accent); font-weight:bold;">DEST: ${bestTrip.dest}</div>
+                <div style="font-size:10px; opacity:0.6; margin-bottom:10px;">UNIT: ${bestTrip.mount}</div>
+                ${slotHtml}
+            `;
+            document.getElementById('manifest-total').textContent = `TOTAL PROFIT: ${bestTrip.profit.toLocaleString()} DUCATS`;
+        }
+
+        function runManifestAllOrigins() {
+            const type = document.getElementById('commerce-type-select').value;
+            const savedPrices = JSON.parse(localStorage.getItem('mabi_p')) || {};
+            const origins = citiesByType[type] || [];
+            let globalBest = null;
+            let globalMaxProfit = -1;
+
+            origins.forEach(originCity => {
+                const originItems = marketData[type] && marketData[type][originCity] ? marketData[type][originCity] : [];
+                let targets = (type === "Barter" ? citiesByType["Normal"] : citiesByType[type]).filter(c => c !== originCity);
+
+                targets.forEach(targetCity => {
+                    Object.keys(transportData).forEach(mKey => {
+                        if (mKey === "Air Ship" && type !== "Group") return;
+                        const stats = getModifiedStats(mKey);
+                        let remWeight = stats.weight, remSlots = stats.slots, totalP = 0, itemsToBuy = [];
+                        const potential = originItems.map(item => {
+                            const priceKey = `${item.name}_${targetCity}`.replace(/[.#$[\]]/g, "_");
+                            const sell = parseInt(savedPrices[priceKey]) || 0;
+                            const buy = getDiscountedBuyPrice(item.buy);
+                            return { ...item, unitP: sell - buy, eff: (sell - buy) / item.weight };
+                        }).filter(i => i.unitP > 0).sort((a, b) => b.eff - a.eff);
+
+                        potential.forEach(item => {
+                            const stock = getStock(item.name) || 0;
+                            let qty = Math.min(Math.floor(remWeight / item.weight), remSlots * item.max, item.limit, stock);
+                            if (qty <= 0) return;
+                            let slots = Math.ceil(qty / item.max);
+                            itemsToBuy.push({ n: item.name, q: qty, img: item.img, s: slots, maxPerSlot: item.max });
+                            remWeight -= (qty * item.weight); remSlots -= slots; totalP += (qty * item.unitP);
+                        });
+
+                        if (totalP > globalMaxProfit) {
+                            globalMaxProfit = totalP;
+                            globalBest = { origin: originCity, dest: targetCity, mount: mKey, items: itemsToBuy, profit: totalP, maxSlots: stats.slots };
+                        }
+                    });
+                });
+            });
+
+            const anchor = document.getElementById('global-manifest-anchor');
+            if (!anchor) return;
+
+            if (!globalBest || globalMaxProfit <= 0) {
+                anchor.innerHTML = '';
+                return;
+            }
+
+            let slotHtml = '<div style="display: flex; flex-wrap: wrap; gap: 4px;">';
+            globalBest.items.forEach(item => {
+                let rem = item.q;
+                for (let i = 0; i < item.s; i++) {
+                    const sqty = Math.min(item.maxPerSlot, rem); rem -= sqty;
+                    slotHtml += `<div class="manifest-slot filled" style="background-image: url('${getImagePath(item.img)}');"><span class="slot-badge">${sqty}</span></div>`;
+                }
+            });
+            slotHtml += '</div>';
+
+            anchor.innerHTML = `
+                <div class="recommendation-box">
+                    <div class="rec-title" style="color:#a29bfe;">GLOBAL_NETWORK_BEST</div>
+                    <div style="color:var(--accent); font-weight:bold;">${globalBest.origin} → ${globalBest.dest}</div>
+                    <div style="font-size:10px; opacity:0.6; margin-bottom:10px;">UNIT: ${globalBest.mount}</div>
+                    ${slotHtml}
+                    <div class="manifest-footer">PROFIT: ${globalBest.profit.toLocaleString()} DUCATS</div>
+                </div>
+            `;
+        }
+
+        // --- HELPERS ---
+        function getDiscountedBuyPrice(base) {
+            const r = parseInt(document.getElementById('merchant-rating-select').value, 10) || 1;
+            const mD = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 1, 6: 1, 7: 2, 8: 2, 9: 3 }[r] || 0;
+            const gear = (parseInt(document.getElementById('trader-qty').value, 10) || 0) * 3 + (parseInt(document.getElementById('trustworthy-qty').value, 10) || 0);
+            return Math.floor(base * (1 - ((mD + gear) / 100)));
+        }
+
+        function getModifiedStats(mName) {
+            const b = transportData[mName];
+            if (!b) return { slots: 0, weight: 0 };
+            let bW = 0, bS = 0;
+            if (document.getElementById('gm-check').checked) { bW += 100; bS += 1; }
+            if (mName !== "Air Ship" && document.getElementById('william-check').checked) { bW += 200; bS += 1; }
+            if (mName === "Wagon" && document.getElementById('alpaca-check').checked) { bW += 200; bS += 2; }
+            return { slots: b.slots + bS, weight: b.weight + bW };
+        }
+
+        function updateStock(itemName, quantity) {
+            const stockData = JSON.parse(localStorage.getItem('mabi_stock')) || {};
+            stockData[itemName] = parseInt(quantity) || 0;
+            localStorage.setItem('mabi_stock', JSON.stringify(stockData));
+            runManifest();
+            runManifestAllOrigins();
+        }
+
+        function getStock(itemName) {
+            const stockData = JSON.parse(localStorage.getItem('mabi_stock')) || {};
+            return stockData[itemName] || 0;
+        }
+
+        function handleAirShipAvailability() {
+            const airShipCheck = document.getElementById('air-travel-check');
+            const dropdown = document.getElementById('transport-dropdown');
+            const option = dropdown.querySelector('option[value="Air Ship"]');
+            if (airShipCheck.checked) option.disabled = false;
+            else { option.disabled = true; if(dropdown.value === "Air Ship") dropdown.value = "Elephant"; }
+        }
+
+        function updateTownIcon() {
+            const avatar = document.getElementById('origin-town-icon');
+            const city = document.getElementById('city-select').value;
+            if (avatar && townIcons[city]) {
+                const fullPath = getImagePath(townIcons[city]);
+                avatar.style.backgroundImage = `url('${fullPath}')`;
+            }
+        }
+
+        function savePrefs() {
+            const p = {
+                type: document.getElementById('commerce-type-select').value,
+                city: document.getElementById('city-select').value,
+                mount: document.getElementById('transport-dropdown').value,
+                gm: document.getElementById('gm-check').checked,
+                william: document.getElementById('william-check').checked,
+                alpaca: document.getElementById('alpaca-check').checked,
+                trader: document.getElementById('trader-qty').value,
+                trust: document.getElementById('trustworthy-qty').value
+            };
+            localStorage.setItem('mabi_prefs', JSON.stringify(p));
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const refresh = () => {
+                updateMarketItems();
+                showPrices();
+                updateRecommendationAndStats();
+                updateTownIcon();
+                savePrefs();
+                runManifest();
+                runManifestAllOrigins();
+            };
+            const saved = JSON.parse(localStorage.getItem('mabi_prefs')) || {};
+
+            document.getElementById('commerce-type-select').onchange = (e) => {
+                const type = e.target.value;
+                document.getElementById('city-select').innerHTML = citiesByType[type].map(c => `<option value="${c}">${c}</option>`).join('');
+                if (saved.city && citiesByType[type].includes(saved.city)) document.getElementById('city-select').value = saved.city;
+                refresh();
+            };
+
+            if (saved.type) document.getElementById('commerce-type-select').value = saved.type;
+            document.getElementById('commerce-type-select').dispatchEvent(new Event('change'));
+
+            if (saved.city) document.getElementById('city-select').value = saved.city;
+            if (saved.mount) document.getElementById('transport-dropdown').value = saved.mount;
+            if (saved.trader) document.getElementById('trader-qty').value = saved.trader;
+            if (saved.trust) document.getElementById('trustworthy-qty').value = saved.trust;
+
+            document.getElementById('gm-check').checked = !!saved.gm;
+            document.getElementById('william-check').checked = !!saved.william;
+            document.getElementById('alpaca-check').checked = !!saved.alpaca;
+
+            document.getElementById('city-select').onchange = refresh;
+            document.getElementById('merchant-rating-select').onchange = refresh;
+            document.getElementById('transport-dropdown').onchange = refresh;
+            document.getElementById('gm-check').onchange = refresh;
+            document.getElementById('william-check').onchange = function() {
+                if(this.checked) document.getElementById('alpaca-check').checked = false;
+                refresh();
+            };
+            document.getElementById('alpaca-check').onchange = function() {
+                if(this.checked) document.getElementById('william-check').checked = false;
+                refresh();
+            };
+            document.getElementById('trader-qty').onchange = refresh;
+            document.getElementById('trustworthy-qty').onchange = refresh;
+
+            startGlobalSync();
+            refresh();
+        });
+    </script>
+</body>
+</html>
