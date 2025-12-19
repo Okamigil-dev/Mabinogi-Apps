@@ -6,13 +6,12 @@
     <title>Barter Material Sync</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     
-    <!-- Firebase Modular SDKs -->
+    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Share modules with the main script
         window.mabiFirebase = { initializeApp, getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken, getFirestore, doc, setDoc, onSnapshot };
     </script>
 
@@ -70,8 +69,7 @@
         .panel-header { 
             font-size: 10px; font-weight: 900; color: var(--text-dim); 
             text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px;
-            display: flex; align-items: center; gap: 10px;
-            flex-shrink: 0;
+            display: flex; align-items: center; gap: 10px; flex-shrink: 0;
         }
         .panel-header::after { content: ''; height: 1px; background: var(--border); flex-grow: 1; }
 
@@ -88,7 +86,7 @@
             background-size: contain; background-repeat: no-repeat; background-position: center;
         }
 
-        /* --- Catalog (Left) --- */
+        /* --- Catalog --- */
         .town-header-container { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; flex-shrink: 0; }
         .town-visual-box {
             width: 44px; height: 44px; background: #000; border: 1px solid var(--accent);
@@ -110,7 +108,7 @@
         .item-name { font-weight: 700; color: #eee; font-size: 11px; }
         .item-limit-tag { font-size: 8px; color: var(--text-dim); }
 
-        /* --- Inventory Grid (Right) --- */
+        /* --- Inventory --- */
         .inventory-window { 
             background: #000; border: 1px solid var(--border); 
             padding: 15px; position: relative; flex-grow: 1; 
@@ -139,7 +137,7 @@
             padding: 10px; font-family: 'JetBrains Mono'; font-size: 10px; color: var(--accent); line-height: 1.6;
         }
 
-        /* --- Materials (Center) --- */
+        /* --- Materials --- */
         .materials-dual-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex-grow: 1; overflow: hidden; }
         .table-container { display: flex; flex-direction: column; overflow: hidden; }
         .data-table { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono'; font-size: 11px; margin-bottom: 20px;}
@@ -162,15 +160,8 @@
 
         /* --- Tooltip --- */
         #item-tooltip {
-            position: fixed;
-            z-index: 10000;
-            background: rgba(0, 0, 0, 0.95);
-            border: 1px solid var(--accent);
-            padding: 10px;
-            pointer-events: none;
-            display: none;
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
-            min-width: 150px;
+            position: fixed; z-index: 10000; background: rgba(0, 0, 0, 0.95); border: 1px solid var(--accent); padding: 10px;
+            pointer-events: none; display: none; box-shadow: 0 0 15px rgba(0, 243, 255, 0.2); min-width: 150px;
         }
         .tt-name { color: #fff; font-weight: 900; font-size: 11px; margin-bottom: 5px; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
         .tt-stat { font-family: 'JetBrains Mono'; font-size: 9px; color: var(--text-dim); display: flex; justify-content: space-between; gap: 20px; }
@@ -195,7 +186,7 @@
             <a href="index.html" class="hub-btn">Hub</a>
             <div style="text-align: center;">
                 <div class="main-title">Barter Material Tracker</div>
-                <div id="sync-status" class="sync-indicator">ACCOUNT_OFFLINE</div>
+                <div id="sync-status" class="sync-indicator">GUEST_MODE</div>
             </div>
             <div style="width:110px"></div>
         </div>
@@ -203,7 +194,7 @@
 
     <div class="interface-grid">
         <div class="panel">
-            <div class="panel-header">NPC Location</div>
+            <div class="panel-header">Trade Post</div>
             <div class="town-header-container">
                 <div class="town-visual-box" id="town-icon-box"></div>
                 <select id="town-select" class="search-input" style="margin:0">
@@ -220,7 +211,7 @@
         </div>
 
         <div class="panel" style="background: #080808;">
-            <div class="panel-header">Context Settings</div>
+            <div class="panel-header">Logistics Config</div>
             <div style="display: flex; gap: 15px; margin-bottom: 25px; flex-shrink: 0;">
                 <div style="flex: 1;">
                     <label style="font-size: 8px; color: var(--text-dim); font-weight: 900; letter-spacing: 1px;">PREP_DURATION (WEEKS)</label>
@@ -309,12 +300,13 @@
                 <div id="trip-calculator" class="trip-planning">PLANNING_IDLE...</div>
             </div>
             <div style="margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border); text-align: center; opacity: 0.2;">
-                <div id="user-display" style="font-family: 'JetBrains Mono'; font-size: 8px;">USER_NOT_AUTH</div>
+                <div id="user-display" style="font-family: 'JetBrains Mono'; font-size: 8px;">GUEST_SESSION</div>
             </div>
         </div>
     </div>
 
     <script type="module">
+        // --- 1. DATABASES ---
         const barterDb = [
             { town: "Pera Volcano", item: "Volcanic Mud Pack", weight: 15, stack: 10, limit: 25, mats: { "Copper Plate": 2, "Mysterious Herb Powder": 3 }, img: "images/tradeposts/barter/pera/Volcanic_Mud_Pack_Icon.png" },
             { town: "Pera Volcano", item: "Magma Stone", weight: 15, stack: 7, limit: 15, mats: { "Mythril Plate": 2, "Barley Flour": 3 }, img: "images/tradeposts/barter/pera/Magma_Stone_Icon.png" },
@@ -396,165 +388,187 @@
             "Karu Forest": "images/tradeposts/Commerce_Karu_Forest_Icon.png"
         };
 
-        // --- AUTH & CONFIG ---
-        const { initializeApp, getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken, getFirestore, doc, setDoc, onSnapshot } = window.mabiFirebase;
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM", databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com" };
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'mabinogi-tracker';
-
-        let user = null;
-        let isSaving = false;
-        let currentCargo = [];
-        let ownedInventory = {};
-        let activeBuffs = { gm: false, william: false, alpaca: false };
-        let weekMult = 1;
-        let selectedTown = "Karu Forest";
-        let targetDest = "None";
-        let transportType = "Back Pack";
-        let publicPrices = {};
-        let debounceTimer = null;
+        // --- 2. STATE ---
+        let currentCargo = [], ownedInventory = {}, activeBuffs = { gm: false, william: false, alpaca: false }, weekMult = 1, selectedTown = "Karu Forest", targetDest = "None", publicPrices = {}, debounceTimer = null;
         const DEBOUNCE_DELAY = 1500;
 
-        // --- AUTH FIRST RULE ---
+        // --- 3. FIREBASE CORE (GUEST FIRST) ---
+        const { initializeApp, getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken, getFirestore, doc, setDoc, onSnapshot } = window.mabiFirebase;
+        const fbConfig = { apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM", databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com" };
+        const app = initializeApp(fbConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = 'mabinogi-tracker';
+
+        let user = null, isSaving = false;
+
+        // AUTH: LOCAL-FIRST / GUEST FALLBACK
         const initAuth = async () => {
             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                 await signInWithCustomToken(auth, __initial_auth_token).catch(() => signInAnonymously(auth));
             } else {
-                // Wait for existing session check from Hub
-                setTimeout(() => {
-                    if (!auth.currentUser) signInAnonymously(auth);
-                }, 1000);
+                setTimeout(() => { if (!auth.currentUser) signInAnonymously(auth); }, 1500);
             }
         };
-
-        initAuth();
 
         onAuthStateChanged(auth, (u) => {
             user = u;
             if (user) {
-                document.getElementById('user-display').textContent = `AUTH_ID: ${user.uid}`;
+                document.getElementById('user-display').textContent = user.isAnonymous ? "GUEST_SESSION" : `AUTH_ID: ${user.uid}`;
                 document.getElementById('sync-status').textContent = 'CONNECTED';
                 document.getElementById('sync-status').classList.add('active');
                 
-                const stateRef = doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'barterState');
-                onSnapshot(stateRef, (snapshot) => {
-                    if (snapshot.exists() && !isSaving && !debounceTimer) {
-                        loadFromCloud(snapshot.data());
+                onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'barterState'), (snap) => {
+                    if (snap.exists() && !isSaving && !debounceTimer) {
+                        if (currentCargo.length === 0) loadFromCloud(snap.data());
                     }
-                }, (error) => console.error(error));
+                });
 
-                // Global Price listener
-                const priceRef = doc(db, 'public_commerce', 'prices');
-                onSnapshot(priceRef, (snapshot) => {
-                    if (snapshot.exists()) {
-                        publicPrices = snapshot.data();
-                        calculateLoadout();
-                    }
+                onSnapshot(doc(db, 'public_commerce', 'prices'), (snap) => {
+                    if (snap.exists()) { publicPrices = snap.data(); calculateLoadout(); }
                 });
             }
         });
 
-        // --- SYNC ---
+        // --- 4. PREFERENCE PERSISTENCE (LOCAL STORAGE) ---
+        function saveLocalPrefs() {
+            const prefs = {
+                transport: document.getElementById('transport-select').value,
+                buffs: activeBuffs
+            };
+            localStorage.setItem('mabi_barter_prefs', JSON.stringify(prefs));
+        }
+
+        function loadLocalPrefs() {
+            const saved = localStorage.getItem('mabi_barter_prefs');
+            if (saved) {
+                const prefs = JSON.parse(saved);
+                if (prefs.transport) document.getElementById('transport-select').value = prefs.transport;
+                if (prefs.buffs) {
+                    activeBuffs = prefs.buffs;
+                    Object.entries(activeBuffs).forEach(([id, active]) => {
+                        const el = document.getElementById(`buff-${id}`);
+                        if (el) el.classList.toggle('active', active);
+                    });
+                }
+            }
+        }
+
         const saveToCloudDebounced = () => {
             if (!user) return;
-            document.getElementById('sync-status').textContent = 'PENDING';
+            document.getElementById('sync-status').textContent = 'CHANGES_PENDING';
             document.getElementById('sync-status').className = 'sync-indicator saving';
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(async () => {
-                isSaving = true;
-                debounceTimer = null;
+                isSaving = true; debounceTimer = null;
                 try {
-                    const stateRef = doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'barterState');
-                    await setDoc(stateRef, {
-                        cargo: JSON.stringify(currentCargo),
-                        inventory: ownedInventory,
-                        buffs: activeBuffs,
-                        multiplier: weekMult,
-                        town: selectedTown,
-                        dest: targetDest,
-                        transport: transportType
+                    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'barterState'), {
+                        cargo: JSON.stringify(currentCargo), inventory: ownedInventory, buffs: activeBuffs, multiplier: weekMult, town: selectedTown, dest: targetDest, transport: document.getElementById('transport-select').value
                     });
                     document.getElementById('sync-status').textContent = 'SYNCED';
                     document.getElementById('sync-status').className = 'sync-indicator active';
-                } catch (e) { console.error(e); } finally { setTimeout(() => { isSaving = false; }, 500); }
+                } catch (e) { console.error(e); } finally { setTimeout(() => isSaving = false, 500); }
             }, DEBOUNCE_DELAY);
         };
 
         const loadFromCloud = (data) => {
             if (data.cargo) currentCargo = JSON.parse(data.cargo);
             if (data.inventory) ownedInventory = data.inventory;
-            if (data.buffs) activeBuffs = data.buffs;
             if (data.multiplier) weekMult = data.multiplier;
             if (data.town) selectedTown = data.town;
             if (data.dest) targetDest = data.dest;
-            if (data.transport) transportType = data.transport;
+            
+            // Cloud overwrites local but we still save local
+            if (data.transport) document.getElementById('transport-select').value = data.transport;
+            if (data.buffs) {
+                activeBuffs = data.buffs;
+                Object.entries(activeBuffs).forEach(([id, active]) => document.getElementById(`buff-${id}`).classList.toggle('active', active));
+            }
 
             document.getElementById('week-mult').value = weekMult;
             document.getElementById('town-select').value = selectedTown;
             document.getElementById('dest-select').value = targetDest;
-            document.getElementById('transport-select').value = transportType;
             
-            Object.entries(activeBuffs).forEach(([id, active]) => {
-                const el = document.getElementById(`buff-${id}`);
-                if (el) el.classList.toggle('active', active);
-            });
-
-            renderCatalog();
-            updateTransportLabels();
-            calculateLoadout();
+            saveLocalPrefs();
+            renderCatalog(); updateTransportLabels(); calculateLoadout();
         };
 
-        // --- OPTIMIZATION ---
+        // --- 5. LOGISTICS ---
         function calculateBestFirstTrip(manifest, maxW, maxS, destination) {
             const itemCounts = {};
             manifest.forEach(i => itemCounts[i.item] = (itemCounts[i.item] || 0) + 1);
-
             const potentialSlots = [];
             Object.keys(itemCounts).forEach(itemName => {
                 const proto = barterDb.find(b => b.item === itemName);
                 let priceKey = `${itemName}_${destination}`.replace(/[.#$[\]]/g, "_");
                 let unitProfit = publicPrices[priceKey] || 0;
-
                 let remaining = itemCounts[itemName];
                 while (remaining > 0) {
                     const take = Math.min(remaining, proto.stack);
-                    potentialSlots.push({
-                        ...proto,
-                        qtyInSlot: take,
-                        slotWeight: take * proto.weight,
-                        totalSlotProfit: take * unitProfit
-                    });
+                    potentialSlots.push({ ...proto, qtyInSlot: take, slotWeight: take * proto.weight, totalSlotProfit: take * unitProfit });
                     remaining -= take;
                 }
             });
-
-            if (destination !== "None") {
-                potentialSlots.sort((a,b) => b.totalSlotProfit - a.totalSlotProfit || b.slotWeight - a.slotWeight);
-            } else {
-                potentialSlots.sort((a,b) => b.slotWeight - a.slotWeight);
-            }
-
+            if (destination !== "None") potentialSlots.sort((a,b) => b.totalSlotProfit - a.totalSlotProfit || b.slotWeight - a.slotWeight);
+            else potentialSlots.sort((a,b) => b.slotWeight - a.slotWeight);
             let tripSlots = [], tripW = 0, tripSCount = 0;
             for (const slot of potentialSlots) {
                 if (tripSCount < maxS && (tripW + slot.slotWeight) <= maxW) {
-                    tripSlots.push(slot);
-                    tripW += slot.slotWeight;
-                    tripSCount++;
+                    tripSlots.push(slot); tripW += slot.slotWeight; tripSCount++;
                 }
             }
             return { tripSlots, tripW, tripSCount };
         }
 
-        // --- RENDERING ---
+        function calculateLoadout() {
+            const stats = getTransportStats();
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            for (let i = 0; i < stats.slots; i++) { grid.appendChild(Object.assign(document.createElement('div'), { className: 'slot', id: `slot-${i}` })); }
+
+            const { tripSlots, tripW, tripSCount } = calculateBestFirstTrip(currentCargo, stats.weight, stats.slots, targetDest);
+            tripSlots.forEach((slotData, idx) => {
+                const slotEl = document.getElementById(`slot-${idx}`);
+                if (slotEl) {
+                    slotEl.classList.add('filled');
+                    const icon = Object.assign(document.createElement('div'), { className: 'item-icon' });
+                    icon.style.backgroundImage = `url('${slotData.img}')`;
+                    icon.innerHTML = `<span class="stack-label">${slotData.qtyInSlot}</span>`;
+                    icon.onmouseenter = (e) => showTooltip(e, slotData);
+                    icon.onmouseleave = hideTooltip;
+                    icon.onclick = () => window.removeItemFromManifest(slotData.item);
+                    slotEl.appendChild(icon);
+                }
+            });
+
+            document.getElementById('weight-label').textContent = `${tripW} / ${stats.weight} kg`;
+            document.getElementById('weight-fill').style.width = Math.min(100, (tripW / stats.weight) * 100) + '%';
+            document.getElementById('weight-fill').className = tripW > stats.weight ? 'progress-fill over' : 'progress-fill';
+            document.getElementById('slot-label').textContent = `${tripSCount} / ${stats.slots} Slots`;
+            document.getElementById('slot-fill').style.width = (tripSCount / stats.slots) * 100 + '%';
+
+            // Logistics Estimation
+            const itemCounts = {};
+            currentCargo.forEach(i => itemCounts[i.item] = (itemCounts[i.item] || 0) + 1);
+            let totalSlotsManifest = 0;
+            Object.keys(itemCounts).forEach(name => totalSlotsManifest += Math.ceil(itemCounts[name] / barterDb.find(b => b.item === name).stack));
+            let totalWeightManifest = currentCargo.reduce((sum, c) => sum + c.weight, 0);
+
+            const tripCount = Math.ceil(Math.max(totalWeightManifest / stats.weight, totalSlotsManifest / stats.slots));
+            const tripDisplay = document.getElementById('trip-calculator');
+            tripDisplay.innerHTML = `TOTAL TRIPS: ${tripCount || 1} <br>MANIFEST: ${totalWeightManifest}kg / ${totalSlotsManifest} slots`;
+            tripDisplay.style.color = tripCount > 1 ? '#ffd700' : 'var(--accent)';
+
+            calculateMaterials();
+        }
+
+        // --- 6. UI HELPERS ---
         function renderCatalog() {
             const town = document.getElementById('town-select').value;
             const container = document.getElementById('catalog-container');
             const iconBox = document.getElementById('town-icon-box');
             iconBox.style.backgroundImage = `url('${townIcons[town]}')`;
             container.innerHTML = '';
-            
             barterDb.filter(b => b.town === town).forEach(b => {
                 const totalInManifest = currentCargo.filter(c => c.item === b.item).length;
                 const isAtLimit = totalInManifest >= b.limit;
@@ -564,9 +578,9 @@
                     <div class="icon-square" style="background-image: url('${b.img}')"></div>
                     <div style="flex-grow:1;">
                         <div class="item-name">${b.item}</div>
-                        <div class="item-limit-tag">LIMIT: ${totalInManifest}/${b.limit}</div>
+                        <div class="item-limit-tag">NPC LIMIT: ${totalInManifest}/${b.limit}</div>
                     </div>
-                    <span style="font-size: 8px; color: ${isAtLimit ? '#ff4444' : 'var(--accent)'};">${isAtLimit ? 'MAX' : '+ADD'}</span>
+                    <span style="font-size: 8px; color: ${isAtLimit ? '#ff4444' : 'var(--accent)'};">${isAtLimit ? 'LIMIT' : '+ADD'}</span>
                 `;
                 if (!isAtLimit) div.onclick = () => addItem(b);
                 container.appendChild(div);
@@ -578,9 +592,7 @@
             else if (id === 'alpaca' && !activeBuffs.alpaca) activeBuffs.william = false;
             activeBuffs[id] = !activeBuffs[id];
             document.querySelectorAll('.buff-toggle').forEach(el => el.classList.toggle('active', activeBuffs[el.id.replace('buff-','')]));
-            updateTransportLabels(); 
-            calculateLoadout();
-            saveToCloudDebounced();
+            updateTransportLabels(); calculateLoadout(); saveLocalPrefs(); saveToCloudDebounced();
         }
 
         function updateTransportLabels() {
@@ -597,63 +609,12 @@
 
         function getTransportStats() {
             const select = document.getElementById('transport-select');
-            const activeOption = select.selectedOptions[0];
-            let s = parseInt(activeOption.dataset.slots), w = parseInt(activeOption.dataset.weight);
+            const opt = select.selectedOptions[0];
+            let s = parseInt(opt.dataset.slots), w = parseInt(opt.dataset.weight);
             if (activeBuffs.gm) { s += 1; w += 100; }
             if (activeBuffs.william) { s += 1; w += 200; }
             if (activeBuffs.alpaca && select.value === "Wagon") { s += 2; w += 200; }
             return { slots: s, weight: w };
-        }
-
-        function calculateLoadout() {
-            const stats = getTransportStats();
-            const grid = document.getElementById('grid');
-            grid.innerHTML = '';
-            for (let i = 0; i < stats.slots; i++) {
-                const slot = document.createElement('div');
-                slot.className = 'slot';
-                slot.id = `slot-${i}`;
-                grid.appendChild(slot);
-            }
-
-            const { tripSlots, tripW, tripSCount } = calculateBestFirstTrip(currentCargo, stats.weight, stats.slots, targetDest);
-            
-            tripSlots.forEach((slotData, idx) => {
-                const slotEl = document.getElementById(`slot-${idx}`);
-                if (slotEl) {
-                    slotEl.classList.add('filled');
-                    const icon = document.createElement('div');
-                    icon.className = 'item-icon';
-                    icon.style.backgroundImage = `url('${slotData.img}')`;
-                    icon.innerHTML = `<span class="stack-label">${slotData.qtyInSlot}</span>`;
-                    icon.onmouseenter = (e) => showTooltip(e, slotData);
-                    icon.onmouseleave = hideTooltip;
-                    icon.onclick = () => window.removeItemFromManifest(slotData.item);
-                    slotEl.appendChild(icon);
-                }
-            });
-
-            document.getElementById('weight-label').textContent = `${tripW} / ${stats.weight} kg`;
-            document.getElementById('weight-fill').style.width = Math.min(100, (tripW / stats.weight) * 100) + '%';
-            document.getElementById('weight-fill').className = tripW > stats.weight ? 'progress-fill over' : 'progress-fill';
-            document.getElementById('slot-label').textContent = `${tripSCount} / ${stats.slots} Slots`;
-            document.getElementById('slot-fill').style.width = (tripSCount / stats.slots) * 100 + '%';
-
-            const itemCounts = {};
-            currentCargo.forEach(i => itemCounts[i.item] = (itemCounts[i.item] || 0) + 1);
-            let totalSlotsManifest = 0;
-            Object.keys(itemCounts).forEach(name => {
-                const proto = barterDb.find(b => b.item === name);
-                totalSlotsManifest += Math.ceil(itemCounts[name] / proto.stack);
-            });
-            let totalWeightManifest = currentCargo.reduce((sum, c) => sum + c.weight, 0);
-
-            const tripCount = Math.ceil(Math.max(totalWeightManifest / stats.weight, totalSlotsManifest / stats.slots));
-            const tripDisplay = document.getElementById('trip-calculator');
-            tripDisplay.innerHTML = `TRIPS REQUIRED: ${tripCount || 1} <br>MANIFEST: ${totalWeightManifest}kg / ${totalSlotsManifest} slots`;
-            tripDisplay.style.color = tripCount > 1 ? '#ffd700' : 'var(--accent)';
-
-            calculateMaterials();
         }
 
         function showTooltip(e, data) {
@@ -670,97 +631,87 @@
         function hideTooltip() { document.getElementById('item-tooltip').style.display = 'none'; }
 
         function addItem(itemData) {
-            const itemTotal = currentCargo.filter(c => c.item === itemData.item).length;
-            if (itemTotal >= itemData.limit) return;
-            currentCargo.push({...itemData});
+            if (currentCargo.filter(c => c.item === itemData.item).length >= itemData.limit) return;
+            currentCargo.push({ ...itemData });
             calculateLoadout(); renderCatalog(); saveToCloudDebounced();
         }
 
         window.removeItemFromManifest = (itemName) => {
-            const actualIdx = currentCargo.findIndex(c => c.item === itemName);
-            if (actualIdx !== -1) currentCargo.splice(actualIdx, 1);
+            const idx = currentCargo.findIndex(c => c.item === itemName);
+            if (idx !== -1) currentCargo.splice(actualIdx, 1); // Fixed variable name error
             calculateLoadout(); renderCatalog(); saveToCloudDebounced();
+        };
+
+        // Simplified logic fix for removal
+        window.removeItemFromManifest = (itemName) => {
+            const actualIdx = currentCargo.findIndex(c => c.item === itemName);
+            if (actualIdx !== -1) {
+                currentCargo.splice(actualIdx, 1);
+            }
+            calculateLoadout();
+            renderCatalog();
+            saveToCloudDebounced();
         };
 
         function calculateMaterials() {
             weekMult = parseInt(document.getElementById('week-mult').value) || 1;
-            const barterIngredients = {}, rawResources = {}, tempOwned = JSON.parse(JSON.stringify(ownedInventory));
-
-            currentCargo.forEach(cargo => {
-                for (const [matName, matQty] of Object.entries(cargo.mats)) barterIngredients[matName] = (barterIngredients[matName] || 0) + (matQty * weekMult);
-            });
-
-            function resolveRaw(name, needed) {
-                const recipe = recipeDb.find(r => r.item === name);
-                if (!recipe) { rawResources[name] = (rawResources[name] || 0) + needed; return; }
-                for (const [m, a] of Object.entries(recipe.mats)) resolveRaw(m, a * needed);
+            const bIngredients = {}, rawRes = {}, tempOwned = JSON.parse(JSON.stringify(ownedInventory));
+            currentCargo.forEach(c => { for (const [m, q] of Object.entries(c.mats)) bIngredients[m] = (bIngredients[m] || 0) + (q * weekMult); });
+            function resolve(n, need) {
+                const r = recipeDb.find(x => x.item === n);
+                if (!r) { rawRes[n] = (rawRes[n] || 0) + need; return; }
+                for (const [m, a] of Object.entries(r.mats)) resolve(m, a * need);
             }
-
-            Object.entries(barterIngredients).forEach(([name, count]) => {
-                const owned = tempOwned[name] || 0;
-                const deficit = Math.max(0, count - owned);
-                if (deficit > 0) resolveRaw(name, deficit);
+            Object.entries(bIngredients).forEach(([n, c]) => {
+                const deficit = Math.max(0, c - (tempOwned[n] || 0));
+                if (deficit > 0) resolve(n, deficit);
             });
-
-            renderTableWithStability('crafted-tbody', barterIngredients, true);
-            renderTableWithStability('raw-tbody', rawResources, false);
+            renderTable('crafted-tbody', bIngredients, true);
+            renderTable('raw-tbody', rawRes, false);
         }
 
-        function renderTableWithStability(tbodyId, dataMap, isComponent) {
+        function renderTable(tbodyId, dataMap, isComp) {
             const tbody = document.getElementById(tbodyId);
-            const allItems = Array.from(new Set([...Object.keys(dataMap), ...Object.keys(ownedInventory).filter(k => {
-                const isCrafted = recipeDb.some(r => r.item === k);
-                return isComponent ? isCrafted : !isCrafted;
+            const all = Array.from(new Set([...Object.keys(dataMap), ...Object.keys(ownedInventory).filter(k => {
+                const isC = recipeDb.some(r => r.item === k); return isComp ? isC : !isC;
             })])).sort();
-            
             const activeRows = new Set();
-            allItems.forEach(item => {
-                const needed = dataMap[item] || 0;
-                const isCrafted = recipeDb.some(r => r.item === item);
-                if (isComponent !== isCrafted) return;
-
-                const rowId = `row-${item.replace(/[^a-zA-Z0-9]/g, '-')}`;
+            all.forEach(item => {
+                const needed = dataMap[item] || 0, isC = recipeDb.some(r => r.item === item);
+                if (isComp !== isC) return;
+                const owned = ownedInventory[item] || 0, deficit = Math.ceil(needed) - owned, rowId = `row-${item.replace(/[^a-zA-Z0-9]/g, '-')}`;
                 let tr = document.getElementById(rowId);
                 if (!tr) {
-                    tr = document.createElement('tr');
-                    tr.id = rowId;
-                    tr.innerHTML = `<td><div class="icon-small"></div><span class="item-name-cell"></span></td><td style="text-align:center;"><input type="number" class="owned-input" data-item="${item}"></td><td style="text-align:center;" class="need-qty"></td><td style="text-align:right;" class="status-cell"></td>`;
+                    tr = Object.assign(document.createElement('tr'), { id: rowId, innerHTML: `<td><div class="icon-small"></div><span class="item-name-cell"></span></td><td style="text-align:center;"><input type="number" class="owned-input" data-item="${item}"></td><td style="text-align:center;" class="need-qty"></td><td style="text-align:right;" class="status-cell"></td>` });
                     tbody.appendChild(tr);
-                    tr.querySelector('.owned-input').oninput = (e) => {
-                        ownedInventory[e.target.dataset.item] = parseInt(e.target.value) || 0;
-                        calculateMaterials(); saveToCloudDebounced();
-                    };
+                    tr.querySelector('.owned-input').oninput = (e) => { ownedInventory[e.target.dataset.item] = parseInt(e.target.value) || 0; calculateMaterials(); saveToCloudDebounced(); };
                 }
-
-                const display = tr.querySelector('.item-name-cell'), icon = tr.querySelector('.icon-small'), input = tr.querySelector('.owned-input'), need = tr.querySelector('.need-qty'), status = tr.querySelector('.status-cell');
-                icon.style.backgroundImage = `url('images/tradeposts/items/${item.replace(/\s+/g, '_')}_Icon.png')`;
-                display.textContent = item;
-                display.style.color = needed > 0 ? '#eee' : '#444';
-                if (document.activeElement !== input) input.value = ownedInventory[item] || 0;
-                need.textContent = needed > 0 ? Math.ceil(needed).toLocaleString() : '-';
-                
-                if (needed === 0) {
-                    status.textContent = ''; status.className = 'status-cell';
-                } else {
-                    const owned = ownedInventory[item] || 0;
-                    const deficit = Math.ceil(needed) - owned;
-                    status.textContent = deficit <= 0 ? 'READY' : deficit.toLocaleString();
-                    status.className = `status-cell ${deficit <= 0 ? 'ready' : 'deficit'}`;
-                }
+                tr.querySelector('.item-name-cell').textContent = item;
+                tr.querySelector('.item-name-cell').style.color = needed > 0 ? '#eee' : '#444';
+                tr.querySelector('.icon-small').style.backgroundImage = `url('images/tradeposts/items/${item.replace(/\s+/g, '_')}_Icon.png')`;
+                if (document.activeElement !== tr.querySelector('.owned-input')) tr.querySelector('.owned-input').value = ownedInventory[item] || 0;
+                tr.querySelector('.need-qty').textContent = needed > 0 ? Math.ceil(needed).toLocaleString() : '-';
+                const sCell = tr.querySelector('.status-cell');
+                if (needed === 0) { sCell.textContent = ''; sCell.className = 'status-cell'; }
+                else { sCell.textContent = deficit <= 0 ? 'READY' : deficit.toLocaleString(); sCell.className = `status-cell ${deficit <= 0 ? 'ready' : 'deficit'}`; }
                 activeRows.add(rowId);
             });
-            [...tbody.rows].forEach(r => { if (!activeRows.has(r.id)) r.remove(); });
+            [...tbody.rows].forEach(r => { if (r.id && !activeRows.has(r.id)) r.remove(); });
         }
 
-        document.getElementById('town-select').onchange = () => { renderCatalog(); saveToCloudDebounced(); };
+        // --- 7. LISTENERS ---
+        document.getElementById('town-select').onchange = () => renderCatalog();
         document.getElementById('dest-select').onchange = (e) => { targetDest = e.target.value; calculateLoadout(); saveToCloudDebounced(); };
-        document.getElementById('transport-select').onchange = () => { calculateLoadout(); saveToCloudDebounced(); };
-        document.getElementById('week-mult').oninput = () => { calculateMaterials(); saveToCloudDebounced(); };
-        document.getElementById('buff-gm').onclick = () => toggleBuff('gm');
-        document.getElementById('buff-william').onclick = () => toggleBuff('william');
-        document.getElementById('buff-alpaca').onclick = () => toggleBuff('alpaca');
+        document.getElementById('transport-select').onchange = () => { calculateLoadout(); saveLocalPrefs(); saveToCloudDebounced(); };
+        document.getElementById('week-mult').oninput = () => calculateLoadout();
 
-        window.onload = () => { renderCatalog(); updateTransportLabels(); calculateLoadout(); };
+        window.onload = () => { 
+            loadLocalPrefs(); // Load preferences immediately
+            initAuth(); 
+            renderCatalog(); 
+            updateTransportLabels(); 
+            calculateLoadout(); 
+        };
     </script>
 </body>
 </html>
