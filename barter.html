@@ -6,7 +6,7 @@
     <title>Barter Material Sync</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     
-    <!-- Firebase SDKs -->
+    <!-- Firebase Modular SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -21,6 +21,7 @@
             --sidebar-bg: #0a0a0a;
             --card-bg: #111;
             --accent: #00f3ff; /* Neon Cyan */
+            --yellow: #ffd700;
             --border: rgba(255,255,255,0.05);
             --text-main: #d0d0d0;
             --text-dim: #444;
@@ -47,7 +48,7 @@
         
         .sync-indicator { font-family: 'JetBrains Mono'; font-size: 9px; color: var(--text-dim); }
         .sync-indicator.active { color: var(--accent); text-shadow: 0 0 5px var(--accent); }
-        .sync-indicator.saving { color: #ffd700; text-shadow: 0 0 5px #ffd700; opacity: 0.8; }
+        .sync-indicator.saving { color: var(--yellow); text-shadow: 0 0 5px var(--yellow); opacity: 0.8; }
 
         .hub-btn {
             color: #fff; text-decoration: none; font-weight: 900; font-size: 10px; 
@@ -75,16 +76,24 @@
 
         .scroll-area { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
 
-        /* --- Icons --- */
-        .icon-square {
-            width: 32px; height: 32px; background: #000; border: 1px solid #222;
-            flex-shrink: 0; background-size: contain; background-repeat: no-repeat; background-position: center;
+        /* --- HUB STYLE TOGGLES --- */
+        .buff-row-side { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; flex-shrink: 0; }
+        .toggle-container {
+            display: flex; align-items: center; gap: 8px; cursor: pointer;
+            font-size: 10px; color: var(--text-dim); user-select: none; width: 45%;
         }
-        .icon-small {
-            width: 20px; height: 20px; background: #000; border: 1px solid #222;
-            display: inline-block; vertical-align: middle; margin-right: 8px;
-            background-size: contain; background-repeat: no-repeat; background-position: center;
+        .toggle-container:hover { color: #fff; }
+        .toggle-input { display: none; }
+        .toggle-slider {
+            width: 28px; height: 16px; background: #222; border: 1px solid #333;
+            border-radius: 99px; position: relative; transition: 0.2s; flex-shrink: 0;
         }
+        .toggle-slider::after {
+            content: ''; position: absolute; top: 2px; left: 2px; width: 10px; height: 10px;
+            background: #666; border-radius: 50%; transition: 0.2s;
+        }
+        .toggle-input:checked + .toggle-slider { background: rgba(0, 243, 255, 0.15); border-color: var(--accent); }
+        .toggle-input:checked + .toggle-slider::after { transform: translateX(12px); background: var(--accent); box-shadow: 0 0 5px var(--accent); }
 
         /* --- Catalog --- */
         .town-header-container { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; flex-shrink: 0; }
@@ -95,8 +104,8 @@
             background-size: contain; background-repeat: no-repeat; background-position: center;
         }
         .search-input { 
-            width: 100%; background: #080808; border: 1px solid #222; 
-            color: var(--accent); padding: 10px; font-family: 'JetBrains Mono'; font-size: 11px;
+            width: 100%; background: #000; border: 1px solid #333; 
+            color: var(--accent); padding: 8px; font-family: 'JetBrains Mono'; font-size: 11px;
         }
         .item-entry {
             background: #0d0d0d; border: 1px solid var(--border);
@@ -107,8 +116,13 @@
         .item-entry.at-limit { opacity: 0.4; cursor: not-allowed; border-left-color: #ff4444; }
         .item-name { font-weight: 700; color: #eee; font-size: 11px; }
         .item-limit-tag { font-size: 8px; color: var(--text-dim); }
+        
+        .icon-square {
+            width: 32px; height: 32px; background: #000; border: 1px solid #222;
+            flex-shrink: 0; background-size: contain; background-repeat: no-repeat; background-position: center;
+        }
 
-        /* --- Inventory --- */
+        /* --- Inventory & Logistics HUD --- */
         .inventory-window { 
             background: #000; border: 1px solid var(--border); 
             padding: 15px; position: relative; flex-grow: 1; 
@@ -126,18 +140,21 @@
         .item-icon { width: 48px; height: 48px; background-size: contain; background-repeat: no-repeat; background-position: center; cursor: pointer; position: relative; }
         .stack-label { position: absolute; bottom: 2px; right: 4px; font-family: 'JetBrains Mono'; font-size: 10px; font-weight: 900; color: #fff; text-shadow: 1px 1px 2px #000; pointer-events: none; }
 
-        .load-stats-embedded { margin-top: 15px; background: #050505; border-top: 1px solid var(--border); padding-top: 15px; flex-shrink: 0; }
+        .logistics-hud {
+            margin-top: 15px; padding: 12px; background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border); border-radius: 4px; flex-shrink: 0;
+        }
         .stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 10px; font-family: 'JetBrains Mono'; }
-        .progress-bar { height: 4px; background: #151515; margin-top: 5px; position: relative; }
+        .progress-bar { height: 4px; background: #151515; margin-top: 5px; position: relative; border-radius: 2px; overflow: hidden; }
         .progress-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
-        .progress-fill.over { background: #ff4444; box-shadow: 0 0 5px #ff4444; }
+        .progress-fill.over { background: #ff4444; box-shadow: 0 0 8px #ff4444; }
 
         .trip-planning { 
-            margin-top: 15px; background: rgba(0, 243, 255, 0.03); border: 1px dashed rgba(0, 243, 255, 0.2); 
-            padding: 10px; font-family: 'JetBrains Mono'; font-size: 10px; color: var(--accent); line-height: 1.6;
+            margin-top: 12px; background: rgba(0, 243, 255, 0.05); border: 1px dashed rgba(0, 243, 255, 0.2); 
+            padding: 8px; font-family: 'JetBrains Mono'; font-size: 10px; color: var(--accent); line-height: 1.6;
         }
 
-        /* --- Materials --- */
+        /* --- Materials (Center) --- */
         .materials-dual-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex-grow: 1; overflow: hidden; }
         .table-container { display: flex; flex-direction: column; overflow: hidden; }
         .data-table { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono'; font-size: 11px; margin-bottom: 20px;}
@@ -149,19 +166,12 @@
         .status-cell { font-weight: 900; }
         .status-cell.deficit { color: #ff4444; }
         .status-cell.ready { color: #00ff88; }
-
-        /* --- Buffs --- */
-        .buff-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; flex-shrink: 0; }
-        .buff-toggle {
-            display: flex; align-items: center; justify-content: center; background: #000; border: 1px solid var(--border);
-            padding: 10px 4px; cursor: pointer; transition: 0.2s; font-size: 9px; color: var(--text-dim); text-transform: uppercase; user-select: none;
-        }
-        .buff-toggle.active { border-color: var(--accent); color: var(--accent); background: rgba(0,243,255,0.05); font-weight: 900; }
+        .icon-small { width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 5px; background-size: contain; background-repeat: no-repeat; }
 
         /* --- Tooltip --- */
         #item-tooltip {
             position: fixed; z-index: 10000; background: rgba(0, 0, 0, 0.95); border: 1px solid var(--accent); padding: 10px;
-            pointer-events: none; display: none; box-shadow: 0 0 15px rgba(0, 243, 255, 0.2); min-width: 150px;
+            pointer-events: none; display: none; box-shadow: 0 0 15px rgba(0, 243, 255, 0.2); min-width: 160px;
         }
         .tt-name { color: #fff; font-weight: 900; font-size: 11px; margin-bottom: 5px; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
         .tt-stat { font-family: 'JetBrains Mono'; font-size: 9px; color: var(--text-dim); display: flex; justify-content: space-between; gap: 20px; }
@@ -186,21 +196,22 @@
             <a href="index.html" class="hub-btn">Hub</a>
             <div style="text-align: center;">
                 <div class="main-title">Barter Material Tracker</div>
-                <div id="sync-status" class="sync-indicator">GUEST_MODE</div>
+                <div id="sync-status" class="sync-indicator">OFFLINE_LOCAL</div>
             </div>
             <div style="width:110px"></div>
         </div>
     </div>
 
     <div class="interface-grid">
+        <!-- LEFT: CATALOG -->
         <div class="panel">
-            <div class="panel-header">Trade Post</div>
+            <div class="panel-header">NPC Location</div>
             <div class="town-header-container">
                 <div class="town-visual-box" id="town-icon-box"></div>
                 <select id="town-select" class="search-input" style="margin:0">
                     <option value="Karu Forest">Karu Forest</option>
                     <option value="Oasis">Oasis</option>
-                    <option value="Calida">Calida</option>
+                    <option value="Lake Calida">Lake Calida</option>
                     <option value="Pera Volcano">Pera Volcano</option>
                 </select>
             </div>
@@ -210,6 +221,7 @@
             </div>
         </div>
 
+        <!-- CENTER: MATERIALS -->
         <div class="panel" style="background: #080808;">
             <div class="panel-header">Logistics Config</div>
             <div style="display: flex; gap: 15px; margin-bottom: 25px; flex-shrink: 0;">
@@ -269,65 +281,78 @@
             </div>
         </div>
 
+        <!-- RIGHT: UNIT & LOGISTICS -->
         <div class="panel">
             <div class="panel-header">Transport selection</div>
             <select id="transport-select" class="search-input">
-                <option value="Back Pack" data-slots="4" data-weight="400">Back Pack</option>
-                <option value="Hand Cart" data-slots="6" data-weight="800">Hand Cart</option>
-                <option value="Wagon" data-slots="8" data-weight="900">Wagon</option>
-                <option value="Elephant" data-slots="7" data-weight="1700">Elephant</option>
-                <option value="Husky" data-slots="11" data-weight="700">Husky</option>
-                <option value="Camel" data-slots="7" data-weight="1400">Camel</option>
-                <option value="Skiff" data-slots="8" data-weight="1200">Skiff</option>
+                <option value="Back Pack">Back Pack</option>
+                <option value="Hand Cart">Hand Cart</option>
+                <option value="Wagon">Wagon</option>
+                <option value="Elephant">Elephant</option>
+                <option value="Husky">Husky</option>
+                <option value="Camel">Camel</option>
+                <option value="Skiff">Skiff</option>
             </select>
 
             <div class="panel-header" style="margin-top: 20px;">Active Buffs</div>
-            <div class="buff-container">
-                <div class="buff-toggle" id="buff-gm" onclick="toggleBuff('gm')">GM</div>
-                <div class="buff-toggle" id="buff-william" onclick="toggleBuff('william')">William</div>
-                <div class="buff-toggle" id="buff-alpaca" onclick="toggleBuff('alpaca')">Alpaca</div>
+            <div class="buff-row-side">
+                <label class="toggle-container">
+                    <input type="checkbox" id="buff-gm" class="toggle-input">
+                    <div class="toggle-slider"></div>
+                    <span>Grandmaster</span>
+                </label>
+                <label class="toggle-container">
+                    <input type="checkbox" id="buff-william" class="toggle-input">
+                    <div class="toggle-slider"></div>
+                    <span>William</span>
+                </label>
+                <label class="toggle-container">
+                    <input type="checkbox" id="buff-alpaca" class="toggle-input">
+                    <div class="toggle-slider"></div>
+                    <span>Alpaca</span>
+                </label>
             </div>
 
             <div class="panel-header">Optimized Loadout (Trip 1)</div>
             <div class="inventory-window">
                 <div id="grid" class="grid-container"></div>
-                <div class="load-stats-embedded">
+                <div class="logistics-hud">
                     <div class="stat-row"><span>LOAD_WEIGHT</span><span id="weight-label">0 / 0 kg</span></div>
                     <div class="progress-bar"><div id="weight-fill" class="progress-fill"></div></div>
                     <div class="stat-row" style="margin-top: 12px;"><span>SLOT_USAGE</span><span id="slot-label">0 / 0 Slots</span></div>
                     <div class="progress-bar"><div id="slot-fill" class="progress-fill"></div></div>
+                    <div id="trip-calculator" class="trip-planning">PLANNING_IDLE...</div>
                 </div>
-                <div id="trip-calculator" class="trip-planning">PLANNING_IDLE...</div>
             </div>
             <div style="margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border); text-align: center; opacity: 0.2;">
-                <div id="user-display" style="font-family: 'JetBrains Mono'; font-size: 8px;">GUEST_SESSION</div>
+                <div id="user-display" style="font-family: 'JetBrains Mono'; font-size: 8px;">GUEST_MODE</div>
             </div>
         </div>
     </div>
 
     <script type="module">
-        // --- 1. DATABASES ---
+        // --- 1. DATASETS ---
         const barterDb = [
-            { town: "Pera Volcano", item: "Volcanic Mud Pack", weight: 15, stack: 10, limit: 25, mats: { "Copper Plate": 2, "Mysterious Herb Powder": 3 }, img: "images/tradeposts/barter/pera/Volcanic_Mud_Pack_Icon.png" },
-            { town: "Pera Volcano", item: "Magma Stone", weight: 15, stack: 7, limit: 15, mats: { "Mythril Plate": 2, "Barley Flour": 3 }, img: "images/tradeposts/barter/pera/Magma_Stone_Icon.png" },
-            { town: "Pera Volcano", item: "Ixion Horn", weight: 20, stack: 7, limit: 10, mats: { "Marionette 500 Potion": 3, "Gold Plate": 5 }, img: "images/tradeposts/barter/pera/Ixion_Horn_Icon.png" },
-            { town: "Pera Volcano", item: "Volcano Lizard Egg", weight: 25, stack: 7, limit: 8, mats: { "Glittering Paper": 5, "Finest Fabric": 5, "HP 500 Potion": 2 }, img: "images/tradeposts/barter/pera/Volcano_Lizard_Egg_Icon.png" },
-            { town: "Pera Volcano", item: "Raspa Black Leopard Leather", weight: 30, stack: 5, limit: 3, mats: { "Mutant": 1, "Harmonious Cosmos Perfume": 2, "Special Firewood": 3 }, img: "images/tradeposts/barter/pera/Raspa_Black_Leopard_Leather_Icon.png" },
-            { town: "Oasis", item: "Fine Sand", weight: 15, stack: 10, limit: 25, mats: { "Stamina 500 Potion": 3, "Braid": 2 }, img: "images/tradeposts/barter/oasis/Fine_Sand_Icon.png" },
-            { town: "Oasis", item: "Prison Ghost Wings", weight: 15, stack: 7, limit: 15, mats: { "Cotton Cushion Stuffing": 1, "Finest Silk": 2 }, img: "images/tradeposts/barter/oasis/Prison_Ghost_Wings_Icon.png" },
-            { town: "Oasis", item: "Oasis Painting", weight: 20, stack: 7, limit: 10, mats: { "Finest Leather Strap": 1, "Tough Thread": 3 }, img: "images/tradeposts/barter/oasis/Oasis_Painting_Icon.png" },
-            { town: "Oasis", item: "Cactus Flower", weight: 25, stack: 7, limit: 8, mats: { "Spirit Liqueur": 1, "Silver Plate": 2, "Fine Fabric": 4 }, img: "images/tradeposts/barter/oasis/Cactus_Flower_Icon.png" },
-            { town: "Oasis", item: "Giant Canine Fossil", weight: 30, stack: 5, limit: 3, mats: { "Pet Playset": 1, "Hay Bale": 3, "Enchanted Firewood": 5 }, img: "images/tradeposts/barter/oasis/Giant_Canine_Fossil_Icon.png" },
-            { town: "Calida", item: "Elvan Egg", weight: 15, stack: 10, limit: 25, mats: { "MP 500 Potion": 1, "Fine Firewood": 2 }, img: "images/tradeposts/barter/calida/Elvan_Egg_Icon.png" },
-            { town: "Calida", item: "Calida Salmon", weight: 15, stack: 7, limit: 15, mats: { "Energy Converter": 1, "Purified Rabbit Foot": 1 }, img: "images/tradeposts/barter/calida/Calida_Salmon_Icon.png" },
-            { town: "Calida", item: "Hot Spring Bath Bomb", weight: 20, stack: 7, limit: 10, mats: { "Sundew": 3, "Finest Vanilla Scented Candle": 2 }, img: "images/tradeposts/barter/calida/Hot_Spring_Bath_Bomb_Icon.png" },
-            { town: "Calida", item: "Large Camping Tent", weight: 25, stack: 7, limit: 8, mats: { "Artificial Turf": 1, "Emerald Fuse": 1, "Fine Leather Strap": 5 }, img: "images/tradeposts/barter/calida/Large_Camping_Tent_Icon.png" },
-            { town: "Calida", item: "Pink Salt", weight: 30, stack: 5, limit: 3, mats: { "Large Mythril Nail": 3, "Poison Tip Wyvern Ballista Bolt": 3, "Finest Firewood": 3 }, img: "images/tradeposts/barter/calida/Pink_Salt_Icon.png" },
-            { town: "Karu Forest", item: "Wooden Table", weight: 15, stack: 10, limit: 25, mats: { "Shrimp Taming Bait": 4, "Shyllien": 2 }, img: "images/tradeposts/barter/karu/Wooden_Table_Icon.png" },
-            { town: "Karu Forest", item: "Wooden Craft", weight: 15, stack: 7, limit: 15, mats: { "Magic Parchment": 1, "Tough String": 2 }, img: "images/tradeposts/barter/karu/Wooden_Craft_Icon.png" },
-            { town: "Karu Forest", item: "Stone Horse Statue", weight: 20, stack: 7, limit: 10, mats: { "Hillwen Alloy": 2, "Wheat Flour": 5 }, img: "images/tradeposts/barter/karu/Stone_Horse_Statue_Icon.png" },
-            { town: "Karu Forest", item: "Karu Shiitake Mushroom", weight: 25, stack: 7, limit: 8, mats: { "Average Firewood": 5, "Fine Silk": 4 }, img: "images/tradeposts/barter/karu/Karu_Shiitake_Mushroom_Icon.png" },
-            { town: "Karu Forest", item: "Shellfish Fossil", weight: 30, stack: 5, limit: 3, mats: { "Energy Amplifier": 2, "Sturdy Loop": 1, "Magic Quill Pen": 5 }, img: "images/tradeposts/barter/karu/Shellfish_Fossil_Icon.png" }
+            { town: "Pera Volcano", item: "Mud Pack", weight: 15, stack: 10, limit: 25, mats: { "Copper Plate": 2, "Mysterious Herb Powder": 3 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/pera/Volcanic_Mud_Pack_Icon.png" },
+            { town: "Pera Volcano", item: "Magma Stone", weight: 15, stack: 7, limit: 15, mats: { "Mythril Plate": 2, "Barley Flour": 3 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/pera/Magma_Stone_Icon.png" },
+            { town: "Pera Volcano", item: "Ixion Horn", weight: 20, stack: 7, limit: 10, mats: { "Marionette 500 Potion": 3, "Gold Plate": 5 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/pera/Ixion_Horn_Icon.png" },
+            { town: "Pera Volcano", item: "Lizard Egg", weight: 25, stack: 7, limit: 8, mats: { "Glittering Paper": 5, "Finest Fabric": 5, "HP 500 Potion": 2 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/pera/Volcano_Lizard_Egg_Icon.png" },
+            { town: "Pera Volcano", item: "Leopard Leather", weight: 30, stack: 5, limit: 3, mats: { "Mutant": 1, "Harmonious Cosmos Perfume": 2, "Special Firewood": 3 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/pera/Raspa_Black_Leopard_Leather_Icon.png" },
+            { town: "Oasis", item: "Fine Sand", weight: 15, stack: 10, limit: 25, mats: { "Stamina 500 Potion": 3, "Braid": 2 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/oasis/Fine_Sand_Icon.png" },
+            { town: "Oasis", item: "Prison Ghost Wings", weight: 15, stack: 7, limit: 15, mats: { "Cotton Cushion Stuffing": 1, "Finest Silk": 2 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/oasis/Prison_Ghost_Wings_Icon.png" },
+            { town: "Oasis", item: "Oasis Painting", weight: 20, stack: 7, limit: 10, mats: { "Finest Leather Strap": 1, "Tough Thread": 3 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/oasis/Oasis_Painting_Icon.png" },
+            { town: "Oasis", item: "Cactus Flower", weight: 25, stack: 7, limit: 8, mats: { "Spirit Liqueur": 1, "Silver Plate": 2, "Fine Fabric": 4 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/oasis/Cactus_Flower_Icon.png" },
+            { town: "Oasis", item: "Giant Canine Fossil", weight: 30, stack: 5, limit: 3, mats: { "Pet Playset": 1, "Hay Bale": 3, "Enchanted Firewood": 5 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/oasis/Giant_Canine_Fossil_Icon.png" },
+            { town: "Lake Calida", item: "Elvan Egg", weight: 15, stack: 10, limit: 25, mats: { "MP 500 Potion": 1, "Fine Firewood": 2 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/calida/Elvan_Egg_Icon.png" },
+            { town: "Lake Calida", item: "Salmon", weight: 15, stack: 7, limit: 15, mats: { "Energy Converter": 1, "Purified Rabbit Foot": 1 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/calida/Calida_Salmon_Icon.png" },
+            { town: "Lake Calida", item: "Bath Bomb", weight: 20, stack: 7, limit: 10, mats: { "Sundew": 3, "Finest Vanilla Scented Candle": 2 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/calida/Hot_Spring_Bath_Bomb_Icon.png" },
+            { town: "Lake Calida", item: "Large Tent", weight: 25, stack: 7, limit: 8, mats: { "Artificial Turf": 1, "Emerald Fuse": 1, "Fine Leather Strap": 5 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/calida/Large_Camping_Tent_Icon.png" },
+            { town: "Lake Calida", item: "Pink Salt", weight: 30, stack: 5, limit: 3, mats: { "Large Mythril Nail": 3, "Poison Tip Wyvern Ballista Bolt": 3, "Finest Firewood": 3 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/calida/Pink_Salt_Icon.png" },
+            { town: "Karu Forest", item: "Wooden Table", weight: 15, stack: 10, limit: 25, mats: { "Shrimp Taming Bait": 4, "Shyllien": 2 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/karu/Wooden_Table_Icon.png" },
+            { town: "Karu Forest", item: "Wooden Craft", weight: 15, stack: 7, limit: 15, mats: { "Magic Parchment": 1, "Tough String": 2 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/karu/Wooden_Craft_Icon.png" },
+            { town: "Karu Forest", item: "Stone Horse Statue", weight: 20, stack: 7, limit: 10, mats: { "Hillwen Alloy": 2, "Wheat Flour": 5 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/karu/Stone_Horse_Statue_Icon.png" },
+            { town: "Karu Forest", item: "Karu Mushroom", weight: 25, stack: 7, limit: 8, mats: { "Average Firewood": 5, "Fine Silk": 4 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/karu/Karu_Shiitake_Mushroom_Icon.png" },
+            { town: "Karu Forest", item: "Shellfish Fossil", weight: 30, stack: 5, limit: 3, mats: { "Energy Amplifier": 2, "Sturdy Loop": 1, "Magic Quill Pen": 5 }, img: "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/barter/karu/Shellfish_Fossil_Icon.png" }
         ];
 
         const recipeDb = [
@@ -381,35 +406,33 @@
             { item: "Wheat Flour", mats: { "Wheat": 10 } }
         ];
 
+        const transportData = {
+            "Back Pack": { slots: 4, weight: 400 }, "Hand Cart": { slots: 6, weight: 800 },
+            "Wagon": { slots: 8, weight: 900 }, "Elephant": { slots: 7, weight: 1700 },
+            "Husky": { slots: 11, weight: 700 }, "Camel": { slots: 7, weight: 1400 },
+            "Skiff": { slots: 8, weight: 1200 }
+        };
+
         const townIcons = {
-            "Pera Volcano": "images/tradeposts/Commerce_Pera_Icon.png",
-            "Oasis": "images/tradeposts/Commerce_Oasis_Icon.png",
-            "Calida": "images/tradeposts/Commerce_Calida_Icon.png",
-            "Karu Forest": "images/tradeposts/Commerce_Karu_Forest_Icon.png"
+            "Pera Volcano": "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/tradeposts/Commerce_Pera_Icon.png",
+            "Oasis": "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/tradeposts/Commerce_Oasis_Icon.png",
+            "Lake Calida": "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/tradeposts/Commerce_Calida_Icon.png",
+            "Karu Forest": "https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/tradeposts/Commerce_Karu_Forest_Icon.png"
         };
 
         // --- 2. STATE ---
         let currentCargo = [], ownedInventory = {}, activeBuffs = { gm: false, william: false, alpaca: false }, weekMult = 1, selectedTown = "Karu Forest", targetDest = "None", publicPrices = {}, debounceTimer = null;
         const DEBOUNCE_DELAY = 1500;
 
-        // --- 3. FIREBASE CORE (GUEST FIRST) ---
+        // --- 3. FIREBASE CORE ---
         const { initializeApp, getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken, getFirestore, doc, setDoc, onSnapshot } = window.mabiFirebase;
-        const fbConfig = { apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM", databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com" };
+        const fbConfig = JSON.parse(__firebase_config);
         const app = initializeApp(fbConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = 'mabinogi-tracker';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'mabinogi-tracker';
 
         let user = null, isSaving = false;
-
-        // AUTH: LOCAL-FIRST / GUEST FALLBACK
-        const initAuth = async () => {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token).catch(() => signInAnonymously(auth));
-            } else {
-                setTimeout(() => { if (!auth.currentUser) signInAnonymously(auth); }, 1500);
-            }
-        };
 
         onAuthStateChanged(auth, (u) => {
             user = u;
@@ -420,23 +443,26 @@
                 
                 onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'barterState'), (snap) => {
                     if (snap.exists() && !isSaving && !debounceTimer) {
-                        if (currentCargo.length === 0) loadFromCloud(snap.data());
+                        loadFromCloud(snap.data());
                     }
-                });
-
-                onSnapshot(doc(db, 'public_commerce', 'prices'), (snap) => {
-                    if (snap.exists()) { publicPrices = snap.data(); calculateLoadout(); }
-                });
+                }, (err) => console.error("Firestore Read Error", err));
             }
         });
 
-        // --- 4. PREFERENCE PERSISTENCE (LOCAL STORAGE) ---
+        const initAuth = async () => {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token).catch(() => signInAnonymously(auth));
+            } else {
+                await signInAnonymously(auth);
+            }
+        };
+
+        // --- 4. PERSISTENCE ---
         function saveLocalPrefs() {
-            const prefs = {
+            localStorage.setItem('mabi_barter_prefs', JSON.stringify({
                 transport: document.getElementById('transport-select').value,
                 buffs: activeBuffs
-            };
-            localStorage.setItem('mabi_barter_prefs', JSON.stringify(prefs));
+            }));
         }
 
         function loadLocalPrefs() {
@@ -446,60 +472,86 @@
                 if (prefs.transport) document.getElementById('transport-select').value = prefs.transport;
                 if (prefs.buffs) {
                     activeBuffs = prefs.buffs;
-                    Object.entries(activeBuffs).forEach(([id, active]) => {
-                        const el = document.getElementById(`buff-${id}`);
-                        if (el) el.classList.toggle('active', active);
-                    });
+                    document.getElementById('buff-gm').checked = !!activeBuffs.gm;
+                    document.getElementById('buff-william').checked = !!activeBuffs.william;
+                    document.getElementById('buff-alpaca').checked = !!activeBuffs.alpaca;
                 }
             }
         }
 
         const saveToCloudDebounced = () => {
             if (!user) return;
-            document.getElementById('sync-status').textContent = 'CHANGES_PENDING';
+            document.getElementById('sync-status').textContent = 'PENDING_SAVE';
             document.getElementById('sync-status').className = 'sync-indicator saving';
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(async () => {
                 isSaving = true; debounceTimer = null;
                 try {
                     await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'barterState'), {
-                        cargo: JSON.stringify(currentCargo), inventory: ownedInventory, buffs: activeBuffs, multiplier: weekMult, town: selectedTown, dest: targetDest, transport: document.getElementById('transport-select').value
+                        cargo: JSON.stringify(currentCargo), 
+                        inventory: ownedInventory, 
+                        buffs: activeBuffs, 
+                        multiplier: weekMult, 
+                        town: selectedTown, 
+                        dest: targetDest, 
+                        transport: document.getElementById('transport-select').value
                     });
                     document.getElementById('sync-status').textContent = 'SYNCED';
                     document.getElementById('sync-status').className = 'sync-indicator active';
-                } catch (e) { console.error(e); } finally { setTimeout(() => isSaving = false, 500); }
+                } catch (e) { 
+                    console.error(e); 
+                    document.getElementById('sync-status').textContent = 'ERROR';
+                } finally { 
+                    setTimeout(() => isSaving = false, 500); 
+                }
             }, DEBOUNCE_DELAY);
         };
 
         const loadFromCloud = (data) => {
             if (data.cargo) currentCargo = JSON.parse(data.cargo);
             if (data.inventory) ownedInventory = data.inventory;
-            if (data.multiplier) weekMult = data.multiplier;
-            if (data.town) selectedTown = data.town;
-            if (data.dest) targetDest = data.dest;
-            
-            // Cloud overwrites local but we still save local
+            if (data.multiplier) {
+                weekMult = data.multiplier;
+                document.getElementById('week-mult').value = weekMult;
+            }
+            if (data.town) {
+                selectedTown = data.town;
+                document.getElementById('town-select').value = selectedTown;
+            }
+            if (data.dest) {
+                targetDest = data.dest;
+                document.getElementById('dest-select').value = targetDest;
+            }
             if (data.transport) document.getElementById('transport-select').value = data.transport;
             if (data.buffs) {
                 activeBuffs = data.buffs;
-                Object.entries(activeBuffs).forEach(([id, active]) => document.getElementById(`buff-${id}`).classList.toggle('active', active));
+                document.getElementById('buff-gm').checked = !!activeBuffs.gm;
+                document.getElementById('buff-william').checked = !!activeBuffs.william;
+                document.getElementById('buff-alpaca').checked = !!activeBuffs.alpaca;
             }
-
-            document.getElementById('week-mult').value = weekMult;
-            document.getElementById('town-select').value = selectedTown;
-            document.getElementById('dest-select').value = targetDest;
-            
-            saveLocalPrefs();
-            renderCatalog(); updateTransportLabels(); calculateLoadout();
+            renderCatalog(); 
+            calculateLoadout();
         };
 
         // --- 5. LOGISTICS ---
-        function calculateBestFirstTrip(manifest, maxW, maxS, destination) {
+        function getModifiedStats() {
+            const mName = document.getElementById('transport-select').value;
+            const b = transportData[mName];
+            if (!b) return { slots: 0, weight: 0 };
+            let bW = 0, bS = 0;
+            if (activeBuffs.gm) { bW += 100; bS += 1; }
+            if (activeBuffs.william) { bW += 200; bS += 1; }
+            if (mName === "Wagon" && activeBuffs.alpaca) { bW += 200; bS += 2; }
+            return { slots: b.slots + bS, weight: b.weight + bW };
+        }
+
+        function calculateBestFirstTrip(manifest, stats, destination) {
             const itemCounts = {};
             manifest.forEach(i => itemCounts[i.item] = (itemCounts[i.item] || 0) + 1);
             const potentialSlots = [];
             Object.keys(itemCounts).forEach(itemName => {
                 const proto = barterDb.find(b => b.item === itemName);
+                if (!proto) return;
                 let priceKey = `${itemName}_${destination}`.replace(/[.#$[\]]/g, "_");
                 let unitProfit = publicPrices[priceKey] || 0;
                 let remaining = itemCounts[itemName];
@@ -511,9 +563,10 @@
             });
             if (destination !== "None") potentialSlots.sort((a,b) => b.totalSlotProfit - a.totalSlotProfit || b.slotWeight - a.slotWeight);
             else potentialSlots.sort((a,b) => b.slotWeight - a.slotWeight);
+            
             let tripSlots = [], tripW = 0, tripSCount = 0;
             for (const slot of potentialSlots) {
-                if (tripSCount < maxS && (tripW + slot.slotWeight) <= maxW) {
+                if (tripSCount < stats.slots && (tripW + slot.slotWeight) <= stats.weight) {
                     tripSlots.push(slot); tripW += slot.slotWeight; tripSCount++;
                 }
             }
@@ -521,12 +574,12 @@
         }
 
         function calculateLoadout() {
-            const stats = getTransportStats();
+            const stats = getModifiedStats();
             const grid = document.getElementById('grid');
             grid.innerHTML = '';
             for (let i = 0; i < stats.slots; i++) { grid.appendChild(Object.assign(document.createElement('div'), { className: 'slot', id: `slot-${i}` })); }
 
-            const { tripSlots, tripW, tripSCount } = calculateBestFirstTrip(currentCargo, stats.weight, stats.slots, targetDest);
+            const { tripSlots, tripW, tripSCount } = calculateBestFirstTrip(currentCargo, stats, targetDest);
             tripSlots.forEach((slotData, idx) => {
                 const slotEl = document.getElementById(`slot-${idx}`);
                 if (slotEl) {
@@ -547,18 +600,19 @@
             document.getElementById('slot-label').textContent = `${tripSCount} / ${stats.slots} Slots`;
             document.getElementById('slot-fill').style.width = (tripSCount / stats.slots) * 100 + '%';
 
-            // Logistics Estimation
-            const itemCounts = {};
-            currentCargo.forEach(i => itemCounts[i.item] = (itemCounts[i.item] || 0) + 1);
+            const totalItemCounts = {};
+            currentCargo.forEach(i => totalItemCounts[i.item] = (totalItemCounts[i.item] || 0) + 1);
             let totalSlotsManifest = 0;
-            Object.keys(itemCounts).forEach(name => totalSlotsManifest += Math.ceil(itemCounts[name] / barterDb.find(b => b.item === name).stack));
+            Object.keys(totalItemCounts).forEach(name => {
+                const proto = barterDb.find(b => b.item === name);
+                if (proto) totalSlotsManifest += Math.ceil(totalItemCounts[name] / proto.stack);
+            });
             let totalWeightManifest = currentCargo.reduce((sum, c) => sum + c.weight, 0);
 
             const tripCount = Math.ceil(Math.max(totalWeightManifest / stats.weight, totalSlotsManifest / stats.slots));
             const tripDisplay = document.getElementById('trip-calculator');
-            tripDisplay.innerHTML = `TOTAL TRIPS: ${tripCount || 1} <br>MANIFEST: ${totalWeightManifest}kg / ${totalSlotsManifest} slots`;
+            tripDisplay.innerHTML = `TOTAL TRIPS: ${tripCount || (currentCargo.length > 0 ? 1 : 0)} <br>MANIFEST: ${totalWeightManifest}kg / ${totalSlotsManifest} slots`;
             tripDisplay.style.color = tripCount > 1 ? '#ffd700' : 'var(--accent)';
-
             calculateMaterials();
         }
 
@@ -576,45 +630,12 @@
                 div.className = 'item-entry' + (isAtLimit ? ' at-limit' : '');
                 div.innerHTML = `
                     <div class="icon-square" style="background-image: url('${b.img}')"></div>
-                    <div style="flex-grow:1;">
-                        <div class="item-name">${b.item}</div>
-                        <div class="item-limit-tag">NPC LIMIT: ${totalInManifest}/${b.limit}</div>
-                    </div>
-                    <span style="font-size: 8px; color: ${isAtLimit ? '#ff4444' : 'var(--accent)'};">${isAtLimit ? 'LIMIT' : '+ADD'}</span>
+                    <div style="flex-grow:1;"><div class="item-name">${b.item}</div><div class="item-limit-tag">LIMIT: ${totalInManifest}/${b.limit}</div></div>
+                    <span style="font-size: 8px; color: ${isAtLimit ? '#ff4444' : 'var(--accent)'};">${isAtLimit ? 'MAX' : '+ADD'}</span>
                 `;
                 if (!isAtLimit) div.onclick = () => addItem(b);
                 container.appendChild(div);
             });
-        }
-
-        function toggleBuff(id) {
-            if (id === 'william' && !activeBuffs.william) activeBuffs.alpaca = false;
-            else if (id === 'alpaca' && !activeBuffs.alpaca) activeBuffs.william = false;
-            activeBuffs[id] = !activeBuffs[id];
-            document.querySelectorAll('.buff-toggle').forEach(el => el.classList.toggle('active', activeBuffs[el.id.replace('buff-','')]));
-            updateTransportLabels(); calculateLoadout(); saveLocalPrefs(); saveToCloudDebounced();
-        }
-
-        function updateTransportLabels() {
-            const select = document.getElementById('transport-select');
-            for (let i = 0; i < select.options.length; i++) {
-                const opt = select.options[i];
-                let s = parseInt(opt.dataset.slots), w = parseInt(opt.dataset.weight);
-                if (activeBuffs.gm) { s += 1; w += 100; }
-                if (activeBuffs.william) { s += 1; w += 200; }
-                if (activeBuffs.alpaca && opt.value === "Wagon") { s += 2; w += 200; }
-                opt.textContent = `${opt.value} (${s} SLOTS / ${w}KG)`;
-            }
-        }
-
-        function getTransportStats() {
-            const select = document.getElementById('transport-select');
-            const opt = select.selectedOptions[0];
-            let s = parseInt(opt.dataset.slots), w = parseInt(opt.dataset.weight);
-            if (activeBuffs.gm) { s += 1; w += 100; }
-            if (activeBuffs.william) { s += 1; w += 200; }
-            if (activeBuffs.alpaca && select.value === "Wagon") { s += 2; w += 200; }
-            return { slots: s, weight: w };
         }
 
         function showTooltip(e, data) {
@@ -624,8 +645,7 @@
             document.getElementById('tt-stack').textContent = data.stack;
             tt.style.display = 'block';
             const rect = e.target.getBoundingClientRect();
-            tt.style.left = (rect.left - 170) + 'px';
-            tt.style.top = rect.top + 'px';
+            tt.style.left = (rect.left - 170) + 'px'; tt.style.top = rect.top + 'px';
         }
 
         function hideTooltip() { document.getElementById('item-tooltip').style.display = 'none'; }
@@ -638,76 +658,159 @@
 
         window.removeItemFromManifest = (itemName) => {
             const idx = currentCargo.findIndex(c => c.item === itemName);
-            if (idx !== -1) currentCargo.splice(actualIdx, 1); // Fixed variable name error
+            if (idx !== -1) currentCargo.splice(idx, 1);
             calculateLoadout(); renderCatalog(); saveToCloudDebounced();
-        };
-
-        // Simplified logic fix for removal
-        window.removeItemFromManifest = (itemName) => {
-            const actualIdx = currentCargo.findIndex(c => c.item === itemName);
-            if (actualIdx !== -1) {
-                currentCargo.splice(actualIdx, 1);
-            }
-            calculateLoadout();
-            renderCatalog();
-            saveToCloudDebounced();
         };
 
         function calculateMaterials() {
             weekMult = parseInt(document.getElementById('week-mult').value) || 1;
             const bIngredients = {}, rawRes = {}, tempOwned = JSON.parse(JSON.stringify(ownedInventory));
-            currentCargo.forEach(c => { for (const [m, q] of Object.entries(c.mats)) bIngredients[m] = (bIngredients[m] || 0) + (q * weekMult); });
+            
+            // First pass: What components do we need for the manifest?
+            currentCargo.forEach(c => { 
+                for (const [m, q] of Object.entries(c.mats)) {
+                    bIngredients[m] = (bIngredients[m] || 0) + (q * weekMult); 
+                }
+            });
+
+            // Recursive function to resolve components to raws
             function resolve(n, need) {
                 const r = recipeDb.find(x => x.item === n);
-                if (!r) { rawRes[n] = (rawRes[n] || 0) + need; return; }
-                for (const [m, a] of Object.entries(r.mats)) resolve(m, a * need);
+                if (!r) { 
+                    rawRes[n] = (rawRes[n] || 0) + need; 
+                    return; 
+                }
+                for (const [m, a] of Object.entries(r.mats)) {
+                    resolve(m, a * need);
+                }
             }
+
+            // Second pass: Subtract what we already own from the components and resolve the rest
             Object.entries(bIngredients).forEach(([n, c]) => {
                 const deficit = Math.max(0, c - (tempOwned[n] || 0));
                 if (deficit > 0) resolve(n, deficit);
             });
+
             renderTable('crafted-tbody', bIngredients, true);
             renderTable('raw-tbody', rawRes, false);
         }
 
         function renderTable(tbodyId, dataMap, isComp) {
             const tbody = document.getElementById(tbodyId);
-            const all = Array.from(new Set([...Object.keys(dataMap), ...Object.keys(ownedInventory).filter(k => {
+            const allItems = Array.from(new Set([...Object.keys(dataMap), ...Object.keys(ownedInventory).filter(k => {
                 const isC = recipeDb.some(r => r.item === k); return isComp ? isC : !isC;
             })])).sort();
+            
             const activeRows = new Set();
-            all.forEach(item => {
-                const needed = dataMap[item] || 0, isC = recipeDb.some(r => r.item === item);
-                if (isComp !== isC) return;
-                const owned = ownedInventory[item] || 0, deficit = Math.ceil(needed) - owned, rowId = `row-${item.replace(/[^a-zA-Z0-9]/g, '-')}`;
+            allItems.forEach(item => {
+                const needed = dataMap[item] || 0;
+                const isItemComp = recipeDb.some(r => r.item === item); 
+                if (isComp !== isItemComp) return;
+                
+                const owned = ownedInventory[item] || 0;
+                const deficit = Math.ceil(needed) - owned;
+                const rowId = `row-${item.replace(/[^a-zA-Z0-9]/g, '-')}`;
+                
                 let tr = document.getElementById(rowId);
                 if (!tr) {
-                    tr = Object.assign(document.createElement('tr'), { id: rowId, innerHTML: `<td><div class="icon-small"></div><span class="item-name-cell"></span></td><td style="text-align:center;"><input type="number" class="owned-input" data-item="${item}"></td><td style="text-align:center;" class="need-qty"></td><td style="text-align:right;" class="status-cell"></td>` });
+                    tr = document.createElement('tr');
+                    tr.id = rowId;
+                    tr.innerHTML = `
+                        <td><div class="icon-small"></div><span class="item-name-cell"></span></td>
+                        <td style="text-align:center;"><input type="number" class="owned-input" data-item="${item}"></td>
+                        <td style="text-align:center;" class="need-qty"></td>
+                        <td style="text-align:right;" class="status-cell"></td>
+                    `;
                     tbody.appendChild(tr);
-                    tr.querySelector('.owned-input').oninput = (e) => { ownedInventory[e.target.dataset.item] = parseInt(e.target.value) || 0; calculateMaterials(); saveToCloudDebounced(); };
+                    tr.querySelector('.owned-input').oninput = (e) => { 
+                        ownedInventory[e.target.dataset.item] = parseInt(e.target.value) || 0; 
+                        calculateMaterials(); 
+                        saveToCloudDebounced(); 
+                    };
                 }
+                
                 tr.querySelector('.item-name-cell').textContent = item;
                 tr.querySelector('.item-name-cell').style.color = needed > 0 ? '#eee' : '#444';
-                tr.querySelector('.icon-small').style.backgroundImage = `url('images/tradeposts/items/${item.replace(/\s+/g, '_')}_Icon.png')`;
-                if (document.activeElement !== tr.querySelector('.owned-input')) tr.querySelector('.owned-input').value = ownedInventory[item] || 0;
+                tr.querySelector('.icon-small').style.backgroundImage = `url('https://raw.githubusercontent.com/Mabinogi-Commerce/Assets/main/tradeposts/items/${item.replace(/\s+/g, '_')}_Icon.png')`;
+                
+                if (document.activeElement !== tr.querySelector('.owned-input')) {
+                    tr.querySelector('.owned-input').value = ownedInventory[item] || 0;
+                }
+                
                 tr.querySelector('.need-qty').textContent = needed > 0 ? Math.ceil(needed).toLocaleString() : '-';
                 const sCell = tr.querySelector('.status-cell');
-                if (needed === 0) { sCell.textContent = ''; sCell.className = 'status-cell'; }
-                else { sCell.textContent = deficit <= 0 ? 'READY' : deficit.toLocaleString(); sCell.className = `status-cell ${deficit <= 0 ? 'ready' : 'deficit'}`; }
+                if (needed === 0) { 
+                    sCell.textContent = ''; 
+                    sCell.className = 'status-cell'; 
+                } else { 
+                    sCell.textContent = deficit <= 0 ? 'READY' : deficit.toLocaleString(); 
+                    sCell.className = `status-cell ${deficit <= 0 ? 'ready' : 'deficit'}`; 
+                }
                 activeRows.add(rowId);
             });
+            
             [...tbody.rows].forEach(r => { if (r.id && !activeRows.has(r.id)) r.remove(); });
         }
 
-        // --- 7. LISTENERS ---
-        document.getElementById('town-select').onchange = () => renderCatalog();
-        document.getElementById('dest-select').onchange = (e) => { targetDest = e.target.value; calculateLoadout(); saveToCloudDebounced(); };
-        document.getElementById('transport-select').onchange = () => { calculateLoadout(); saveLocalPrefs(); saveToCloudDebounced(); };
-        document.getElementById('week-mult').oninput = () => calculateLoadout();
+        // --- MISSING FUNCTIONS FIX ---
+        function updateTransportLabels() {
+            const stats = getModifiedStats();
+            // This ensures weight labels and slot labels stay current
+            document.getElementById('weight-label').textContent = `0 / ${stats.weight} kg`;
+            document.getElementById('slot-label').textContent = `0 / ${stats.slots} Slots`;
+        }
 
-        window.onload = () => { 
-            loadLocalPrefs(); // Load preferences immediately
-            initAuth(); 
+        function syncLocalPrefs() {
+            saveLocalPrefs();
+        }
+
+        // --- 7. LISTENERS ---
+        document.getElementById('town-select').onchange = (e) => {
+            selectedTown = e.target.value;
+            renderCatalog();
+            saveToCloudDebounced();
+        };
+
+        document.getElementById('dest-select').onchange = (e) => { 
+            targetDest = e.target.value; 
+            calculateLoadout(); 
+            saveToCloudDebounced(); 
+        };
+
+        document.getElementById('transport-select').onchange = () => { 
+            calculateLoadout(); 
+            saveLocalPrefs(); 
+            saveToCloudDebounced(); 
+        };
+
+        document.getElementById('week-mult').oninput = (e) => {
+            weekMult = parseInt(e.target.value) || 1;
+            calculateLoadout(); 
+            saveToCloudDebounced();
+        };
+        
+        document.querySelectorAll('.toggle-input').forEach(chk => {
+            chk.onchange = (e) => {
+                const id = e.target.id.replace('buff-', '');
+                if (id === 'william' && e.target.checked) { 
+                    document.getElementById('buff-alpaca').checked = false; 
+                    activeBuffs.alpaca = false; 
+                }
+                if (id === 'alpaca' && e.target.checked) { 
+                    document.getElementById('buff-william').checked = false; 
+                    activeBuffs.william = false; 
+                }
+                activeBuffs[id] = e.target.checked;
+                calculateLoadout(); 
+                syncLocalPrefs(); 
+                updateTransportLabels(); 
+                saveToCloudDebounced();
+            };
+        });
+
+        window.onload = async () => { 
+            loadLocalPrefs();
+            await initAuth(); 
             renderCatalog(); 
             updateTransportLabels(); 
             calculateLoadout(); 
