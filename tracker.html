@@ -22,7 +22,10 @@
             --text-dim: #444;
         }
 
-        * { box-sizing: border-box; outline: none; }
+        * {
+            box-sizing: border-box;
+            outline: none;
+        }
 
         body {
             font-family: 'Inter', sans-serif;
@@ -36,119 +39,378 @@
             scrollbar-gutter: stable;
         }
 
-        /* Add this anywhere inside your <style> block */
-        .header-row .tab-btn:first-child:hover {
-            color: #fff !important;
-            text-shadow: 0 0 5px var(--accent);
-        }
-
         /* --- SCROLLBARS --- */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--accent); box-shadow: 0 0 5px var(--accent); }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
 
-        /* AUTH OVERLAY */
-        #auth-overlay {
-            position: fixed; inset: 0; background: var(--bg); z-index: 9999;
-            display: flex; align-items: center; justify-content: center; padding: 20px;
+        ::-webkit-scrollbar-track {
+            background: transparent;
         }
-        .auth-card {
-            background: var(--card-bg); padding: 25px; border-radius: 8px;
-            border: 1px solid var(--border); width: 100%; max-width: 320px;
-            text-align: center; box-shadow: 0 10px 50px rgba(0,0,0,0.8);
+
+        ::-webkit-scrollbar-thumb {
+            background: #1a1a1a;
+            border-radius: 10px;
         }
-        .auth-card .inp-s { font-size: 16px !important; margin-bottom: 12px; padding: 12px; width: 100%; }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: var(--accent);
+                box-shadow: 0 0 5px var(--accent);
+            }
 
         /* SIDEBAR */
         #sidebar {
-            width: 220px; background: var(--sidebar-bg); border-right: 1px solid var(--border);
-            display: flex; flex-direction: column; padding: 12px; gap: 12px; flex-shrink: 0; height: 100%;
+            width: 220px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+            gap: 12px;
+            flex-shrink: 0;
+            height: 100%;
         }
-        #sidebar-list { overflow-y: auto; flex-grow: 1; padding-right: 4px; }
-        .sidebar-header { font-size: 9px; font-weight: 900; letter-spacing: 1px; color: #333; text-transform: uppercase; }
-        .timer-card { background: rgba(255,255,255,0.02); padding: 6px; border-radius: 4px; border-left: 2px solid var(--accent); margin-bottom: 4px; }
-        .timer-card.thu { border-left-color: var(--thu); }
-        .timer-card.sat { border-left-color: var(--sat); }
-        .t-label { font-size: 8px; color: var(--text-dim); text-transform: uppercase; }
-        .t-val { font-family: 'JetBrains Mono'; font-size: 12px; color: #eee; }
-        .side-cat { margin-top: 10px; margin-bottom: 4px; color: var(--accent); font-size: 8px; font-weight: 900; text-transform: uppercase; opacity: 0.5; }
-        .side-task { font-size: 10px; color: #777; padding: 4px 6px; border-left: 1px solid #222; margin-bottom: 2px; cursor: pointer; transition: 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .side-task:hover { color: #fff; border-left-color: var(--accent); background: rgba(255,255,255,0.03); }
+
+        #sidebar-list {
+            overflow-y: auto;
+            flex-grow: 1;
+            padding-right: 4px;
+        }
+
+        .sidebar-header {
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            color: #333;
+            text-transform: uppercase;
+        }
+
+        .timer-card {
+            background: rgba(255,255,255,0.02);
+            padding: 6px;
+            border-radius: 4px;
+            border-left: 2px solid var(--accent);
+            margin-bottom: 4px;
+        }
+
+            .timer-card.thu {
+                border-left-color: var(--thu);
+            }
+
+            .timer-card.sat {
+                border-left-color: var(--sat);
+            }
+
+        .t-label {
+            font-size: 8px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        .t-val {
+            font-family: 'JetBrains Mono';
+            font-size: 12px;
+            color: #eee;
+        }
+
+        .side-cat {
+            margin-top: 10px;
+            margin-bottom: 4px;
+            color: var(--accent);
+            font-size: 8px;
+            font-weight: 900;
+            text-transform: uppercase;
+            opacity: 0.5;
+        }
+
+        .side-task {
+            font-size: 10px;
+            color: #777;
+            padding: 4px 6px;
+            border-left: 1px solid #222;
+            margin-bottom: 2px;
+            cursor: pointer;
+            transition: 0.2s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+            .side-task:hover {
+                color: #fff;
+                border-left-color: var(--accent);
+                background: rgba(255,255,255,0.03);
+            }
 
         /* MAIN CONTENT */
-        #main-content { flex-grow: 1; padding: 15px 30px; overflow-y: auto; scroll-behavior: smooth; }
-        .container { width: 100%; max-width: 850px; margin: 0 auto; padding-bottom: 100px; }
-        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; position: sticky; top: 0; background: var(--bg); z-index: 10; padding: 10px 0; }
-        .tab-btn { padding: 4px 10px; border: none; background: none; color: var(--text-dim); font-size: 10px; font-weight: 900; cursor: pointer; border-radius: 3px; text-transform: uppercase; flex-shrink: 0; touch-action: manipulation; }
-        .tab-btn.active { background: #222; color: #fff; }
+        #main-content {
+            flex-grow: 1;
+            padding: 15px 30px;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 850px;
+            margin: 0 auto;
+            padding-bottom: 100px;
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            position: sticky;
+            top: 0;
+            background: var(--bg);
+            z-index: 10;
+            padding: 10px 0;
+        }
+
+        .tab-btn {
+            padding: 4px 10px;
+            border: none;
+            background: none;
+            color: var(--text-dim);
+            font-size: 10px;
+            font-weight: 900;
+            cursor: pointer;
+            border-radius: 3px;
+            text-transform: uppercase;
+            flex-shrink: 0;
+            touch-action: manipulation;
+        }
+
+            .tab-btn.active {
+                background: #222;
+                color: #fff;
+            }
 
         /* TASKS UI */
-        .group-wrap { margin-bottom: 10px; scroll-margin-top: 60px; }
-        summary { list-style: none; cursor: pointer; padding: 4px 0; display: flex; align-items: center; gap: 8px; font-size: 10px; font-weight: 900; color: #444; text-transform: uppercase; border-bottom: 1px solid var(--border); }
-        summary::before { content: '▶'; font-size: 7px; transition: 0.2s; color: #222; }
-        details[open] summary::before { transform: rotate(90deg); color: var(--accent); }
+        .group-wrap {
+            margin-bottom: 10px;
+            scroll-margin-top: 60px;
+        }
 
-        .task-card { background: var(--card-bg); border-bottom: 1px solid var(--bg); padding: 5px 10px; display: flex; align-items: center; position: relative; border-left: 2px solid transparent; transition: 0.2s; }
-        .task-card.type-thu { border-left-color: var(--thu); }
-        .task-card.type-sat { border-left-color: var(--sat); }
-        .task-card.complete { opacity: 0.15; filter: grayscale(1); }
-        .task-card.highlight { outline: 1px solid var(--accent); z-index: 5; }
+        summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 4px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 10px;
+            font-weight: 900;
+            color: #444;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+        }
 
-        .type-tag { font-size: 7px; padding: 1px 4px; border-radius: 2px; margin-left: 5px; text-transform: uppercase; font-weight: 900; }
-        .tag-thu { background: var(--thu); color: #fff; }
-        .tag-sat { background: var(--sat); color: #fff; }
+            summary::before {
+                content: '▶';
+                font-size: 7px;
+                transition: 0.2s;
+                color: #222;
+            }
 
-        .t-info { flex-grow: 1; display: flex; align-items: center; gap: 10px; overflow: hidden; }
-        .t-char-tag { font-size: 8px; font-weight: 900; color: var(--accent); width: 55px; opacity: 0.7; }
-        .t-name { font-size: 12px; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        details[open] summary::before {
+            transform: rotate(90deg);
+            color: var(--accent);
+        }
 
-        .pips { display: flex; gap: 2px; margin-right: 15px; }
-        .pip { width: 6px; height: 2px; background: #222; border-radius: 1px; }
-        .pip.on { background: var(--accent); box-shadow: 0 0 4px var(--accent); }
+        .task-card {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--bg);
+            padding: 5px 10px;
+            display: flex;
+            align-items: center;
+            position: relative;
+            border-left: 2px solid transparent;
+            transition: 0.2s;
+        }
 
-        .btn-c { width: 28px; height: 28px; border: 1px solid #222; background: #000; color: #fff; cursor: pointer; border-radius: 2px; font-size: 12px; display: flex; align-items: center; justify-content: center; }
-        .prog-bar { position: absolute; bottom: 0; left: 0; height: 1px; background: var(--accent); transition: width 0.3s; opacity: 0.4; }
+            .task-card.type-thu {
+                border-left-color: var(--thu);
+            }
 
-        /* MANAGEMENT & EDIT UI FIXES */
-        .mgmt-p { background: #000; border: 1px solid var(--border); padding: 8px; border-radius: 4px; margin-bottom: 10px; font-size: 10px; }
-        .inp-s { background: #111; border: 1px solid #222; color: #fff; padding: 6px; border-radius: 2px; font-size: 11px; }
+            .task-card.type-sat {
+                border-left-color: var(--sat);
+            }
 
-        .edit-ui { display: none; gap: 8px; width: 100%; align-items: center; }
-        .show-mgmt .edit-ui { display: flex !important; }
-        .show-mgmt .view-ui { display: none !important; }
+            .task-card.complete {
+                opacity: 0.15;
+                filter: grayscale(1);
+            }
 
-        /* THE WIDTH FIXES YOU REQUESTED */
-        .edit-ui select:nth-child(2) { min-width: 90px !important; flex: 0 0 auto; } /* Character Box */
-        .edit-ui select:nth-child(3) { min-width: 125px !important; flex: 0 0 auto; } /* Reset Type Box */
-        .edit-ui input[type="number"] { width: 45px !important; flex: 0 0 auto; text-align: center; } /* Max Box */
-        .edit-ui input[type="text"] { flex: 1; min-width: 100px; } /* Name Box */
+            .task-card.highlight {
+                outline: 1px solid var(--accent);
+                z-index: 5;
+            }
 
-        .drag-handle, .group-handle { display: none; cursor: grab; padding-right: 8px; }
-        .show-mgmt .drag-handle, .show-mgmt .group-handle { display: block; }
+        .type-tag {
+            font-size: 7px;
+            padding: 1px 4px;
+            border-radius: 2px;
+            margin-left: 5px;
+            text-transform: uppercase;
+            font-weight: 900;
+        }
+
+        .tag-thu {
+            background: var(--thu);
+            color: #fff;
+        }
+
+        .tag-sat {
+            background: var(--sat);
+            color: #fff;
+        }
+
+        .t-info {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow: hidden;
+        }
+
+        .t-char-tag {
+            font-size: 8px;
+            font-weight: 900;
+            color: var(--accent);
+            width: 55px;
+            opacity: 0.7;
+        }
+
+        .t-name {
+            font-size: 12px;
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .pips {
+            display: flex;
+            gap: 2px;
+            margin-right: 15px;
+        }
+
+        .pip {
+            width: 6px;
+            height: 2px;
+            background: #222;
+            border-radius: 1px;
+        }
+
+            .pip.on {
+                background: var(--accent);
+                box-shadow: 0 0 4px var(--accent);
+            }
+
+        .btn-c {
+            width: 28px;
+            height: 28px;
+            border: 1px solid #222;
+            background: #000;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 2px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .prog-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 1px;
+            background: var(--accent);
+            transition: width 0.3s;
+            opacity: 0.4;
+        }
+
+        .mgmt-p {
+            background: #000;
+            border: 1px solid var(--border);
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 10px;
+        }
+
+        .inp-s {
+            background: #111;
+            border: 1px solid #222;
+            color: #fff;
+            padding: 6px;
+            border-radius: 2px;
+            font-size: 11px;
+        }
+
+        .edit-ui {
+            display: none;
+            gap: 8px;
+            width: 100%;
+            align-items: center;
+        }
+
+        .show-mgmt .edit-ui {
+            display: flex !important;
+        }
+
+        .show-mgmt .view-ui {
+            display: none !important;
+        }
+
+        .edit-ui select:nth-child(2) {
+            min-width: 90px !important;
+            flex: 0 0 auto;
+        }
+
+        .edit-ui select:nth-child(3) {
+            min-width: 125px !important;
+            flex: 0 0 auto;
+        }
+
+        .edit-ui input[type="number"] {
+            width: 45px !important;
+            flex: 0 0 auto;
+            text-align: center;
+        }
+
+        .edit-ui input[type="text"] {
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .drag-handle, .group-handle {
+            display: none;
+            cursor: grab;
+            padding-right: 8px;
+        }
+
+        .show-mgmt .drag-handle, .show-mgmt .group-handle {
+            display: block;
+        }
 
         @media (max-width: 600px) {
-            #sidebar { display: none; }
-            #main-content { padding: 10px 15px; }
+            #sidebar {
+                display: none;
+            }
+
+            #main-content {
+                padding: 10px 15px;
+            }
         }
     </style>
 </head>
 <body>
-
-    <div id="auth-overlay">
-        <div class="auth-card">
-            <h2 style="font-size:11px; letter-spacing:2px; color:var(--accent); margin-bottom:20px;">MABI TRACKER SECURE</h2>
-            <form id="login-form" onsubmit="handleAuth(event, 'login')">
-                <input type="email" id="email" class="inp-s" placeholder="Email" required autocomplete="email">
-                <input type="password" id="password" class="inp-s" placeholder="Password" required autocomplete="current-password">
-                <div style="display:flex; gap:10px; margin-top:5px;">
-                    <button type="submit" class="tab-btn active" style="flex:1; padding:12px; border:1px solid #333;">LOGIN</button>
-                    <button type="button" class="tab-btn" style="flex:1; padding:12px; border:1px solid #333;" onclick="handleAuth(event, 'register')">SIGN UP</button>
-                </div>
-            </form>
-            <p id="auth-error" style="color:#ff4444; font-size:10px; margin-top:15px; min-height:14px;"></p>
-        </div>
-    </div>
 
     <div id="sidebar">
         <div class="sidebar-header">USER</div>
@@ -168,7 +430,6 @@
             <div class="header-row">
                 <div style="background:#000; border:1px solid var(--border); padding:2px; border-radius:4px; display:flex; align-items:center;">
                     <button class="tab-btn" onclick="location.href='index.html'" style="color:var(--accent); padding: 4px 8px; border-right: 1px solid #222; border-radius: 0; margin-right: 4px;">HUB</button>
-
                     <button id="nav-daily" class="tab-btn active" onclick="setView('daily')">Dailies</button>
                     <button id="nav-weekly" class="tab-btn" onclick="setView('weekly')">Weeklies</button>
                 </div>
@@ -178,9 +439,6 @@
             <div id="char-filters" style="display: flex; gap: 4px; margin-bottom: 12px; overflow-x: auto; position: sticky; top: 41px; background: var(--bg); z-index: 99; padding: 10px 0; border-bottom: 1px solid var(--border); "></div>
 
             <div id="mgmt-panel" class="mgmt-p" style="display:none; border: 1px solid var(--accent);">
-                <!--IMPORT BOX <div style="color:var(--accent); font-weight:bold; margin-bottom:4px;">RESCUE IMPORT</div>
-                <textarea id="import-box" class="inp-s" style="width:100%; height:40px;" placeholder="Paste backup here..."></textarea>
-                <button class="tab-btn active" style="width:100%; margin:5px 0 10px 0; background:var(--accent); color:#000;" onclick="rescueData()">IMPORT TO ACCOUNT</button>-->
                 CHARS: <input type="text" id="char-input" class="inp-s" style="width:px;" onchange="updateChars(this.value)">
             </div>
 
@@ -202,20 +460,15 @@
     let currentView = 'daily', activeFilter = "ALL", currentUser = null;
 
     auth.onAuthStateChanged(user => {
-        if (user) { currentUser = user; document.getElementById('auth-overlay').style.display = 'none'; document.getElementById('user-info').innerText = user.email; startSync(); }
-        else { document.getElementById('auth-overlay').style.display = 'flex'; }
+        if (user) {
+            currentUser = user;
+            document.getElementById('user-info').innerText = user.email;
+            startSync();
+        } else {
+            // Redirect back to Hub if not logged in
+            window.location.href = 'index.html';
+        }
     });
-
-    function handleAuth(event, mode) {
-        if (event) event.preventDefault();
-        const email = document.getElementById('email').value.trim();
-        const pass = document.getElementById('password').value;
-        const err = document.getElementById('auth-error');
-        if (!email || !pass) { err.innerText = "Enter credentials"; return; }
-        err.innerText = "Authenticating...";
-        const action = mode === 'login' ? auth.signInWithEmailAndPassword(email, pass) : auth.createUserWithEmailAndPassword(email, pass);
-        action.catch(e => err.innerText = e.message);
-    }
 
     function startSync() {
         db.ref(`users/${currentUser.uid}`).on('value', (snap) => {
@@ -344,20 +597,19 @@
     function setView(v) { currentView = v; render(); }
     function setF(f) { activeFilter = f; render(); }
     function toggleMgmt() { document.getElementById('app').classList.toggle('show-mgmt'); document.getElementById('mgmt-panel').style.display = document.getElementById('app').classList.contains('show-mgmt') ? 'block' : 'none'; render(); }
-    function rescueData() { const raw = document.getElementById('import-box').value; try { const d = JSON.parse(raw); tasks = d.tasks; chars = d.chars; catOrder = d.catOrder || []; pushData(); alert("Data imported!"); } catch(e) { alert("Parse Error!"); } }
-    
-    function saveTaskOrder() { 
-        let nt = []; 
-        const hidden = tasks.filter(t => currentView === 'daily' ? t.type !== 'daily' : t.type === 'daily'); 
-        document.querySelectorAll('.task-card').forEach(c => { 
-            const t = tasks.find(x => x.id == c.dataset.id); 
-            t.cat = c.closest('.sort-list').dataset.cat; 
-            nt.push(t); 
-        }); 
-        tasks = [...nt, ...hidden]; 
-        pushData(); 
+
+    function saveTaskOrder() {
+        let nt = [];
+        const hidden = tasks.filter(t => currentView === 'daily' ? t.type !== 'daily' : t.type === 'daily');
+        document.querySelectorAll('.task-card').forEach(c => {
+            const t = tasks.find(x => x.id == c.dataset.id);
+            t.cat = c.closest('.sort-list').dataset.cat;
+            nt.push(t);
+        });
+        tasks = [...nt, ...hidden];
+        pushData();
     }
-    
+
     function saveCatOrder() { catOrder = Array.from(document.querySelectorAll('.group-wrap')).map(w => w.dataset.catname); pushData(); }
 
     function updateEngine() {
