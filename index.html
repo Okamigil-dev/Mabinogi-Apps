@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mabi Hub - Central Index</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #050505;
+            --card-bg: #111;
+            --accent: #00ff88;
+            --border: rgba(255,255,255,0.05);
+            --text-main: #d0d0d0;
+            --text-dim: #444;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-size: 14px;
+        }
+
+        .hub-container {
+            width: 100%;
+            max-width: 600px;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .hub-header {
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            color: var(--accent);
+            text-transform: uppercase;
+            margin-bottom: 40px;
+            opacity: 0.8;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .hub-link {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hub-link:hover {
+            border-color: var(--accent);
+            background: #161616;
+            transform: translateY(-2px);
+        }
+
+        .hub-link::after {
+            content: 'GO →';
+            font-family: 'JetBrains Mono';
+            font-size: 10px;
+            color: var(--accent);
+            font-weight: bold;
+            opacity: 0;
+            transition: 0.2s;
+        }
+
+        .hub-link:hover::after {
+            opacity: 1;
+        }
+
+        .link-info {
+            text-align: left;
+        }
+
+        .link-title {
+            font-size: 16px;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .link-desc {
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .footer {
+            margin-top: 50px;
+            font-family: 'JetBrains Mono';
+            font-size: 10px;
+            color: #222;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hub-container">
+        <div class="hub-header">System_Central_Index</div>
+        
+        <div class="grid">
+            <a href="tracker.html" class="hub-link">
+                <div class="link-info">
+                    <span class="link-title">MABI TRACKER</span>
+                    <span class="link-desc">Daily & Weekly Task Management</span>
+                </div>
+            </a>
+
+            <a href="#" class="hub-link" style="opacity: 0.5; cursor: default;">
+                <div class="link-info">
+                    <span class="link-title">DATABASE</span>
+                    <span class="link-desc">System Offline</span>
+                </div>
+            </a>
+
+            <a href="#" class="hub-link" style="opacity: 0.5; cursor: default;">
+                <div class="link-info">
+                    <span class="link-title">GUIDES</span>
+                    <span class="link-desc">System Offline</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="footer">
+            V_HUB.01 // SESSION_ACTIVE
+        </div>
+    </div>
+
+</body>
+</html>
