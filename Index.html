@@ -1,0 +1,657 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mabi Tracker - v46.7</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #050505;
+            --sidebar-bg: #0a0a0a;
+            --card-bg: #111;
+            --accent: #00ff88;
+            --thu: #0088ff;
+            --sat: #cc44ff;
+            --border: rgba(255,255,255,0.05);
+            --text-main: #d0d0d0;
+            --text-dim: #444;
+        }
+
+        * {
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            font-size: 12px;
+            scrollbar-gutter: stable; /* Keeps the S-Bug away */
+        }
+
+        /* --- UNIFIED SCROLLBARS --- */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #1a1a1a;
+            border-radius: 10px;
+        }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: var(--accent);
+                box-shadow: 0 0 5px var(--accent);
+            }
+
+        /* AUTH OVERLAY - MOBILE SECURE */
+        #auth-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            width: 100%;
+            max-width: 320px;
+            text-align: center;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.8);
+        }
+
+            .auth-card .inp-s {
+                font-size: 16px !important;
+                margin-bottom: 12px;
+                padding: 12px;
+                width: 100%;
+            }
+
+        /* SIDEBAR */
+        #sidebar {
+            width: 220px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+            gap: 12px;
+            flex-shrink: 0;
+            height: 100%;
+        }
+
+        #sidebar-list {
+            overflow-y: auto;
+            flex-grow: 1;
+            padding-right: 4px;
+        }
+
+        .sidebar-header {
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            color: #333;
+            text-transform: uppercase;
+        }
+
+        .timer-card {
+            background: rgba(255,255,255,0.02);
+            padding: 6px;
+            border-radius: 4px;
+            border-left: 2px solid var(--accent);
+            margin-bottom: 4px;
+        }
+
+            .timer-card.thu {
+                border-left-color: var(--thu);
+            }
+
+            .timer-card.sat {
+                border-left-color: var(--sat);
+            }
+
+        .t-label {
+            font-size: 8px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        .t-val {
+            font-family: 'JetBrains Mono';
+            font-size: 12px;
+            color: #eee;
+        }
+
+        .side-cat {
+            margin-top: 10px;
+            margin-bottom: 4px;
+            color: var(--accent);
+            font-size: 8px;
+            font-weight: 900;
+            text-transform: uppercase;
+            opacity: 0.5;
+        }
+
+        .side-task {
+            font-size: 10px;
+            color: #777;
+            padding: 4px 6px;
+            border-left: 1px solid #222;
+            margin-bottom: 2px;
+            cursor: pointer;
+            transition: 0.2s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+            .side-task:hover {
+                color: #fff;
+                border-left-color: var(--accent);
+                background: rgba(255,255,255,0.03);
+            }
+
+        /* MAIN CONTENT */
+        #main-content {
+            flex-grow: 1;
+            padding: 15px 30px;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 850px;
+            margin: 0 auto;
+            padding-bottom: 100px;
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            position: sticky;
+            top: 0;
+            background: var(--bg);
+            z-index: 10;
+            padding: 10px 0;
+        }
+
+        .tab-btn {
+            padding: 4px 10px;
+            border: none;
+            background: none;
+            color: var(--text-dim);
+            font-size: 10px;
+            font-weight: 900;
+            cursor: pointer;
+            border-radius: 3px;
+            text-transform: uppercase;
+            flex-shrink: 0;
+            touch-action: manipulation;
+        }
+
+            .tab-btn.active {
+                background: #222;
+                color: #fff;
+            }
+
+        /* TASKS */
+        .group-wrap {
+            margin-bottom: 10px;
+            scroll-margin-top: 60px;
+        }
+
+        summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 4px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 10px;
+            font-weight: 900;
+            color: #444;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+        }
+
+            summary::before {
+                content: '▶';
+                font-size: 7px;
+                transition: 0.2s;
+                color: #222;
+            }
+
+        details[open] summary::before {
+            transform: rotate(90deg);
+            color: var(--accent);
+        }
+
+        .task-card {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--bg);
+            padding: 5px 10px;
+            display: flex;
+            align-items: center;
+            position: relative;
+            border-left: 2px solid transparent;
+            transition: 0.2s;
+        }
+
+            .task-card.type-thu {
+                border-left-color: var(--thu);
+            }
+
+            .task-card.type-sat {
+                border-left-color: var(--sat);
+            }
+
+            .task-card.complete {
+                opacity: 0.15;
+                filter: grayscale(1);
+            }
+
+            .task-card.highlight {
+                outline: 1px solid var(--accent);
+                z-index: 5;
+            }
+
+        .type-tag {
+            font-size: 7px;
+            padding: 1px 4px;
+            border-radius: 2px;
+            margin-left: 5px;
+            text-transform: uppercase;
+            font-weight: 900;
+        }
+
+        .tag-thu {
+            background: var(--thu);
+            color: #fff;
+        }
+
+        .tag-sat {
+            background: var(--sat);
+            color: #fff;
+        }
+
+        .t-info {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .t-char-tag {
+            font-size: 8px;
+            font-weight: 900;
+            color: var(--accent);
+            width: 55px;
+            opacity: 0.7;
+        }
+
+        .t-name {
+            font-size: 12px;
+            flex-grow: 1;
+        }
+
+        .pips {
+            display: flex;
+            gap: 2px;
+            margin-right: 15px;
+        }
+
+        .pip {
+            width: 6px;
+            height: 2px;
+            background: #222;
+            border-radius: 1px;
+        }
+
+            .pip.on {
+                background: var(--accent);
+                box-shadow: 0 0 4px var(--accent);
+            }
+
+        .btn-c {
+            width: 28px;
+            height: 28px;
+            border: 1px solid #222;
+            background: #000;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 2px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .prog-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 1px;
+            background: var(--accent);
+            transition: width 0.3s;
+            opacity: 0.4;
+        }
+
+        .mgmt-p {
+            background: #000;
+            border: 1px solid var(--border);
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 10px;
+        }
+
+        .inp-s {
+            background: #111;
+            border: 1px solid #222;
+            color: #fff;
+            padding: 6px;
+            border-radius: 2px;
+            font-size: 11px;
+        }
+
+        .edit-ui {
+            display: none;
+            gap: 5px;
+            width: 100%;
+            align-items: center;
+        }
+
+        .show-mgmt .edit-ui {
+            display: flex !important;
+        }
+
+        .show-mgmt .view-ui {
+            display: none !important;
+        }
+
+        .drag-handle, .group-handle {
+            display: none;
+            cursor: grab;
+            padding-right: 8px;
+        }
+
+        .show-mgmt .drag-handle, .show-mgmt .group-handle {
+            display: block;
+        }
+
+        @media (max-width: 600px) {
+            #sidebar {
+                display: none;
+            }
+
+            #main-content {
+                padding: 10px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="auth-overlay">
+        <div class="auth-card">
+            <h2 style="font-size:11px; letter-spacing:2px; color:var(--accent); margin-bottom:20px;">MABI TRACKER SECURE</h2>
+            <form id="login-form" onsubmit="handleAuth(event, 'login')">
+                <input type="email" id="email" class="inp-s" placeholder="Email" required autocomplete="email">
+                <input type="password" id="password" class="inp-s" placeholder="Password" required autocomplete="current-password">
+                <div style="display:flex; gap:10px; margin-top:5px;">
+                    <button type="submit" class="tab-btn active" style="flex:1; padding:12px; border:1px solid #333;">LOGIN</button>
+                    <button type="button" class="tab-btn" style="flex:1; padding:12px; border:1px solid #333;" onclick="handleAuth(event, 'register')">SIGN UP</button>
+                </div>
+            </form>
+            <p id="auth-error" style="color:#ff4444; font-size:10px; margin-top:15px; min-height:14px;"></p>
+        </div>
+    </div>
+
+    <div id="sidebar">
+        <div class="sidebar-header">USER</div>
+        <div id="user-info" style="font-size:10px; color:var(--accent); overflow:hidden; text-overflow:ellipsis;">...</div>
+        <button onclick="firebase.auth().signOut()" class="tab-btn" style="padding:0; text-align:left; font-size:8px;">[ LOGOUT ]</button>
+        <hr style="border:0; border-top:1px solid #111; margin:5px 0;">
+        <div class="sidebar-header">RESETS</div>
+        <div class="timer-card"><div class="t-label">Daily</div><div id="timer-daily" class="t-val">00:00:00</div></div>
+        <div class="timer-card thu"><div class="t-label">Thu</div><div id="timer-thu" class="t-val">00:00:00</div></div>
+        <div class="timer-card sat"><div class="t-label">Sat</div><div id="timer-sat" class="t-val">00:00:00</div></div>
+        <div class="sidebar-header" style="margin-top:10px;">PENDING</div>
+        <div id="sidebar-list"></div>
+    </div>
+
+    <div id="main-content">
+        <div class="container" id="app">
+            <div class="header-row">
+                <div style="background:#000; border:1px solid var(--border); padding:2px; border-radius:4px; display:flex;">
+                    <button id="nav-daily" class="tab-btn active" onclick="setView('daily')">Dailies</button>
+                    <button id="nav-weekly" class="tab-btn" onclick="setView('weekly')">Weeklies</button>
+                </div>
+                <button onclick="toggleMgmt()" class="tab-btn" style="color:#222; white-space:nowrap;">[ SYSTEM_CONFIG ]</button>
+            </div>
+
+            <div id="char-filters" style="display:flex; gap:4px; margin-bottom:12px; overflow-x:auto;"></div>
+
+            <div id="mgmt-panel" class="mgmt-p" style="display:none; border: 1px solid var(--accent);">
+                <div style="color:var(--accent); font-weight:bold; margin-bottom:4px;">RESCUE IMPORT</div>
+                <textarea id="import-box" class="inp-s" style="width:100%; height:40px;" placeholder="Paste backup here..."></textarea>
+                <button class="tab-btn active" style="width:100%; margin:5px 0 10px 0; background:var(--accent); color:#000;" onclick="rescueData()">IMPORT TO ACCOUNT</button>
+                CHARS: <input type="text" id="char-input" class="inp-s" style="width:250px;" onchange="updateChars(this.value)">
+            </div>
+
+            <div id="list-container"></div>
+            <div class="edit-ui" style="margin-top:20px; border-top:1px dashed #222; padding-top:10px;">
+                <input type="text" id="new-cat" class="inp-s" placeholder="New Group Name...">
+                <button onclick="addCat()" class="tab-btn active" style="border:1px solid #333;">+ CREATE GROUP</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const firebaseConfig = { apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM", databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const auth = firebase.auth();
+
+    let tasks = [], chars = ["Main"], collapsed = {}, catOrder = [], lastReset = { daily: 0, thu: 0, sat: 0 };
+    let currentView = 'daily', activeFilter = "ALL", currentUser = null;
+
+    auth.onAuthStateChanged(user => {
+        if (user) { currentUser = user; document.getElementById('auth-overlay').style.display = 'none'; document.getElementById('user-info').innerText = user.email; startSync(); }
+        else { document.getElementById('auth-overlay').style.display = 'flex'; }
+    });
+
+    function handleAuth(event, mode) {
+        if (event) event.preventDefault();
+        const email = document.getElementById('email').value.trim();
+        const pass = document.getElementById('password').value;
+        const err = document.getElementById('auth-error');
+
+        if (!email || !pass) { err.innerText = "Enter credentials"; return; }
+        err.innerText = "Authenticating...";
+
+        const action = mode === 'login' ? auth.signInWithEmailAndPassword(email, pass) : auth.createUserWithEmailAndPassword(email, pass);
+        action.catch(e => err.innerText = e.message);
+    }
+
+    function startSync() {
+        db.ref(`users/${currentUser.uid}`).on('value', (snap) => {
+            const data = snap.val() || {};
+            tasks = data.tasks || []; chars = data.chars || ["Main"]; catOrder = data.catOrder || []; lastReset = data.lastReset || { daily: 0, thu: 0, sat: 0 };
+            checkAndReset(); render();
+        });
+    }
+
+    function pushData() { if (currentUser) db.ref(`users/${currentUser.uid}`).set({ tasks, chars, catOrder, lastReset }); }
+
+    function checkAndReset() {
+        const now = new Date(), pac = new Date(now.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
+        const getR = (dayNum) => {
+            let r = new Date(pac); r.setHours(7, 0, 0, 0);
+            if (dayNum !== null) while (r.getDay() !== dayNum) r.setDate(r.getDate() - 1);
+            if (pac < r) r.setDate(r.getDate() - (dayNum !== null ? 7 : 1));
+            return r.getTime();
+        };
+        const rd = getR(null), rt = getR(4), rs = getR(6);
+        let changed = false;
+        if (lastReset.daily < rd) { tasks.forEach(t => { if(t.type === 'daily') t.done = 0; }); lastReset.daily = rd; changed = true; }
+        if (lastReset.thu < rt) { tasks.forEach(t => { if(t.type === 'thu') t.done = 0; }); lastReset.thu = rt; changed = true; }
+        if (lastReset.sat < rs) { tasks.forEach(t => { if(t.type === 'sat') t.done = 0; }); lastReset.sat = rs; changed = true; }
+        if (changed) pushData();
+    }
+
+    function render() {
+        if(!currentUser) return;
+        const isEdit = document.getElementById('app').classList.contains('show-mgmt');
+        document.getElementById('nav-daily').classList.toggle('active', currentView === 'daily');
+        document.getElementById('nav-weekly').classList.toggle('active', currentView === 'weekly');
+        document.getElementById('char-input').value = chars.join(', ');
+
+        const fBar = document.getElementById('char-filters');
+        fBar.innerHTML = `<button class="tab-btn ${activeFilter==='ALL'?'active':''}" onclick="setF('ALL')">ALL</button>`;
+        chars.forEach(c => fBar.innerHTML += `<button class="tab-btn ${activeFilter===c?'active':''}" onclick="setF('${c}')">${c}</button>`);
+
+        const cont = document.getElementById('list-container'); cont.innerHTML = '';
+        const visibleTasks = tasks.filter(t => currentView === 'daily' ? t.type === 'daily' : t.type !== 'daily');
+        let cats = [...new Set(visibleTasks.map(t => t.cat))].sort((a,b) => catOrder.indexOf(a) - catOrder.indexOf(b));
+
+        cats.forEach(cat => {
+            const finalTasks = visibleTasks.filter(t => t.cat === cat && (activeFilter === "ALL" || t.char === activeFilter));
+            if (finalTasks.length === 0 && !isEdit) return;
+
+            const wrap = document.createElement('div'); wrap.className = 'group-wrap'; wrap.dataset.catname = cat;
+            const det = document.createElement('details'); det.open = collapsed[cat] !== false;
+            det.ontoggle = () => { collapsed[cat] = det.open; };
+
+            const sum = document.createElement('summary');
+            sum.innerHTML = `<div class="group-handle">⠿</div>`;
+            if(isEdit) {
+                const inp = document.createElement('input'); inp.style = "background:none; border:none; color:var(--accent); font-weight:900; font-size:10px; width:150px;";
+                inp.value = cat; inp.onclick = e => e.stopPropagation();
+                inp.onchange = e => { tasks.forEach(t => { if(t.cat === cat) t.cat = e.target.value; }); catOrder = catOrder.map(c => c === cat ? e.target.value : c); pushData(); };
+                sum.appendChild(inp);
+            } else { sum.innerHTML += cat + (finalTasks.every(t => t.done >= t.max) ? ' ✓' : ''); }
+
+            const list = document.createElement('div'); list.className = "sort-list"; list.dataset.cat = cat;
+            finalTasks.forEach(t => {
+                const card = document.createElement('div'); card.className = `task-card type-${t.type} ${t.done >= t.max ? 'complete' : ''}`; card.dataset.id = t.id;
+                let tag = t.type === 'thu' ? `<span class="type-tag tag-thu">THU</span>` : t.type === 'sat' ? `<span class="type-tag tag-sat">SAT</span>` : "";
+                card.innerHTML = `
+                    <div class="drag-handle">≡</div>
+                    <div class="t-info">
+                        <div class="view-ui t-char-tag">${t.char || 'GB'}</div>
+                        <div class="view-ui t-name">${t.name} ${tag}</div>
+                        <div class="view-ui pips">${Array.from({length:t.max}, (_,i) => `<div class="pip ${i<t.done?'on':''}"></div>`).join('')}</div>
+                        <div class="edit-ui">
+                            <input type="text" class="inp-s" style="flex:1" value="${t.name}" onchange="upd(${t.id},'name',this.value)">
+                            <select class="inp-s" onchange="upd(${t.id},'char',this.value)">
+                                <option value="">Global</option>
+                                ${chars.map(c => `<option value="${c}" ${t.char === c ? 'selected' : ''}>${c}</option>`).join('')}
+                            </select>
+                            <select class="inp-s" onchange="upd(${t.id},'type',this.value)">
+                                <option value="daily" ${t.type==='daily'?'selected':''}>Daily</option>
+                                <option value="thu" ${t.type==='thu'?'selected':''}>Thu Weekly</option>
+                                <option value="sat" ${t.type==='sat'?'selected':''}>Sat Weekly</option>
+                            </select>
+                            <input type="number" class="inp-s" style="width:30px" value="${t.max}" onchange="upd(${t.id},'max',this.value)">
+                            <button onclick="del(${t.id})" style="color:red; background:none; border:none; cursor:pointer;">×</button>
+                        </div>
+                        <div class="prog-bar" style="width:${(t.done/t.max)*100}%"></div>
+                    </div>
+                    <div class="view-ui" style="display:flex; align-items:center; gap:5px;">
+                        <button class="btn-c" onclick="mod(${t.id},-1)">-</button>
+                        <div style="font-family:'JetBrains Mono'; font-size:10px; width:15px; text-align:center;">${t.done}</div>
+                        <button class="btn-c" onclick="mod(${t.id},1)">+</button>
+                    </div>`;
+                list.appendChild(card);
+            });
+            if(isEdit) { const add = document.createElement('button'); add.className = "tab-btn active"; add.style="width:100%; border:1px dashed #222"; add.innerText = "+ TASK"; add.onclick = () => addTask(cat); list.appendChild(add); }
+            det.append(sum, list); wrap.appendChild(det); cont.appendChild(wrap);
+            new Sortable(list, { group: 'tasks', handle: '.drag-handle', animation: 150, onEnd: saveTaskOrder });
+        });
+        new Sortable(cont, { handle: '.group-handle', animation: 150, onEnd: saveCatOrder });
+        renderSidebar();
+    }
+
+    function renderSidebar() {
+        const list = document.getElementById('sidebar-list'); list.innerHTML = '';
+        const visible = tasks.filter(t => (t.done < t.max) && (currentView === 'daily' ? t.type === 'daily' : t.type !== 'daily') && (activeFilter === "ALL" || t.char === activeFilter));
+        let catsInSidebar = [...new Set(visible.map(t => t.cat))].sort((a,b) => catOrder.indexOf(a) - catOrder.indexOf(b));
+        catsInSidebar.forEach(cat => {
+            const divCat = document.createElement('div'); divCat.className = 'side-cat'; divCat.innerText = cat; list.appendChild(divCat);
+            visible.filter(t => t.cat === cat).forEach(t => {
+                const divT = document.createElement('div'); divT.className = 'side-task'; divT.innerText = t.name; divT.onclick = () => jumpTo(t.id, cat); list.appendChild(divT);
+            });
+        });
+    }
+
+    function jumpTo(taskId, catName) {
+        const wrap = document.querySelector(`.group-wrap[data-catname="${catName}"]`); if(!wrap) return;
+        const det = wrap.querySelector('details'); det.open = true; collapsed[catName] = true;
+        const card = document.querySelector(`.task-card[data-id="${taskId}"]`);
+        if(card) { card.scrollIntoView({ behavior: 'smooth', block: 'center' }); card.classList.add('highlight'); setTimeout(() => card.classList.remove('highlight'), 1500); }
+    }
+
+    function mod(id, d) { const t = tasks.find(x => x.id == id); t.done = Math.max(0, Math.min(t.max, t.done + d)); pushData(); }
+    function upd(id, f, v) { const t = tasks.find(x => x.id == id); t[f] = (f==='max'?parseInt(v):v); pushData(); }
+    function del(id) { tasks = tasks.filter(x => x.id != id); pushData(); }
+    function addTask(cat) { tasks.push({ id: Date.now(), name: "New Task", cat, done: 0, max: 1, type: currentView === 'daily' ? "daily" : "thu", char: chars[0] }); pushData(); }
+    function addCat() { const i = document.getElementById('new-cat'); if(i.value.trim()){ addTask(i.value.trim()); i.value=''; } }
+    function updateChars(v) { chars = v.split(',').map(s => s.trim()).filter(s => s !== ""); pushData(); }
+    function setView(v) { currentView = v; render(); }
+    function setF(f) { activeFilter = f; render(); }
+    function toggleMgmt() { document.getElementById('app').classList.toggle('show-mgmt'); document.getElementById('mgmt-panel').style.display = document.getElementById('app').classList.contains('show-mgmt') ? 'block' : 'none'; render(); }
+    function rescueData() { const raw = document.getElementById('import-box').value; try { const d = JSON.parse(raw); tasks = d.tasks; chars = d.chars; catOrder = d.catOrder || []; pushData(); alert("Data imported!"); } catch(e) { alert("Parse Error!"); } }
+    function saveTaskOrder() { let nt = []; const hidden = tasks.filter(t => currentView === 'daily' ? t.type !== 'daily' : t.type === 'daily'); document.querySelectorAll('.task-card').forEach(c => { const t = tasks.find(x => x.id == c.dataset.id); t.cat = c.closest('.sort-list').dataset.cat; nt.push(t); }); tasks = [...nt, ...hidden]; pushData(); }
+    function saveCatOrder() { catOrder = Array.from(document.querySelectorAll('.group-wrap')).map(w => w.dataset.catname); pushData(); }
+
+    function updateEngine() {
+        const now = new Date();
+        const pac = new Date(now.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
+        const getNextReset = (day) => {
+            let d = new Date(pac); d.setHours(7,0,0,0);
+            if (day !== null) { while(d.getDay() !== day) d.setDate(d.getDate()+1); }
+            if (pac >= d) d.setDate(d.getDate() + (day !== null ? 7 : 1));
+            return d;
+        };
+        const formatDiff = (target) => {
+            const ms = target - pac;
+            const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000), s = Math.floor((ms%60000)/1000);
+            return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        };
+        document.getElementById('timer-daily').innerText = formatDiff(getNextReset(null));
+        document.getElementById('timer-thu').innerText = formatDiff(getNextReset(4));
+        document.getElementById('timer-sat').innerText = formatDiff(getNextReset(6));
+    }
+
+    setInterval(updateEngine, 1000);
+    setInterval(checkAndReset, 60000);
+    updateEngine();
+    </script>
+</body>
+</html>
