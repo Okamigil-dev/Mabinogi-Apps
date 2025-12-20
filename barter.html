@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Barter Material Sync</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-
+    
     <!-- Firebase Modular SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -20,7 +20,7 @@
             --bg: #050505;
             --sidebar-bg: #0a0a0a;
             --card-bg: #111;
-            --accent: #00f3ff;
+            --accent: #00f3ff; /* Neon Cyan */
             --yellow: #ffd700;
             --border: rgba(255,255,255,0.05);
             --text-main: #d0d0d0;
@@ -29,13 +29,9 @@
             --slot-size: 54px;
         }
 
-        * {
-            box-sizing: border-box;
-            outline: none;
-        }
-
+        * { box-sizing: border-box; outline: none; }
         body {
-            background-color: var(--bg);
+            background-color: #000; /* Darker pitch black for outside the container */
             color: var(--text-main);
             font-family: 'Inter', sans-serif;
             margin: 0;
@@ -44,487 +40,169 @@
             height: 100vh;
         }
 
-        .header-bar {
-            background: var(--sidebar-bg);
-            border-bottom: 1px solid var(--border);
-            height: 65px;
-            flex-shrink: 0;
-        }
-
-        .neon-line {
-            height: 2px;
-            background: var(--accent);
-            box-shadow: 0 0 15px var(--accent);
-            width: 100%;
-        }
-
-        .title-section {
+        /* --- App Wrapper to limit horizontal size --- */
+        .app-shell {
+            max-width: 1500px;
+            margin: 0 auto;
+            background-color: var(--bg);
+            height: 100vh;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 20px;
+            flex-direction: column;
+            border-left: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            position: relative;
         }
 
-        .main-title {
-            font-size: 16px;
-            font-weight: 900;
-            color: var(--accent);
-            letter-spacing: 4px;
-            text-transform: uppercase;
+        /* Prevent text selection during rapid clicking */
+        .hub-btn, .item-entry, .slot, .item-icon, .toggle-container, select, input, .town-visual-box {
+            user-select: none;
+            -webkit-user-select: none;
         }
 
-        .sync-indicator {
-            font-family: 'JetBrains Mono';
-            font-size: 9px;
-            color: var(--text-dim);
-        }
-
-            .sync-indicator.active {
-                color: var(--accent);
-                text-shadow: 0 0 5px var(--accent);
-            }
-
-            .sync-indicator.saving {
-                color: var(--yellow);
-                text-shadow: 0 0 5px var(--yellow);
-                opacity: 0.8;
-            }
+        /* --- Header --- */
+        .header-bar { background: var(--sidebar-bg); border-bottom: 1px solid var(--border); height: 65px; flex-shrink: 0; }
+        .neon-line { height: 2px; background: var(--accent); box-shadow: 0 0 15px var(--accent); width: 100%; }
+        .title-section { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; }
+        .main-title { font-size: 16px; font-weight: 900; color: var(--accent); letter-spacing: 4px; text-transform: uppercase; }
+        
+        .sync-indicator { font-family: 'JetBrains Mono'; font-size: 9px; color: var(--text-dim); }
+        .sync-indicator.active { color: var(--accent); text-shadow: 0 0 5px var(--accent); }
+        .sync-indicator.saving { color: var(--yellow); text-shadow: 0 0 5px var(--yellow); opacity: 0.8; }
 
         .hub-btn {
-            color: #fff;
-            text-decoration: none;
-            font-weight: 900;
-            font-size: 10px;
-            background: #1a1a1a;
-            border: 1px solid var(--border);
-            padding: 5px 15px;
-            transition: 0.2s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            color: #fff; text-decoration: none; font-weight: 900; font-size: 10px; 
+            background: #1a1a1a; border: 1px solid var(--border); padding: 5px 15px; 
+            transition: 0.2s; text-transform: uppercase; letter-spacing: 1px;
+            cursor: pointer;
         }
+        .hub-btn:hover { background: var(--accent); color: #000; box-shadow: 0 0 12px var(--accent); border-color: var(--accent); }
 
-            .hub-btn:hover {
-                background: var(--accent);
-                color: #000;
-                box-shadow: 0 0 12px var(--accent);
-                border-color: var(--accent);
-            }
-
+        /* --- Layout Grid --- */
         .interface-grid {
             display: grid;
             grid-template-columns: 320px 1fr 380px;
             gap: var(--panel-gap);
             background: var(--border);
-            height: calc(100vh - 65px);
-        }
-
-        .panel {
-            background: var(--card-bg);
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
+            flex-grow: 1;
             overflow: hidden;
         }
 
-        .panel-header {
-            font-size: 10px;
-            font-weight: 900;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-shrink: 0;
+        .panel { background: var(--card-bg); display: flex; flex-direction: column; padding: 20px; overflow: hidden; }
+        .panel-header { 
+            font-size: 10px; font-weight: 900; color: var(--text-dim); 
+            text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px;
+            display: flex; align-items: center; gap: 10px; flex-shrink: 0;
         }
+        .panel-header::after { content: ''; height: 1px; background: var(--border); flex-grow: 1; }
 
-            .panel-header::after {
-                content: '';
-                height: 1px;
-                background: var(--border);
-                flex-grow: 1;
-            }
+        .scroll-area { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
 
-        .scroll-area {
-            overflow-y: auto;
-            flex-grow: 1;
-            padding-right: 5px;
-        }
-
-        .buff-row-side {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 20px;
-            flex-shrink: 0;
-        }
-
+        /* --- Buffs --- */
+        .buff-row-side { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; flex-shrink: 0; }
         .toggle-container {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            font-size: 10px;
-            color: var(--text-dim);
-            user-select: none;
-            width: 45%;
+            display: flex; align-items: center; gap: 8px; cursor: pointer;
+            font-size: 10px; color: var(--text-dim); width: 45%;
         }
-
-            .toggle-container:hover {
-                color: #fff;
-            }
-
-        .toggle-input {
-            display: none;
-        }
-
+        .toggle-container:hover { color: #fff; }
+        .toggle-input { display: none; }
         .toggle-slider {
-            width: 28px;
-            height: 16px;
-            background: #222;
-            border: 1px solid #333;
-            border-radius: 99px;
-            position: relative;
-            transition: 0.2s;
-            flex-shrink: 0;
+            width: 28px; height: 16px; background: #222; border: 1px solid #333;
+            border-radius: 99px; position: relative; transition: 0.2s; flex-shrink: 0;
         }
-
-            .toggle-slider::after {
-                content: '';
-                position: absolute;
-                top: 2px;
-                left: 2px;
-                width: 10px;
-                height: 10px;
-                background: #666;
-                border-radius: 50%;
-                transition: 0.2s;
-            }
-
-        .toggle-input:checked + .toggle-slider {
-            background: rgba(0, 243, 255, 0.15);
-            border-color: var(--accent);
+        .toggle-slider::after {
+            content: ''; position: absolute; top: 2px; left: 2px; width: 10px; height: 10px;
+            background: #666; border-radius: 50%; transition: 0.2s;
         }
+        .toggle-input:checked + .toggle-slider { background: rgba(0, 243, 255, 0.15); border-color: var(--accent); }
+        .toggle-input:checked + .toggle-slider::after { transform: translateX(12px); background: var(--accent); box-shadow: 0 0 5px var(--accent); }
 
-            .toggle-input:checked + .toggle-slider::after {
-                transform: translateX(12px);
-                background: var(--accent);
-                box-shadow: 0 0 5px var(--accent);
-            }
-
-        .town-header-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-            flex-shrink: 0;
-        }
-
+        /* --- Catalog --- */
+        .town-header-container { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; flex-shrink: 0; }
         .town-visual-box {
-            width: 44px;
-            height: 44px;
-            background: #000;
-            border: 1px solid var(--accent);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
+            width: 44px; height: 44px; background: #000; border: 1px solid var(--accent);
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
             box-shadow: 0 0 10px rgba(0, 243, 255, 0.1);
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
+            background-size: contain; background-repeat: no-repeat; background-position: center;
         }
-
-        .search-input {
-            width: 100%;
-            background: #000;
-            border: 1px solid #333;
-            color: var(--accent);
-            padding: 8px;
-            font-family: 'JetBrains Mono';
-            font-size: 11px;
+        .search-input { 
+            width: 100%; background: #000; border: 1px solid #333; 
+            color: var(--accent); padding: 8px; font-family: 'JetBrains Mono'; font-size: 11px;
         }
-
         .item-entry {
-            background: #0d0d0d;
-            border: 1px solid var(--border);
-            padding: 10px;
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            transition: 0.2s;
-            cursor: pointer;
-            border-left: 2px solid transparent;
+            background: #0d0d0d; border: 1px solid var(--border);
+            padding: 10px; display: flex; gap: 12px; align-items: center;
+            transition: 0.1s; cursor: pointer; border-left: 2px solid transparent;
         }
-
-            .item-entry:hover {
-                background: #161616;
-                border-left-color: var(--accent);
-            }
-
-            .item-entry.at-limit {
-                opacity: 0.4;
-                cursor: not-allowed;
-                border-left-color: #ff4444;
-            }
-
-        .item-name {
-            font-weight: 700;
-            color: #eee;
-            font-size: 11px;
-        }
-
-        .item-limit-tag {
-            font-size: 8px;
-            color: var(--text-dim);
-        }
-
+        .item-entry:hover { background: #161616; border-left-color: var(--accent); }
+        .item-entry.at-limit { opacity: 0.4; cursor: not-allowed; border-left-color: #ff4444; }
+        .item-name { font-weight: 700; color: #eee; font-size: 11px; }
+        .item-limit-tag { font-size: 8px; color: var(--text-dim); }
+        
         .icon-square {
-            width: 32px;
-            height: 32px;
-            background: #000;
-            border: 1px solid #222;
-            flex-shrink: 0;
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><rect width="32" height="32" fill="%23000"/><path d="M8 8h16v16H8z" fill="none" stroke="%23222"/></svg>');
+            width: 32px; height: 32px; background: #000; border: 1px solid #222;
+            flex-shrink: 0; background-size: contain; background-repeat: no-repeat; background-position: center;
         }
 
-        .inventory-window {
-            background: #000;
-            border: 1px solid var(--border);
-            padding: 15px;
-            position: relative;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
+        /* --- Inventory Grid --- */
+        .inventory-window { 
+            background: #000; border: 1px solid var(--border); 
+            padding: 15px; position: relative; flex-grow: 1; 
+            display: flex; flex-direction: column; overflow-y: auto;
         }
-
         .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, var(--slot-size));
-            gap: 2px;
-            background: #151515;
-            padding: 2px;
-            border: 1px solid #222;
+            display: grid; grid-template-columns: repeat(auto-fill, var(--slot-size));
+            gap: 2px; background: #151515; padding: 2px; border: 1px solid #222;
         }
-
         .slot {
-            width: var(--slot-size);
-            height: var(--slot-size);
-            background: #0a0a0a;
-            border: 1px solid #1a1a1a;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: var(--slot-size); height: var(--slot-size); background: #0a0a0a; border: 1px solid #1a1a1a;
+            position: relative; display: flex; align-items: center; justify-content: center;
         }
-
-            .slot.filled {
-                border-color: rgba(0, 243, 255, 0.3);
-                background: #111;
-            }
-
-        .item-icon {
-            width: 48px;
-            height: 48px;
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            cursor: pointer;
-            position: relative;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><rect width="48" height="48" fill="none"/><path d="M14 14 h20 v20 h-20 z" fill="none" stroke="%23222" stroke-width="1"/></svg>');
+        .slot.filled { border-color: rgba(0, 243, 255, 0.3); background: #111; }
+        .item-icon { 
+            width: 48px; height: 48px; background-size: contain; background-repeat: no-repeat; background-position: center; 
+            cursor: pointer; position: relative;
         }
-
-        .stack-label {
-            position: absolute;
-            bottom: 2px;
-            right: 4px;
-            font-family: 'JetBrains Mono';
-            font-size: 10px;
-            font-weight: 900;
-            color: #fff;
-            text-shadow: 1px 1px 2px #000;
-            pointer-events: none;
-        }
+        .stack-label { position: absolute; bottom: 2px; right: 4px; font-family: 'JetBrains Mono'; font-size: 10px; font-weight: 900; color: #fff; text-shadow: 1px 1px 2px #000; pointer-events: none; }
 
         .logistics-hud {
-            margin-top: 15px;
-            padding: 12px;
-            background: rgba(255,255,255,0.02);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            flex-shrink: 0;
+            margin-top: 15px; padding: 12px; background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border); border-radius: 4px; flex-shrink: 0;
+        }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 10px; font-family: 'JetBrains Mono'; }
+        .progress-bar { height: 4px; background: #151515; margin-top: 5px; position: relative; border-radius: 2px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
+        .progress-fill.over { background: #ff4444; box-shadow: 0 0 8px #ff4444; }
+
+        .trip-planning { 
+            margin-top: 12px; background: rgba(0, 243, 255, 0.05); border: 1px dashed rgba(0, 243, 255, 0.2); 
+            padding: 8px; font-family: 'JetBrains Mono'; font-size: 10px; color: var(--accent); line-height: 1.6;
         }
 
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-            font-size: 10px;
-            font-family: 'JetBrains Mono';
-        }
-
-        .progress-bar {
-            height: 4px;
-            background: #151515;
-            margin-top: 5px;
-            position: relative;
-            border-radius: 2px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: var(--accent);
-            transition: width 0.3s;
-        }
-
-            .progress-fill.over {
-                background: #ff4444;
-                box-shadow: 0 0 8px #ff4444;
-            }
-
-        .trip-planning {
-            margin-top: 12px;
-            background: rgba(0, 243, 255, 0.05);
-            border: 1px dashed rgba(0, 243, 255, 0.2);
-            padding: 8px;
-            font-family: 'JetBrains Mono';
-            font-size: 10px;
-            color: var(--accent);
-            line-height: 1.6;
-        }
-
-        .materials-dual-layout {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            flex-grow: 1;
-            overflow: hidden;
-        }
-
-        .table-container {
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-family: 'JetBrains Mono';
-            font-size: 11px;
-            margin-bottom: 20px;
-        }
-
-            .data-table thead {
-                position: sticky;
-                top: 0;
-                background: #080808;
-                z-index: 10;
-            }
-
-            .data-table th {
-                text-align: left;
-                color: var(--text-dim);
-                font-size: 9px;
-                padding-bottom: 8px;
-                border-bottom: 1px solid var(--border);
-            }
-
-            .data-table td {
-                padding: 6px 0;
-                border-bottom: 1px solid rgba(255,255,255,0.02);
-            }
-
-        .owned-input {
-            background: #000;
-            border: 1px solid #333;
-            color: #fff;
-            width: 45px;
-            text-align: center;
-            font-size: 10px;
-            padding: 2px;
-        }
-
-        .need-qty {
-            color: #888;
-            font-weight: bold;
-        }
-
-        .status-cell {
-            font-weight: 900;
-        }
-
-            .status-cell.deficit {
-                color: #ff4444;
-            }
-
-            .status-cell.ready {
-                color: #00ff88;
-            }
-
-        .icon-small {
-            width: 16px;
-            height: 16px;
-            display: inline-block;
-            vertical-align: middle;
-            margin-right: 5px;
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><rect width="16" height="16" fill="none" stroke="%23333" stroke-width="1"/></svg>');
-        }
+        /* --- Tables --- */
+        .materials-dual-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex-grow: 1; overflow: hidden; }
+        .table-container { display: flex; flex-direction: column; overflow: hidden; }
+        .data-table { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono'; font-size: 11px; margin-bottom: 20px;}
+        .data-table thead { position: sticky; top: 0; background: #080808; z-index: 10; }
+        .data-table th { text-align: left; color: var(--text-dim); font-size: 9px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .data-table td { padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.02); }
+        .owned-input { background: #000; border: 1px solid #333; color: #fff; width: 45px; text-align: center; font-size: 10px; padding: 2px;}
+        .need-qty { color: #888; font-weight: bold; }
+        .status-cell { font-weight: 900; }
+        .status-cell.deficit { color: #ff4444; }
+        .status-cell.ready { color: #00ff88; }
+        .icon-small { width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 5px; background-size: contain; background-repeat: no-repeat; }
 
         #item-tooltip {
-            position: fixed;
-            z-index: 10000;
-            background: rgba(0, 0, 0, 0.95);
-            border: 1px solid var(--accent);
-            padding: 10px;
-            pointer-events: none;
-            display: none;
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
-            min-width: 160px;
+            position: fixed; z-index: 10000; background: rgba(0, 0, 0, 0.95); border: 1px solid var(--accent); padding: 10px;
+            pointer-events: none; display: none; box-shadow: 0 0 15px rgba(0, 243, 255, 0.2); min-width: 160px;
         }
+        .tt-name { color: #fff; font-weight: 900; font-size: 11px; margin-bottom: 5px; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+        .tt-stat { font-family: 'JetBrains Mono'; font-size: 9px; color: var(--text-dim); display: flex; justify-content: space-between; gap: 20px; }
+        .tt-stat b { color: var(--accent); }
 
-        .tt-name {
-            color: #fff;
-            font-weight: 900;
-            font-size: 11px;
-            margin-bottom: 5px;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 5px;
-        }
-
-        .tt-stat {
-            font-family: 'JetBrains Mono';
-            font-size: 9px;
-            color: var(--text-dim);
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
-        }
-
-            .tt-stat b {
-                color: var(--accent);
-            }
-
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #222;
-            border-radius: 10px;
-        }
-
-            ::-webkit-scrollbar-thumb:hover {
-                background: var(--accent);
-            }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
     </style>
 </head>
 <body>
@@ -535,161 +213,159 @@
         <div class="tt-stat">Max Stack: <b id="tt-stack">0</b></div>
     </div>
 
-    <div class="header-bar">
-        <div class="neon-line"></div>
-        <div class="title-section">
-            <a href="index.html" class="hub-btn">Hub</a>
-            <div style="text-align: center;">
-                <div class="main-title">Barter Material Tracker</div>
-                <div id="sync-status" class="sync-indicator">OFFLINE_LOCAL</div>
-            </div>
-            <div style="width:110px"></div>
-        </div>
-    </div>
-
-    <div class="interface-grid">
-        <div class="panel">
-            <div class="panel-header">Trade Posts</div>
-            <div class="town-header-container">
-                <div class="town-visual-box" id="town-icon-box"></div>
-                <select id="town-select" class="search-input" style="margin:0">
-                    <option value="Karu Forest">Karu Forest</option>
-                    <option value="Oasis">Oasis</option>
-                    <option value="Lake Calida">Lake Calida</option>
-                    <option value="Pera Volcano">Pera Volcano</option>
-                </select>
-            </div>
-            <div class="panel-header">Catalog</div>
-            <div class="scroll-area">
-                <div id="catalog-container" class="item-list"></div>
-            </div>
-        </div>
-
-        <div class="panel" style="background: #080808;">
-            <div class="panel-header">Logistics Config</div>
-            <div style="display: flex; gap: 15px; margin-bottom: 25px; flex-shrink: 0;">
-                <div style="flex: 1;">
-                    <label style="font-size: 8px; color: var(--text-dim); font-weight: 900; letter-spacing: 1px;">PREP_DURATION (WEEKS)</label>
-                    <input type="number" id="week-mult" value="1" min="1" class="search-input" style="margin-top: 5px;">
+    <!-- Centered Shell -->
+    <div class="app-shell">
+        <div class="header-bar">
+            <div class="neon-line"></div>
+            <div class="title-section">
+                <a href="index.html" class="hub-btn">Hub</a>
+                <div style="text-align: center;">
+                    <div class="main-title">Barter Material Tracker</div>
+                    <div id="sync-status" class="sync-indicator">OFFLINE_LOCAL</div>
                 </div>
-                <div style="flex: 1.5;">
-                    <label style="font-size: 8px; color: var(--text-dim); font-weight: 900; letter-spacing: 1px;">TARGET_DESTINATION</label>
-                    <select id="dest-select" class="search-input" style="margin-top: 5px;">
-                        <option value="None">None (Priority by Weight)</option>
-                        <option value="Tir Chonaill">Tir Chonaill</option>
-                        <option value="Dunbarton">Dunbarton</option>
-                        <option value="Bangor">Bangor</option>
-                        <option value="Emain Macha">Emain Macha</option>
-                        <option value="Taillteann">Taillteann</option>
-                        <option value="Tara">Tara</option>
-                        <option value="Cobh">Cobh</option>
-                        <option value="Belvast">Belvast</option>
+                <div style="width:110px"></div>
+            </div>
+        </div>
+
+        <div class="interface-grid">
+            <!-- LEFT: CATALOG -->
+            <div class="panel">
+                <div class="panel-header">Trade Posts</div>
+                <div class="town-header-container">
+                    <div class="town-visual-box" id="town-icon-box"></div>
+                    <select id="town-select" class="search-input" style="margin:0">
+                        <option value="Karu Forest">Karu Forest</option>
+                        <option value="Oasis">Oasis</option>
+                        <option value="Lake Calida">Lake Calida</option>
+                        <option value="Pera Volcano">Pera Volcano</option>
                     </select>
                 </div>
+                <div class="panel-header">Catalog</div>
+                <div class="scroll-area">
+                    <div id="catalog-container" class="item-list"></div>
+                </div>
             </div>
 
-            <div class="materials-dual-layout">
-                <div class="table-container">
-                    <div class="panel-header" style="color: var(--accent); opacity: 0.8;">Base Resources (Raw)</div>
-                    <div class="scroll-area">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>ITEM</th>
-                                    <th style="text-align:center;">OWNED</th>
-                                    <th style="text-align:center;">NEED</th>
-                                    <th style="text-align:right;">STATUS</th>
-                                </tr>
-                            </thead>
-                            <tbody id="raw-tbody"></tbody>
-                        </table>
+            <!-- CENTER: MATERIALS -->
+            <div class="panel" style="background: #080808;">
+                <div class="panel-header">Logistics Config</div>
+                <div style="display: flex; gap: 15px; margin-bottom: 25px; flex-shrink: 0;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 8px; color: var(--text-dim); font-weight: 900; letter-spacing: 1px;">PREP_DURATION (WEEKS)</label>
+                        <input type="number" id="week-mult" value="1" min="1" class="search-input" style="margin-top: 5px;">
+                    </div>
+                    <div style="flex: 1.5;">
+                        <label style="font-size: 8px; color: var(--text-dim); font-weight: 900; letter-spacing: 1px;">TARGET_DESTINATION</label>
+                        <select id="dest-select" class="search-input" style="margin-top: 5px;">
+                            <option value="None">None (Priority by Weight)</option>
+                            <option value="Tir Chonaill">Tir Chonaill</option>
+                            <option value="Dunbarton">Dunbarton</option>
+                            <option value="Bangor">Bangor</option>
+                            <option value="Emain Macha">Emain Macha</option>
+                            <option value="Taillteann">Taillteann</option>
+                            <option value="Tara">Tara</option>
+                            <option value="Cobh">Cobh</option>
+                            <option value="Belvast">Belvast</option>
+                        </select>
                     </div>
                 </div>
-                <div class="table-container">
-                    <div class="panel-header" style="color: #fff; opacity: 0.8;">Barter Components</div>
-                    <div class="scroll-area">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>INGREDIENT</th>
-                                    <th style="text-align:center;">OWNED</th>
-                                    <th style="text-align:center;">NEED</th>
-                                    <th style="text-align:right;">STATUS</th>
-                                </tr>
-                            </thead>
-                            <tbody id="crafted-tbody"></tbody>
-                        </table>
+
+                <div class="materials-dual-layout">
+                    <div class="table-container">
+                        <div class="panel-header" style="color: var(--accent); opacity: 0.8;">Base Resources (Raw)</div>
+                        <div class="scroll-area">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>ITEM</th>
+                                        <th style="text-align:center;">OWNED</th>
+                                        <th style="text-align:center;">NEED</th>
+                                        <th style="text-align:right;">STATUS</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="raw-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <div class="panel-header" style="color: #fff; opacity: 0.8;">Barter Components</div>
+                        <div class="scroll-area">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>INGREDIENT</th>
+                                        <th style="text-align:center;">OWNED</th>
+                                        <th style="text-align:center;">NEED</th>
+                                        <th style="text-align:right;">STATUS</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="crafted-tbody"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="panel">
-            <div class="panel-header">Transport selection</div>
-            <select id="transport-select" class="search-input">
-                <option value="Back Pack">Back Pack</option>
-                <option value="Hand Cart">Hand Cart</option>
-                <option value="Wagon">Wagon</option>
-                <option value="Elephant">Elephant</option>
-                <option value="Husky">Husky</option>
-                <option value="Camel">Camel</option>
-                <option value="Skiff">Skiff</option>
-            </select>
+            <!-- RIGHT: LOGISTICS -->
+            <div class="panel">
+                <div class="panel-header">Transport selection (Auto)</div>
+                <select id="transport-select" class="search-input" style="pointer-events: none; opacity: 0.8;">
+                    <option value="Back Pack">Back Pack</option>
+                    <option value="Hand Cart">Hand Cart</option>
+                    <option value="Wagon">Wagon</option>
+                    <option value="Elephant">Elephant</option>
+                    <option value="Husky">Husky</option>
+                    <option value="Camel">Camel</option>
+                    <option value="Skiff">Skiff</option>
+                </select>
 
-            <div class="panel-header" style="margin-top: 20px;">Active Buffs</div>
-            <div class="buff-row-side">
-                <label class="toggle-container">
-                    <input type="checkbox" id="buff-gm" class="toggle-input">
-                    <div class="toggle-slider"></div>
-                    <span>Grandmaster</span>
-                </label>
-                <label class="toggle-container">
-                    <input type="checkbox" id="buff-william" class="toggle-input">
-                    <div class="toggle-slider"></div>
-                    <span>William</span>
-                </label>
-                <label class="toggle-container">
-                    <input type="checkbox" id="buff-alpaca" class="toggle-input">
-                    <div class="toggle-slider"></div>
-                    <span>Alpaca</span>
-                </label>
-            </div>
-
-            <div class="panel-header">Optimized Loadout (Trip 1)</div>
-            <div class="inventory-window">
-                <div id="grid" class="grid-container"></div>
-                <div class="logistics-hud">
-                    <div class="stat-row"><span>LOAD_WEIGHT</span><span id="weight-label">0 / 0 kg</span></div>
-                    <div class="progress-bar"><div id="weight-fill" class="progress-fill"></div></div>
-                    <div class="stat-row" style="margin-top: 12px;"><span>SLOT_USAGE</span><span id="slot-label">0 / 0 Slots</span></div>
-                    <div class="progress-bar"><div id="slot-fill" class="progress-fill"></div></div>
-                    <div id="trip-calculator" class="trip-planning">PLANNING_IDLE...</div>
+                <div class="panel-header" style="margin-top: 20px;">Active Buffs</div>
+                <div class="buff-row-side">
+                    <label class="toggle-container">
+                        <input type="checkbox" id="buff-gm" class="toggle-input">
+                        <div class="toggle-slider"></div>
+                        <span>Grandmaster</span>
+                    </label>
+                    <label class="toggle-container">
+                        <input type="checkbox" id="buff-william" class="toggle-input">
+                        <div class="toggle-slider"></div>
+                        <span>William</span>
+                    </label>
+                    <label class="toggle-container">
+                        <input type="checkbox" id="buff-alpaca" class="toggle-input">
+                        <div class="toggle-slider"></div>
+                        <span>Alpaca</span>
+                    </label>
                 </div>
-            </div>
-            <div style="margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border); text-align: center; opacity: 0.2;">
-                <div id="user-display" style="font-family: 'JetBrains Mono'; font-size: 8px;">GUEST_MODE</div>
+
+                <div class="panel-header">Run Loadout</div>
+                <div class="inventory-window">
+                    <div id="grid" class="grid-container"></div>
+                    <div class="logistics-hud">
+                        <div class="stat-row"><span>RUN_WEIGHT</span><span id="weight-label">0 / 0 kg</span></div>
+                        <div class="progress-bar"><div id="weight-fill" class="progress-fill"></div></div>
+                        <div class="stat-row" style="margin-top: 12px;"><span>SLOT_USAGE</span><span id="slot-label">0 / 0 Slots</span></div>
+                        <div class="progress-bar"><div id="slot-fill" class="progress-fill"></div></div>
+                        <div id="trip-calculator" class="trip-planning">SELECT ITEMS TO PLAN...</div>
+                    </div>
+                </div>
+                <div style="margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border); text-align: center; opacity: 0.2;">
+                    <div id="user-display" style="font-family: 'JetBrains Mono'; font-size: 8px;">GUEST_MODE</div>
+                </div>
             </div>
         </div>
     </div>
 
     <script type="module">
-        // --- 1. DATASETS & ASSETS ---
-        // Path logic optimized for Github Pages local assets
+        // --- 1. CONFIG & DATA ---
         const getIconUrl = (name, category = 'items', townKey = '') => {
             const cleanName = name.replace(/\s+/g, '_');
-
-            // Trade Post Icons
-            if (category === 'towns') {
-                return `images/tradeposts/Commerce_${cleanName}_Icon.png`;
-            }
-
-            // Barter Specific Items
+            if (category === 'towns') return `images/tradeposts/Commerce_${cleanName}_Icon.png`;
             if (category === 'barter') {
-                const subfolder = townKey.split(' ')[0].toLowerCase(); // "Karu Forest" -> "karu"
+                const townSubfolderMap = { "Karu Forest": "karu", "Oasis": "oasis", "Lake Calida": "calida", "Pera Volcano": "pera" };
+                const subfolder = townSubfolderMap[townKey] || 'items';
                 return `images/tradeposts/barter/${subfolder}/${cleanName}_Icon.png`;
             }
-
-            // Default Ingredients/Raw
             return `images/tradeposts/items/${cleanName}_Icon.png`;
         };
 
@@ -699,19 +375,19 @@
             { town: "Pera Volcano", item: "Ixion Horn", weight: 20, stack: 7, limit: 10, mats: { "Marionette 500 Potion": 3, "Gold Plate": 5 } },
             { town: "Pera Volcano", item: "Volcano Lizard Egg", weight: 25, stack: 7, limit: 8, mats: { "Glittering Paper": 5, "Finest Fabric": 5, "HP 500 Potion": 2 } },
             { town: "Pera Volcano", item: "Raspa Black Leopard Leather", weight: 30, stack: 5, limit: 3, mats: { "Mutant": 1, "Harmonious Cosmos Perfume": 2, "Special Firewood": 3 } },
-
+            
             { town: "Oasis", item: "Fine Sand", weight: 15, stack: 10, limit: 25, mats: { "Stamina 500 Potion": 3, "Braid": 2 } },
             { town: "Oasis", item: "Prison Ghost Wings", weight: 15, stack: 7, limit: 15, mats: { "Cotton Cushion Stuffing": 1, "Finest Silk": 2 } },
             { town: "Oasis", item: "Oasis Painting", weight: 20, stack: 7, limit: 10, mats: { "Finest Leather Strap": 1, "Tough Thread": 3 } },
             { town: "Oasis", item: "Cactus Flower", weight: 25, stack: 7, limit: 8, mats: { "Spirit Liqueur": 1, "Silver Plate": 2, "Fine Fabric": 4 } },
             { town: "Oasis", item: "Giant Canine Fossil", weight: 30, stack: 5, limit: 3, mats: { "Pet Playset": 1, "Hay Bale": 3, "Enchanted Firewood": 5 } },
-
+            
             { town: "Lake Calida", item: "Elvan Egg", weight: 15, stack: 10, limit: 25, mats: { "MP 500 Potion": 1, "Fine Firewood": 2 } },
             { town: "Lake Calida", item: "Calida Salmon", weight: 15, stack: 7, limit: 15, mats: { "Energy Converter": 1, "Purified Rabbit Foot": 1 } },
             { town: "Lake Calida", item: "Hot Spring Bath Bomb", weight: 20, stack: 7, limit: 10, mats: { "Sundew": 3, "Finest Vanilla Scented Candle": 2 } },
             { town: "Lake Calida", item: "Large Camping Tent", weight: 25, stack: 7, limit: 8, mats: { "Artificial Turf": 1, "Emerald Fuse": 1, "Fine Leather Strap": 5 } },
             { town: "Lake Calida", item: "Pink Salt", weight: 30, stack: 5, limit: 3, mats: { "Large Mythril Nail": 3, "Poison Tip Wyvern Ballista Bolt": 3, "Finest Firewood": 3 } },
-
+            
             { town: "Karu Forest", item: "Wooden Table", weight: 15, stack: 10, limit: 25, mats: { "Shrimp Taming Bait": 4, "Shyllien": 2 } },
             { town: "Karu Forest", item: "Wooden Craft", weight: 15, stack: 7, limit: 15, mats: { "Magic Parchment": 1, "Tough String": 2 } },
             { town: "Karu Forest", item: "Stone Horse Statue", weight: 20, stack: 7, limit: 10, mats: { "Hillwen Alloy": 2, "Wheat Flour": 5 } },
@@ -719,7 +395,6 @@
             { town: "Karu Forest", item: "Shellfish Fossil", weight: 30, stack: 5, limit: 3, mats: { "Energy Amplifier": 2, "Sturdy Loop": 1, "Magic Quill Pen": 5 } }
         ];
 
-        // Hydrate images based on naming pattern
         barterDb.forEach(b => b.img = getIconUrl(b.item, 'barter', b.town));
 
         const recipeDb = [
@@ -774,10 +449,13 @@
         ];
 
         const transportData = {
-            "Back Pack": { slots: 4, weight: 400 }, "Hand Cart": { slots: 6, weight: 800 },
-            "Wagon": { slots: 8, weight: 900 }, "Elephant": { slots: 7, weight: 1700 },
-            "Husky": { slots: 11, weight: 700 }, "Camel": { slots: 7, weight: 1400 },
-            "Skiff": { slots: 8, weight: 1200 }
+            "Back Pack": { slots: 4, weight: 400, speed: 100 },
+            "Hand Cart": { slots: 6, weight: 800, speed: 115 },
+            "Wagon": { slots: 8, weight: 900, speed: 135 },
+            "Elephant": { slots: 7, weight: 1700, speed: 110 },
+            "Husky": { slots: 11, weight: 700, speed: 165 },
+            "Camel": { slots: 7, weight: 1400, speed: 155 },
+            "Skiff": { slots: 8, weight: 1200, speed: 140 }
         };
 
         const townIcons = {
@@ -788,15 +466,15 @@
         };
 
         // --- 2. STATE ---
-        let currentCargo = [], ownedInventory = {}, activeBuffs = { gm: false, william: false, alpaca: false }, weekMult = 1, selectedTown = "Karu Forest", targetDest = "None", publicPrices = {}, debounceTimer = null;
+        let currentCargo = [], ownedInventory = {}, activeBuffs = { gm: false, william: false, alpaca: false }, weekMult = 1, selectedTown = "Karu Forest", targetDest = "None", debounceTimer = null;
         const DEBOUNCE_DELAY = 1500;
 
-        // --- 3. FIREBASE CORE ---
+        // --- 3. FIREBASE CORE (YOUR CONFIG) ---
         const { initializeApp, getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken, getFirestore, doc, setDoc, onSnapshot } = window.mabiFirebase;
-
+        
         let app, auth, db, appId;
         try {
-            const fbConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            const fbConfig = { 
                 apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM",
                 authDomain: "mabinogi-tracker.firebaseapp.com",
                 databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com",
@@ -809,10 +487,8 @@
             app = initializeApp(fbConfig);
             auth = getAuth(app);
             db = getFirestore(app);
-            appId = typeof __app_id !== 'undefined' ? __app_id : 'mabinogi-tracker';
-        } catch (e) {
-            console.warn("Firebase Init Skipped: Local only mode.");
-        }
+            appId = 'mabinogi-tracker';
+        } catch (e) { console.warn("Firebase Failed to Init."); }
 
         let user = null, isSaving = false;
 
@@ -823,49 +499,19 @@
                     document.getElementById('user-display').textContent = user.isAnonymous ? "GUEST_SESSION" : `AUTH_ID: ${user.uid}`;
                     document.getElementById('sync-status').textContent = 'CONNECTED';
                     document.getElementById('sync-status').classList.add('active');
-
                     onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'barterState'), (snap) => {
-                        if (snap.exists() && !isSaving && !debounceTimer) {
-                            loadFromCloud(snap.data());
-                        }
-                    }, (err) => console.error("Firestore Error:", err));
+                        if (snap.exists() && !isSaving && !debounceTimer) { loadFromCloud(snap.data()); }
+                    }, (err) => console.error(err));
                 }
             });
         }
 
         const initAuth = async () => {
             if (!auth) return;
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token).catch(() => signInAnonymously(auth));
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (e) { console.error("Auth failed:", e); }
+            try { signInAnonymously(auth); } catch (e) { console.error(e); }
         };
 
         // --- 4. PERSISTENCE ---
-        function saveLocalPrefs() {
-            localStorage.setItem('mabi_barter_prefs', JSON.stringify({
-                transport: document.getElementById('transport-select').value,
-                buffs: activeBuffs
-            }));
-        }
-
-        function loadLocalPrefs() {
-            const saved = localStorage.getItem('mabi_barter_prefs');
-            if (saved) {
-                const prefs = JSON.parse(saved);
-                if (prefs.transport) document.getElementById('transport-select').value = prefs.transport;
-                if (prefs.buffs) {
-                    activeBuffs = prefs.buffs;
-                    document.getElementById('buff-gm').checked = !!activeBuffs.gm;
-                    document.getElementById('buff-william').checked = !!activeBuffs.william;
-                    document.getElementById('buff-alpaca').checked = !!activeBuffs.alpaca;
-                }
-            }
-        }
-
         const saveToCloudDebounced = () => {
             if (!user || !db) return;
             document.getElementById('sync-status').textContent = 'PENDING_SAVE';
@@ -875,129 +521,130 @@
                 isSaving = true; debounceTimer = null;
                 try {
                     await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'barterState'), {
-                        cargo: JSON.stringify(currentCargo),
-                        inventory: ownedInventory,
-                        buffs: activeBuffs,
-                        multiplier: weekMult,
-                        town: selectedTown,
-                        dest: targetDest,
-                        transport: document.getElementById('transport-select').value
+                        cargo: JSON.stringify(currentCargo), inventory: ownedInventory, buffs: activeBuffs, multiplier: weekMult, town: selectedTown, dest: targetDest, transport: document.getElementById('transport-select').value
                     });
                     document.getElementById('sync-status').textContent = 'SYNCED';
                     document.getElementById('sync-status').className = 'sync-indicator active';
-                } catch (e) {
-                    console.error(e);
-                    document.getElementById('sync-status').textContent = 'ERROR';
-                } finally { setTimeout(() => isSaving = false, 500); }
+                } catch (e) { document.getElementById('sync-status').textContent = 'ERROR'; } finally { setTimeout(() => isSaving = false, 500); }
             }, DEBOUNCE_DELAY);
         };
 
         const loadFromCloud = (data) => {
             if (data.cargo) currentCargo = JSON.parse(data.cargo);
             if (data.inventory) ownedInventory = data.inventory;
-            if (data.multiplier) {
-                weekMult = data.multiplier;
-                document.getElementById('week-mult').value = weekMult;
-            }
-            if (data.town) {
-                selectedTown = data.town;
-                document.getElementById('town-select').value = selectedTown;
-            }
-            if (data.dest) {
-                targetDest = data.dest;
-                document.getElementById('dest-select').value = targetDest;
-            }
-            if (data.transport) document.getElementById('transport-select').value = data.transport;
+            if (data.multiplier) { weekMult = data.multiplier; document.getElementById('week-mult').value = weekMult; }
+            if (data.town) { selectedTown = data.town; document.getElementById('town-select').value = selectedTown; }
+            if (data.dest) { targetDest = data.dest; document.getElementById('dest-select').value = targetDest; }
             if (data.buffs) {
                 activeBuffs = data.buffs;
                 document.getElementById('buff-gm').checked = !!activeBuffs.gm;
                 document.getElementById('buff-william').checked = !!activeBuffs.william;
                 document.getElementById('buff-alpaca').checked = !!activeBuffs.alpaca;
             }
-            renderCatalog();
-            calculateLoadout();
+            renderCatalog(); calculateLoadout();
         };
 
-        // --- 5. LOGISTICS ---
-        function getModifiedStats() {
-            const mName = document.getElementById('transport-select').value;
-            const b = transportData[mName];
-            if (!b) return { slots: 0, weight: 0 };
+        // --- 5. AUTO LOGISTICS ---
+        function getStatsForTransport(name) {
+            const b = transportData[name];
+            if (!b) return { slots: 0, weight: 0, speed: 0 };
             let bW = 0, bS = 0;
             if (activeBuffs.gm) { bW += 100; bS += 1; }
             if (activeBuffs.william) { bW += 200; bS += 1; }
-            if (mName === "Wagon" && activeBuffs.alpaca) { bW += 200; bS += 2; }
-            return { slots: b.slots + bS, weight: b.weight + bW };
+            if (name === "Wagon" && activeBuffs.alpaca) { bW += 200; bS += 2; }
+            return { slots: b.slots + bS, weight: b.weight + bW, speed: b.speed };
         }
 
-        function calculateBestFirstTrip(manifest, stats, destination) {
-            const itemCounts = {};
-            manifest.forEach(i => itemCounts[i.item] = (itemCounts[i.item] || 0) + 1);
-            const potentialSlots = [];
-            Object.keys(itemCounts).forEach(itemName => {
-                const proto = barterDb.find(b => b.item === itemName);
-                if (!proto) return;
-                let priceKey = `${itemName}_${destination}`.replace(/[.#$[\]]/g, "_");
-                let unitProfit = publicPrices[priceKey] || 0;
-                let remaining = itemCounts[itemName];
-                while (remaining > 0) {
-                    const take = Math.min(remaining, proto.stack);
-                    potentialSlots.push({ ...proto, qtyInSlot: take, slotWeight: take * proto.weight, totalSlotProfit: take * unitProfit });
-                    remaining -= take;
-                }
+        function autoSelectTransport(requiredWeight, requiredSlots) {
+            const allTransports = Object.keys(transportData);
+            
+            const validCandidates = allTransports.filter(name => {
+                const stats = getStatsForTransport(name);
+                return requiredWeight <= stats.weight && requiredSlots <= stats.slots;
             });
-            if (destination !== "None") potentialSlots.sort((a, b) => b.totalSlotProfit - a.totalSlotProfit || b.slotWeight - a.slotWeight);
-            else potentialSlots.sort((a, b) => b.slotWeight - a.slotWeight);
 
-            let tripSlots = [], tripW = 0, tripSCount = 0;
-            for (const slot of potentialSlots) {
-                if (tripSCount < stats.slots && (tripW + slot.slotWeight) <= stats.weight) {
-                    tripSlots.push(slot); tripW += slot.slotWeight; tripSCount++;
-                }
+            let bestMatch;
+            if (validCandidates.length > 0) {
+                bestMatch = validCandidates.reduce((prev, curr) => {
+                    const statsPrev = getStatsForTransport(prev);
+                    const statsCurr = getStatsForTransport(curr);
+                    return statsCurr.speed > statsPrev.speed ? curr : prev;
+                });
+            } else {
+                bestMatch = allTransports.reduce((prev, curr) => {
+                    const statsPrev = getStatsForTransport(prev);
+                    const statsCurr = getStatsForTransport(curr);
+                    return statsCurr.weight > statsPrev.weight ? curr : prev;
+                });
             }
-            return { tripSlots, tripW, tripSCount };
+            
+            const select = document.getElementById('transport-select');
+            if (select.value !== bestMatch) {
+                select.value = bestMatch;
+            }
+            return getStatsForTransport(bestMatch);
         }
 
         function calculateLoadout() {
-            const stats = getModifiedStats();
-            const grid = document.getElementById('grid');
-            grid.innerHTML = '';
-            for (let i = 0; i < stats.slots; i++) { grid.appendChild(Object.assign(document.createElement('div'), { className: 'slot', id: `slot-${i}` })); }
+            const itemCounts = {};
+            currentCargo.forEach(i => itemCounts[i.item] = (itemCounts[i.item] || 0) + 1);
 
-            const { tripSlots, tripW, tripSCount } = calculateBestFirstTrip(currentCargo, stats, targetDest);
-            tripSlots.forEach((slotData, idx) => {
-                const slotEl = document.getElementById(`slot-${idx}`);
-                if (slotEl) {
-                    slotEl.classList.add('filled');
-                    const icon = Object.assign(document.createElement('div'), { className: 'item-icon' });
-                    icon.style.backgroundImage = `url('${slotData.img}')`;
-                    icon.innerHTML = `<span class="stack-label">${slotData.qtyInSlot}</span>`;
-                    icon.onmouseenter = (e) => showTooltip(e, slotData);
-                    icon.onmouseleave = hideTooltip;
-                    icon.onclick = () => window.removeItemFromManifest(slotData.item);
-                    slotEl.appendChild(icon);
+            let runWeight = 0, runSlots = 0;
+            const displaySlots = [];
+
+            barterDb.forEach(proto => {
+                if (itemCounts[proto.item]) {
+                    let remaining = itemCounts[proto.item];
+                    while (remaining > 0) {
+                        const take = Math.min(remaining, proto.stack);
+                        displaySlots.push({ ...proto, qtyInSlot: take });
+                        runWeight += (take * proto.weight);
+                        runSlots++;
+                        remaining -= take;
+                    }
                 }
             });
 
-            document.getElementById('weight-label').textContent = `${tripW} / ${stats.weight} kg`;
-            document.getElementById('weight-fill').style.width = Math.min(100, (tripW / stats.weight) * 100) + '%';
-            document.getElementById('weight-fill').className = tripW > stats.weight ? 'progress-fill over' : 'progress-fill';
-            document.getElementById('slot-label').textContent = `${tripSCount} / ${stats.slots} Slots`;
-            document.getElementById('slot-fill').style.width = (tripSCount / stats.slots) * 100 + '%';
+            const stats = autoSelectTransport(runWeight, runSlots);
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            for (let i = 0; i < stats.slots; i++) { 
+                grid.appendChild(Object.assign(document.createElement('div'), { className: 'slot', id: `slot-${i}` })); 
+            }
 
-            const totalItemCounts = {};
-            currentCargo.forEach(i => totalItemCounts[i.item] = (totalItemCounts[i.item] || 0) + 1);
-            let totalSlotsManifest = 0;
-            Object.keys(totalItemCounts).forEach(name => {
-                const proto = barterDb.find(b => b.item === name);
-                if (proto) totalSlotsManifest += Math.ceil(totalItemCounts[name] / proto.stack);
+            displaySlots.forEach((slotData, idx) => {
+                if (idx < stats.slots) {
+                    const slotEl = document.getElementById(`slot-${idx}`);
+                    if (slotEl) {
+                        slotEl.classList.add('filled');
+                        const icon = Object.assign(document.createElement('div'), { className: 'item-icon' });
+                        icon.style.backgroundImage = `url('${slotData.img}')`;
+                        icon.innerHTML = `<span class="stack-label">${slotData.qtyInSlot}</span>`;
+                        icon.onmouseenter = (e) => showTooltip(e, slotData);
+                        icon.onmouseleave = hideTooltip;
+                        icon.onclick = () => window.removeItemFromManifest(slotData.item);
+                        slotEl.appendChild(icon);
+                    }
+                }
             });
-            let totalWeightManifest = currentCargo.reduce((sum, c) => sum + c.weight, 0);
 
-            const tripCount = Math.ceil(Math.max(totalWeightManifest / stats.weight, totalSlotsManifest / stats.slots));
+            document.getElementById('weight-label').textContent = `${runWeight.toLocaleString()} / ${stats.weight.toLocaleString()} kg`;
+            document.getElementById('weight-fill').style.width = Math.min(100, (runWeight / stats.weight) * 100) + '%';
+            document.getElementById('weight-fill').className = runWeight > stats.weight ? 'progress-fill over' : 'progress-fill';
+            
+            document.getElementById('slot-label').textContent = `${runSlots} / ${stats.slots} Slots`;
+            document.getElementById('slot-fill').style.width = Math.min(100, (runSlots / stats.slots) * 100) + '%';
+            document.getElementById('slot-fill').className = runSlots > stats.slots ? 'progress-fill over' : 'progress-fill';
+
             const tripDisplay = document.getElementById('trip-calculator');
-            tripDisplay.innerHTML = `TOTAL TRIPS: ${tripCount || (currentCargo.length > 0 ? 1 : 0)} <br>MANIFEST: ${totalWeightManifest}kg / ${totalSlotsManifest} slots`;
-            tripDisplay.style.color = tripCount > 1 ? '#ffd700' : 'var(--accent)';
+            if (currentCargo.length > 0) {
+                tripDisplay.innerHTML = `AUTO-SELECTED ${document.getElementById('transport-select').value.toUpperCase()}.`;
+                if (runWeight > stats.weight || runSlots > stats.slots) tripDisplay.innerHTML += ` <span style="color:#ff4444;">(LIMIT EXCEEDED)</span>`;
+                tripDisplay.style.color = 'var(--accent)';
+            } else {
+                tripDisplay.innerHTML = `SELECT ITEMS TO PLAN...`;
+                tripDisplay.style.color = 'var(--text-dim)';
+            }
             calculateMaterials();
         }
 
@@ -1006,21 +653,16 @@
             const town = document.getElementById('town-select').value;
             const container = document.getElementById('catalog-container');
             const iconBox = document.getElementById('town-icon-box');
-
             iconBox.style.backgroundImage = `url('${townIcons[town]}')`;
             container.innerHTML = '';
-
             barterDb.filter(b => b.town === town).forEach(b => {
                 const totalInManifest = currentCargo.filter(c => c.item === b.item).length;
                 const isAtLimit = totalInManifest >= b.limit;
                 const div = document.createElement('div');
                 div.className = 'item-entry' + (isAtLimit ? ' at-limit' : '');
-
-                div.innerHTML = `
-                        <div class="icon-square" style="background-image: url('${b.img}')"></div>
-                        <div style="flex-grow:1;"><div class="item-name">${b.item}</div><div class="item-limit-tag">LIMIT: ${totalInManifest}/${b.limit}</div></div>
-                        <span style="font-size: 8px; color: ${isAtLimit ? '#ff4444' : 'var(--accent)'};">${isAtLimit ? 'MAX' : '+ADD'}</span>
-                    `;
+                div.innerHTML = `<div class="icon-square" style="background-image: url('${b.img}')"></div>
+                    <div style="flex-grow:1;"><div class="item-name">${b.item}</div><div class="item-limit-tag">LIMIT: ${totalInManifest}/${b.limit}</div></div>
+                    <span style="font-size: 8px; color: ${isAtLimit ? '#ff4444' : 'var(--accent)'};">${isAtLimit ? 'MAX' : '+ADD'}</span>`;
                 if (!isAtLimit) div.onclick = () => addItem(b);
                 container.appendChild(div);
             });
@@ -1045,7 +687,7 @@
         }
 
         window.removeItemFromManifest = (itemName) => {
-            const idx = currentCargo.findIndex(c => c.item === itemName);
+            const idx = currentCargo.findLastIndex(c => c.item === itemName);
             if (idx !== -1) currentCargo.splice(idx, 1);
             calculateLoadout(); renderCatalog(); saveToCloudDebounced();
         };
@@ -1053,19 +695,13 @@
         function calculateMaterials() {
             weekMult = parseInt(document.getElementById('week-mult').value) || 1;
             const bIngredients = {}, rawRes = {}, tempOwned = JSON.parse(JSON.stringify(ownedInventory));
-
-            currentCargo.forEach(c => {
-                for (const [m, q] of Object.entries(c.mats)) {
-                    bIngredients[m] = (bIngredients[m] || 0) + (q * weekMult);
-                }
+            currentCargo.forEach(c => { 
+                for (const [m, q] of Object.entries(c.mats)) { bIngredients[m] = (bIngredients[m] || 0) + (q * weekMult); } 
             });
 
             function resolve(n, need) {
                 const r = recipeDb.find(x => x.item === n);
-                if (!r) {
-                    rawRes[n] = (rawRes[n] || 0) + need;
-                    return;
-                }
+                if (!r) { rawRes[n] = (rawRes[n] || 0) + need; return; }
                 for (const [m, a] of Object.entries(r.mats)) { resolve(m, a * need); }
             }
 
@@ -1083,116 +719,54 @@
             const allItems = Array.from(new Set([...Object.keys(dataMap), ...Object.keys(ownedInventory).filter(k => {
                 const isC = recipeDb.some(r => r.item === k); return isComp ? isC : !isC;
             })])).sort();
-
             const activeRows = new Set();
             allItems.forEach(item => {
                 const needed = dataMap[item] || 0;
-                const isItemComp = recipeDb.some(r => r.item === item);
+                const isItemComp = recipeDb.some(r => r.item === item); 
                 if (isComp !== isItemComp) return;
-
                 const owned = ownedInventory[item] || 0;
                 const deficit = Math.ceil(needed) - owned;
                 const rowId = `row-${item.replace(/[^a-zA-Z0-9]/g, '-')}`;
-
                 let tr = document.getElementById(rowId);
                 if (!tr) {
                     tr = document.createElement('tr');
                     tr.id = rowId;
-                    tr.innerHTML = `
-                            <td><div class="icon-small"></div><span class="item-name-cell"></span></td>
-                            <td style="text-align:center;"><input type="number" class="owned-input" data-item="${item}"></td>
-                            <td style="text-align:center;" class="need-qty"></td>
-                            <td style="text-align:right;" class="status-cell"></td>
-                        `;
+                    tr.innerHTML = `<td><div class="icon-small"></div><span class="item-name-cell"></span></td><td style="text-align:center;"><input type="number" class="owned-input" data-item="${item}"></td><td style="text-align:center;" class="need-qty"></td><td style="text-align:right;" class="status-cell"></td>`;
                     tbody.appendChild(tr);
-                    tr.querySelector('.owned-input').oninput = (e) => {
-                        ownedInventory[e.target.dataset.item] = parseInt(e.target.value) || 0;
-                        calculateMaterials();
-                        saveToCloudDebounced();
-                    };
+                    tr.querySelector('.owned-input').oninput = (e) => { ownedInventory[e.target.dataset.item] = parseInt(e.target.value) || 0; calculateMaterials(); saveToCloudDebounced(); };
                 }
-
-                const iconEl = tr.querySelector('.icon-small');
-                iconEl.style.backgroundImage = `url('${getIconUrl(item)}')`;
-
+                tr.querySelector('.icon-small').style.backgroundImage = `url('${getIconUrl(item)}')`;
                 tr.querySelector('.item-name-cell').textContent = item;
                 tr.querySelector('.item-name-cell').style.color = needed > 0 ? '#eee' : '#444';
-
-                if (document.activeElement !== tr.querySelector('.owned-input')) {
-                    tr.querySelector('.owned-input').value = ownedInventory[item] || 0;
-                }
-
+                if (document.activeElement !== tr.querySelector('.owned-input')) { tr.querySelector('.owned-input').value = ownedInventory[item] || 0; }
                 tr.querySelector('.need-qty').textContent = needed > 0 ? Math.ceil(needed).toLocaleString() : '-';
                 const sCell = tr.querySelector('.status-cell');
-                if (needed === 0) { sCell.textContent = ''; sCell.className = 'status-cell'; }
-                else {
-                    sCell.textContent = deficit <= 0 ? 'READY' : deficit.toLocaleString();
-                    sCell.className = `status-cell ${deficit <= 0 ? 'ready' : 'deficit'}`;
-                }
+                if (needed === 0) { sCell.textContent = ''; sCell.className = 'status-cell'; } 
+                else { sCell.textContent = deficit <= 0 ? 'READY' : deficit.toLocaleString(); sCell.className = `status-cell ${deficit <= 0 ? 'ready' : 'deficit'}`; }
                 activeRows.add(rowId);
             });
-
             [...tbody.rows].forEach(r => { if (r.id && !activeRows.has(r.id)) r.remove(); });
         }
 
-        function updateTransportLabels() {
-            const stats = getModifiedStats();
-            document.getElementById('weight-label').textContent = `0 / ${stats.weight} kg`;
-            document.getElementById('slot-label').textContent = `0 / ${stats.slots} Slots`;
-        }
-
-        function syncLocalPrefs() { saveLocalPrefs(); }
-
         // --- 7. LISTENERS ---
-        document.getElementById('town-select').onchange = (e) => {
-            selectedTown = e.target.value;
-            renderCatalog();
-            saveToCloudDebounced();
-        };
-
-        document.getElementById('dest-select').onchange = (e) => {
-            targetDest = e.target.value;
-            calculateLoadout();
-            saveToCloudDebounced();
-        };
-
-        document.getElementById('transport-select').onchange = () => {
-            calculateLoadout();
-            saveLocalPrefs();
-            saveToCloudDebounced();
-        };
-
-        document.getElementById('week-mult').oninput = (e) => {
-            weekMult = parseInt(e.target.value) || 1;
-            calculateLoadout();
-            saveToCloudDebounced();
-        };
-
+        document.getElementById('town-select').onchange = (e) => { selectedTown = e.target.value; renderCatalog(); saveToCloudDebounced(); };
+        document.getElementById('dest-select').onchange = (e) => { targetDest = e.target.value; calculateLoadout(); saveToCloudDebounced(); };
+        document.getElementById('week-mult').oninput = (e) => { weekMult = parseInt(e.target.value) || 1; calculateLoadout(); saveToCloudDebounced(); };
+        
         document.querySelectorAll('.toggle-input').forEach(chk => {
             chk.onchange = (e) => {
                 const id = e.target.id.replace('buff-', '');
-                if (id === 'william' && e.target.checked) {
-                    document.getElementById('buff-alpaca').checked = false;
-                    activeBuffs.alpaca = false;
-                }
-                if (id === 'alpaca' && e.target.checked) {
-                    document.getElementById('buff-william').checked = false;
-                    activeBuffs.william = false;
-                }
+                if (id === 'william' && e.target.checked) { document.getElementById('buff-alpaca').checked = false; activeBuffs.alpaca = false; }
+                if (id === 'alpaca' && e.target.checked) { document.getElementById('buff-william').checked = false; activeBuffs.william = false; }
                 activeBuffs[id] = e.target.checked;
-                calculateLoadout();
-                syncLocalPrefs();
-                updateTransportLabels();
-                saveToCloudDebounced();
+                calculateLoadout(); saveToCloudDebounced();
             };
         });
 
-        window.onload = async () => {
-            loadLocalPrefs();
-            renderCatalog();
-            updateTransportLabels();
-            calculateLoadout();
-            if (typeof initAuth !== 'undefined') await initAuth();
+        window.onload = async () => { 
+            renderCatalog(); 
+            calculateLoadout(); 
+            await initAuth(); 
         };
     </script>
 </body>
