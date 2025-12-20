@@ -532,27 +532,6 @@
             color: #fff;
             font-family: 'JetBrains Mono';
         }
-
-        /* --- Import Section --- */
-        #import-section {
-            padding: 20px;
-            border-top: 1px solid var(--border);
-            background: #0a0a0a;
-            margin-top: 20px;
-        }
-
-        #import-area {
-            width: 100%;
-            height: 100px;
-            background: #000;
-            color: var(--accent);
-            border: 1px solid #333;
-            font-family: monospace;
-            font-size: 10px;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
-
         @media (max-width: 1000px) {
             .content-grid {
                 grid-template-columns: 1fr;
@@ -586,7 +565,7 @@
         <div class="content-grid">
             <div class="left-panel">
                 <div class="commerce-type-section">
-                    <label class="panel-small-label">System Mode</label>
+                    <label class="panel-small-label">Commerce Mode</label>
                     <select id="commerce-type-select" class="city-dropdown">
                         <option value="Normal">Normal Commerce</option>
                         <option value="Barter">Bartering</option>
@@ -605,11 +584,11 @@
                 <div class="player-info">
                     <div class="player-avatar" id="origin-town-icon"></div>
                     <div style="display: flex; flex-direction: column; flex-grow: 1;">
-                        <label class="panel-small-label">Origin Node</label>
+                        <label class="panel-small-label">Trade Post</label>
                         <select class="city-dropdown" id="city-select"></select>
                     </div>
                     <div style="display: flex; flex-direction: column; width: 50px;">
-                        <label class="panel-small-label">Post Lv.</label>
+                        <label class="panel-small-label">Merchant Rating</label>
                         <select id="merchant-rating-select" class="city-dropdown">
                             <option value="1">1</option>
                             <option value="2">2</option>
@@ -630,7 +609,7 @@
                         <input type="number" id="trader-qty" min="0" max="2" value="0" class="qty-input-compact">
                     </div>
                     <div class="buff-item">
-                        <label>Trust</label>
+                        <label>Trustworthy</label>
                         <input type="number" id="trustworthy-qty" min="0" max="2" value="0" class="qty-input-compact">
                     </div>
                 </div>
@@ -769,21 +748,13 @@
                 </div>
 
                 <div class="recommendation-box" id="manifest-box" style="display:none;">
-                    <div class="rec-title">Best Local Route</div>
+                    <div class="rec-title">Local Best Loadout</div>
                     <div id="manifest-list"></div>
                     <div id="manifest-total" class="manifest-footer"></div>
                 </div>
 
                 <div id="global-manifest-anchor"></div>
             </div>
-        </div>
-
-        <div id="import-section">
-            <div style="color:var(--accent); font-weight:bold; margin-bottom:5px;">DATA IMPORT TOOL (GOOGLE SHEETS)</div>
-            <div style="color:#aaa; font-size:10px; margin-bottom:10px;">Paste your full sheet data here (Columns: Item | Town1 | Town2 ...). No Headers.</div>
-            <textarea id="import-area" placeholder="Paste data here..."></textarea>
-            <button class="hub-btn" onclick="runImport()">START IMPORT</button>
-            <div id="import-status" style="margin-top:5px; color:#fff;"></div>
         </div>
     </div>
 
@@ -1641,47 +1612,6 @@
             });
             letterSelect.value = "None";
         }
-
-        // --- 8. IMPORT TOOL ---
-        async function runImport() {
-            const raw = document.getElementById('import-area').value;
-            const status = document.getElementById('import-status');
-            const townOrder = ["Tir Chonaill", "Dunbarton", "Bangor", "Emain Macha", "Taillteann", "Tara", "Cobh", "Belvast", "Qilla", "Filia", "Cor", "Vales"];
-
-            if (!raw) return status.textContent = "Please paste data first.";
-
-            const rows = raw.trim().split('\n');
-            status.textContent = `Processing ${rows.length} rows...`;
-            let count = 0; const updates = {};
-
-            for (let i = 0; i < rows.length; i++) {
-                const cols = rows[i].split('\t');
-                const item = cols[0].trim();
-                if (!item) continue;
-
-                for (let j = 1; j < cols.length; j++) {
-                    const townIndex = j - 1;
-                    if (townIndex >= townOrder.length) break;
-
-                    const priceRaw = cols[j];
-                    if (!priceRaw || priceRaw.trim() === "") continue;
-
-                    const price = parseInt(priceRaw.replace(/,/g, '').trim(), 10);
-                    if (!isNaN(price)) {
-                        updates[`${item}_${townOrder[townIndex]}`.replace(/[.#$[\]]/g, "_")] = price;
-                        count++;
-                    }
-                }
-            }
-
-            if (count > 0) {
-                await rtdb.ref('public_commerce/prices').update(updates);
-                status.textContent = `Done! Imported ${count} prices.`;
-            } else {
-                status.textContent = "No valid data found.";
-            }
-        }
-
         // --- 9. INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', () => {
             const saved = JSON.parse(localStorage.getItem('mabi_prefs')) || {};
