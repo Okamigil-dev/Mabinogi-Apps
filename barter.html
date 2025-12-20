@@ -9,10 +9,11 @@
     <!-- Firebase Modular SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
-        window.mabiFirebase = { initializeApp, getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken, getFirestore, doc, setDoc, onSnapshot };
+        // Export to window for global access
+        window.mabiFirebase = { initializeApp, getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken, GoogleAuthProvider, signInWithPopup, signOut, getDatabase, ref, set, onValue };
     </script>
 
     <style>
@@ -52,6 +53,7 @@
             position: relative;
         }
 
+        /* Prevent text selection during rapid clicking */
         .hub-btn, .item-entry, .slot, .item-icon, .toggle-container, select, input, .town-visual-box {
             user-select: none;
             -webkit-user-select: none;
@@ -73,6 +75,9 @@
             cursor: pointer;
         }
         .hub-btn:hover { background: var(--accent); color: #000; box-shadow: 0 0 12px var(--accent); border-color: var(--accent); }
+        
+        .login-btn { border-color: #444; background: #222; margin-left: 10px; }
+        .login-btn.logged-in { background: rgba(0, 243, 255, 0.1); border-color: var(--accent); color: var(--accent); }
 
         .interface-grid {
             display: grid;
@@ -93,7 +98,6 @@
 
         .scroll-area { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
 
-        /* --- Buffs --- */
         .buff-row-side { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; flex-shrink: 0; }
         .toggle-container {
             display: flex; align-items: center; gap: 8px; cursor: pointer;
@@ -112,7 +116,6 @@
         .toggle-input:checked + .toggle-slider { background: rgba(0, 243, 255, 0.15); border-color: var(--accent); }
         .toggle-input:checked + .toggle-slider::after { transform: translateX(12px); background: var(--accent); box-shadow: 0 0 5px var(--accent); }
 
-        /* --- Catalog --- */
         .town-header-container { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; flex-shrink: 0; }
         .town-visual-box {
             width: 44px; height: 44px; background: #000; border: 1px solid var(--accent);
@@ -139,7 +142,6 @@
             flex-shrink: 0; background-size: contain; background-repeat: no-repeat; background-position: center;
         }
 
-        /* --- Inventory Grid --- */
         .inventory-window { 
             background: #000; border: 1px solid var(--border); 
             padding: 15px; position: relative; flex-grow: 1; 
@@ -166,7 +168,6 @@
         }
         .stack-label { position: absolute; bottom: 2px; right: 4px; font-family: 'JetBrains Mono'; font-size: 10px; font-weight: 900; color: #fff; text-shadow: 1px 1px 2px #000; pointer-events: none; }
 
-        /* --- Tables --- */
         .materials-dual-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex-grow: 1; overflow: hidden; min-height: 0; }
         .table-container { display: flex; flex-direction: column; overflow: hidden; height: 100%; }
         .data-table { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono'; font-size: 11px; margin-bottom: 20px;}
@@ -179,6 +180,34 @@
         .status-cell.deficit { color: #ff4444; }
         .status-cell.ready { color: #00ff88; }
         .icon-small { width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 5px; background-size: contain; background-repeat: no-repeat; }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 20000;
+            display: flex; align-items: center; justify-content: center;
+            visibility: hidden; opacity: 0; transition: 0.2s;
+        }
+        .modal-overlay.active { visibility: visible; opacity: 1; }
+        
+        .modal-box {
+            background: #111; border: 1px solid var(--accent);
+            padding: 20px; width: 300px;
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);
+            position: relative; transform: scale(0.9); transition: 0.2s;
+        }
+        .modal-overlay.active .modal-box { transform: scale(1); }
+
+        .modal-title { font-size: 14px; font-weight: 900; color: var(--accent); margin-bottom: 20px; text-transform: uppercase; text-align: center;}
+        .range-container { margin: 20px 0; display: flex; align-items: center; gap: 10px; }
+        .modal-range { flex-grow: 1; accent-color: var(--accent); }
+        .modal-number { width: 50px; background: #000; border: 1px solid #333; color: #fff; padding: 5px; text-align: center; }
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .modal-btn { flex: 1; padding: 8px; cursor: pointer; font-weight: 900; text-transform: uppercase; font-size: 10px; border: 1px solid transparent; }
+        .btn-cancel { background: #222; color: #888; border-color: #333; }
+        .btn-confirm { background: var(--accent); color: #000; }
+        .btn-cancel:hover { background: #333; color: #fff; }
+        .btn-confirm:hover { box-shadow: 0 0 10px var(--accent); }
 
         #item-tooltip {
             position: fixed; z-index: 10000; background: rgba(0, 0, 0, 0.95); border: 1px solid var(--accent); padding: 10px;
@@ -201,6 +230,25 @@
         <div class="tt-stat">Max Stack: <b id="tt-stack">0</b></div>
     </div>
 
+    <!-- Quantity Modal -->
+    <div id="qty-modal" class="modal-overlay">
+        <div class="modal-box">
+            <div id="modal-title" class="modal-title">ADD ITEM</div>
+            <div style="text-align: center; font-size: 10px; color: #888; margin-bottom: 10px;">SELECT QUANTITY TO ADD</div>
+            <div class="range-container">
+                <input type="range" id="qty-range" class="modal-range" min="1" max="1" value="1">
+                <input type="number" id="qty-number" class="modal-number" min="1" max="1" value="1">
+            </div>
+            <div style="text-align: right; font-size: 9px; color: var(--text-dim); margin-bottom: 15px;">
+                AVAILABLE SPACE: <span id="modal-max-label">0</span>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn btn-cancel" onclick="closeQtyModal()">CANCEL</button>
+                <button class="modal-btn btn-confirm" onclick="confirmQtyAdd()">ADD TO LOADOUT</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Centered Shell -->
     <div class="app-shell">
         <div class="header-bar">
@@ -211,7 +259,10 @@
                     <div class="main-title">Barter Material Tracker</div>
                     <div id="sync-status" class="sync-indicator">OFFLINE_LOCAL</div>
                 </div>
-                <div style="width:110px"></div>
+                <div style="display: flex; align-items: center;">
+                    <div id="user-display" style="font-family: 'JetBrains Mono'; font-size: 8px; text-align: right; margin-right: 10px;">GUEST</div>
+                    <button id="auth-btn" class="hub-btn login-btn">LOGIN</button>
+                </div>
             </div>
         </div>
 
@@ -328,9 +379,6 @@
                     </select>
                     <div id="grid-2" class="grid-container"></div>
                 </div>
-                <div style="margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border); text-align: center; opacity: 0.2;">
-                    <div id="user-display" style="font-family: 'JetBrains Mono'; font-size: 8px;">GUEST_MODE</div>
-                </div>
             </div>
         </div>
     </div>
@@ -371,7 +419,22 @@
             { town: "Karu Forest", item: "Shellfish Fossil", weight: 30, stack: 5, limit: 3, mats: { "Energy Amplifier": 2, "Sturdy Loop": 1, "Magic Quill Pen": 5 } }
         ];
 
-        barterDb.forEach(b => b.img = getIconUrl(b.item, 'barter', b.town));
+        const transportData = {
+            "Back Pack": { slots: 4, weight: 400, speed: 100 },
+            "Hand Cart": { slots: 6, weight: 800, speed: 115 },
+            "Wagon": { slots: 8, weight: 900, speed: 135 },
+            "Elephant": { slots: 7, weight: 1700, speed: 110 },
+            "Husky": { slots: 11, weight: 700, speed: 165 },
+            "Camel": { slots: 7, weight: 1400, speed: 155 },
+            "Skiff": { slots: 8, weight: 1200, speed: 140 }
+        };
+
+        const townIcons = {
+            "Pera Volcano": getIconUrl("Pera", "towns"),
+            "Oasis": getIconUrl("Oasis", "towns"),
+            "Lake Calida": getIconUrl("Calida", "towns"),
+            "Karu Forest": getIconUrl("Karu Forest", "towns")
+        };
 
         const recipeDb = [
             { item: "Artificial Turf", mats: { "Fresh Grass": 20, "Bundle of Flowers": 5 } },
@@ -424,32 +487,22 @@
             { item: "Wheat Flour", mats: { "Wheat": 10 } }
         ];
 
-        const transportData = {
-            "Back Pack": { slots: 4, weight: 400, speed: 100 },
-            "Hand Cart": { slots: 6, weight: 800, speed: 115 },
-            "Wagon": { slots: 8, weight: 900, speed: 135 },
-            "Elephant": { slots: 7, weight: 1700, speed: 110 },
-            "Husky": { slots: 11, weight: 700, speed: 165 },
-            "Camel": { slots: 7, weight: 1400, speed: 155 },
-            "Skiff": { slots: 8, weight: 1200, speed: 140 }
-        };
-
-        const townIcons = {
-            "Pera Volcano": getIconUrl("Pera", "towns"),
-            "Oasis": getIconUrl("Oasis", "towns"),
-            "Lake Calida": getIconUrl("Calida", "towns"),
-            "Karu Forest": getIconUrl("Karu Forest", "towns")
-        };
-
         // --- 2. STATE ---
         let currentCargo = [], ownedInventory = {}, activeBuffs = { gm: false, william: false, alpaca: false }, selectedTown = "Karu Forest", debounceTimer = null;
-        const DEBOUNCE_DELAY = 1500;
+        const DEBOUNCE_DELAY = 1000;
         let isFullCapacity = false;
+        let selectedItemForModal = null;
 
-        // --- 3. FIREBASE CORE ---
-        const { initializeApp, getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken, getFirestore, doc, setDoc, onSnapshot } = window.mabiFirebase;
+        // --- 3. FIREBASE CORE & PERSISTENCE ---
+        const { initializeApp, getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken, GoogleAuthProvider, signInWithPopup, signOut, getDatabase, ref, set, onValue } = window.mabiFirebase;
         
-        let app, auth, db, appId;
+        let app, auth, db, user = null, isSaving = false;
+
+        // INITIAL LOAD: Load local data instantly
+        const localData = JSON.parse(localStorage.getItem('barter_save_data') || '{}');
+        loadFromData(localData);
+
+        // INITIALIZE FIREBASE (Realtime DB based on your provided config)
         try {
             const fbConfig = { 
                 apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM",
@@ -463,65 +516,100 @@
             };
             app = initializeApp(fbConfig);
             auth = getAuth(app);
-            db = getFirestore(app);
-            appId = 'mabinogi-tracker';
-        } catch (e) { console.warn("Firebase Failed to Init."); }
+            db = getDatabase(app);
 
-        let user = null, isSaving = false;
+            // AUTO-LOGIN LOGIC
+            const initAuth = async () => {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    onAuthStateChanged(auth, (u) => {
+                        if (!u) signInAnonymously(auth);
+                    });
+                }
+            };
+            initAuth();
 
-        if (auth) {
+            // AUTH STATE & CLOUD SYNC
             onAuthStateChanged(auth, (u) => {
                 user = u;
                 if (user) {
-                    document.getElementById('user-display').textContent = user.isAnonymous ? "GUEST_SESSION" : `AUTH_ID: ${user.uid}`;
-                    document.getElementById('sync-status').textContent = 'CONNECTED';
-                    document.getElementById('sync-status').classList.add('active');
+                    const disp = user.isAnonymous ? "GUEST_SESSION" : "LOGGED_IN";
+                    document.getElementById('user-display').textContent = disp;
                     
-                    onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'barterState'), (snap) => {
-                        if (snap.exists() && !isSaving && !debounceTimer) { 
-                            loadFromCloud(snap.data()); 
+                    const btn = document.getElementById('auth-btn');
+                    if (user.isAnonymous) {
+                        btn.textContent = "LOGIN";
+                        btn.onclick = loginWithGoogle;
+                        btn.classList.remove('logged-in');
+                    } else {
+                        btn.textContent = "LOGOUT";
+                        btn.onclick = () => signOut(auth);
+                        btn.classList.add('logged-in');
+                    }
+
+                    // CONNECT TO REALTIME DB
+                    document.getElementById('sync-status').textContent = 'SYNCING...';
+                    const dbRef = ref(db, `users/${user.uid}/barter_data`);
+                    onValue(dbRef, (snapshot) => {
+                        const data = snapshot.val();
+                        if (data && !isSaving && !debounceTimer) { 
+                            console.log("Cloud update received");
+                            loadFromData(data); 
+                            document.getElementById('sync-status').textContent = 'CLOUD_SYNC_OK';
+                            document.getElementById('sync-status').className = 'sync-indicator active';
                         }
-                    }, (err) => console.error("Firestore error:", err));
+                    }, (err) => {
+                        console.error("RTDB error:", err);
+                        document.getElementById('sync-status').textContent = 'CLOUD_ERROR';
+                    });
                 }
             });
-        }
 
-        const initAuth = async () => {
-            if (!auth) return;
-            try { await signInAnonymously(auth); } catch (e) { console.error("Auth error:", e); }
+        } catch (e) { console.warn("Firebase Init Error:", e); }
+
+        const loginWithGoogle = async () => {
+            const provider = new GoogleAuthProvider();
+            try { await signInWithPopup(auth, provider); } catch (error) { alert("Login blocked. Enable popups."); }
         };
 
-        // --- 4. PERSISTENCE ---
-        const saveToCloudDebounced = () => {
+        // --- SAVE LOGIC ---
+        function saveData() {
+            // 1. SAVE LOCAL INSTANTLY
+            const dataPayload = {
+                cargo: JSON.stringify(currentCargo), 
+                inventory: ownedInventory, 
+                buffs: activeBuffs, 
+                town: selectedTown, 
+                transport1: document.getElementById('transport-select-1').value,
+                transport2: document.getElementById('transport-select-2').value
+            };
+            localStorage.setItem('barter_save_data', JSON.stringify(dataPayload));
+            document.getElementById('sync-status').textContent = 'LOCAL_SAVED';
+
+            // 2. SAVE TO CLOUD DEBOUNCED
             if (!user || !db) return;
-            document.getElementById('sync-status').textContent = 'PENDING_SAVE';
             document.getElementById('sync-status').className = 'sync-indicator saving';
+            
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(async () => {
                 isSaving = true; 
                 debounceTimer = null;
                 try {
-                    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'barterState'), {
-                        cargo: JSON.stringify(currentCargo), 
-                        inventory: ownedInventory, 
-                        buffs: activeBuffs, 
-                        town: selectedTown, 
-                        transport1: document.getElementById('transport-select-1').value,
-                        transport2: document.getElementById('transport-select-2').value
-                    });
-                    document.getElementById('sync-status').textContent = 'SYNCED';
+                    await set(ref(db, `users/${user.uid}/barter_data`), dataPayload);
+                    document.getElementById('sync-status').textContent = 'ALL_SAVED';
                     document.getElementById('sync-status').className = 'sync-indicator active';
                 } catch (e) { 
-                    document.getElementById('sync-status').textContent = 'ERROR'; 
-                    console.error("Save error:", e);
+                    console.error("Cloud Save error:", e);
                 } finally { 
                     setTimeout(() => isSaving = false, 500); 
                 }
             }, DEBOUNCE_DELAY);
-        };
+        }
 
-        const loadFromCloud = (data) => {
-            if (data.cargo) currentCargo = JSON.parse(data.cargo);
+        function loadFromData(data) {
+            if (!data) return;
+            if (data.cargo) currentCargo = typeof data.cargo === 'string' ? JSON.parse(data.cargo) : data.cargo;
             if (data.inventory) ownedInventory = data.inventory;
             if (data.town) { selectedTown = data.town; document.getElementById('town-select').value = selectedTown; }
             if (data.buffs) {
@@ -534,7 +622,7 @@
             if (data.transport2) document.getElementById('transport-select-2').value = data.transport2;
             
             renderCatalog(); calculateLoadout();
-        };
+        }
 
         // --- 5. LOGISTICS ---
         function getStatsForTransport(name) {
@@ -593,20 +681,6 @@
             return { slots1, slots2, overflow, s1, s2 };
         }
 
-        function addItem(itemData) {
-             const testCargo = [...currentCargo, itemData];
-             const result = packCargo(testCargo);
-             
-             if (result.overflow) {
-                 return; // Rejects add if it doesn't fit
-             }
-
-             currentCargo.push(itemData);
-             calculateLoadout();
-             renderCatalog();
-             saveToCloudDebounced();
-        }
-
         function calculateLoadout() {
             const result = packCargo(currentCargo);
             
@@ -652,17 +726,60 @@
             element.appendChild(icon);
         }
 
-        // --- 6. UI HELPERS ---
+        // --- 6. UI HELPERS & MODAL ---
+        window.openQtyModal = (itemName) => {
+            const item = barterDb.find(i => i.item === itemName);
+            if (!item) return;
+            selectedItemForModal = item;
+            
+            const currentCount = currentCargo.filter(c => c.item === item.item).length;
+            const remaining = Math.max(0, item.limit - currentCount);
+            
+            document.getElementById('modal-title').textContent = `ADD ${item.item}`;
+            document.getElementById('modal-max-label').textContent = `${remaining} Remaining Limit`;
+            
+            const range = document.getElementById('qty-range');
+            const num = document.getElementById('qty-number');
+            range.max = remaining; range.value = 1;
+            num.max = remaining; num.value = 1;
+            
+            range.oninput = () => num.value = range.value;
+            num.oninput = () => range.value = num.value;
+            
+            document.getElementById('qty-modal').classList.add('active');
+        };
+
+        window.closeQtyModal = () => {
+            document.getElementById('qty-modal').classList.remove('active');
+            selectedItemForModal = null;
+        };
+
+        window.confirmQtyAdd = () => {
+            if (!selectedItemForModal) return;
+            const qty = parseInt(document.getElementById('qty-number').value);
+            if (qty > 0) {
+                const newItems = Array(qty).fill(selectedItemForModal);
+                const testCargo = [...currentCargo, ...newItems];
+                const result = packCargo(testCargo);
+                
+                if (result.overflow) {
+                    alert("Not enough space in loadouts for this quantity!");
+                } else {
+                    currentCargo.push(...newItems);
+                    calculateLoadout();
+                    renderCatalog();
+                    saveData();
+                    closeQtyModal();
+                }
+            }
+        };
+
         function renderCatalog() {
             const town = document.getElementById('town-select').value;
             const container = document.getElementById('catalog-container');
             const iconBox = document.getElementById('town-icon-box');
             iconBox.style.backgroundImage = `url('${townIcons[town]}')`;
             container.innerHTML = '';
-            
-            // For catalog buttons, we need to know if adding ONE more item would overflow.
-            // But checking every single item is expensive. We'll use a heuristic:
-            // If isFullCapacity is true, block everything.
             
             barterDb.filter(b => b.town === town).forEach(b => {
                 const totalInManifest = currentCargo.filter(c => c.item === b.item).length;
@@ -682,7 +799,7 @@
                     <div style="flex-grow:1;"><div class="item-name">${b.item}</div><div class="item-limit-tag">LIMIT: ${totalInManifest}/${b.limit}</div></div>
                     <span style="font-size: 8px; color: ${btnColor};">${btnText}</span>`;
                 
-                if (!blockAdd) div.onclick = () => addItem(b);
+                if (!blockAdd) div.onclick = () => window.openQtyModal(b.item);
                 container.appendChild(div);
             });
         }
@@ -704,7 +821,7 @@
             if (idx !== -1) currentCargo.splice(idx, 1);
             calculateLoadout(); 
             renderCatalog(); 
-            saveToCloudDebounced();
+            saveData();
         };
 
         function calculateMaterials() {
@@ -717,7 +834,6 @@
                 } 
             });
 
-            // Flatten recipes
             const rawRes = {};
             function resolve(n, need) {
                 const r = recipeDb.find(x => x.item === n);
@@ -767,7 +883,7 @@
                     tr.querySelector('.owned-input').oninput = (e) => { 
                         ownedInventory[e.target.dataset.item] = parseInt(e.target.value) || 0; 
                         calculateMaterials(); 
-                        saveToCloudDebounced(); 
+                        saveData(); 
                     };
                 }
                 
@@ -787,9 +903,9 @@
         }
 
         // --- 7. LISTENERS ---
-        document.getElementById('town-select').onchange = (e) => { selectedTown = e.target.value; renderCatalog(); saveToCloudDebounced(); };
-        document.getElementById('transport-select-1').onchange = (e) => { calculateLoadout(); saveToCloudDebounced(); };
-        document.getElementById('transport-select-2').onchange = (e) => { calculateLoadout(); saveToCloudDebounced(); };
+        document.getElementById('town-select').onchange = (e) => { selectedTown = e.target.value; renderCatalog(); saveData(); };
+        document.getElementById('transport-select-1').onchange = (e) => { calculateLoadout(); saveData(); };
+        document.getElementById('transport-select-2').onchange = (e) => { calculateLoadout(); saveData(); };
         
         document.querySelectorAll('.toggle-input').forEach(chk => {
             chk.onchange = (e) => {
@@ -798,14 +914,13 @@
                 if (id === 'alpaca' && e.target.checked) { document.getElementById('buff-william').checked = false; activeBuffs.william = false; }
                 activeBuffs[id] = e.target.checked;
                 calculateLoadout(); 
-                saveToCloudDebounced();
+                saveData();
             };
         });
 
         window.onload = async () => { 
             renderCatalog(); 
             calculateLoadout(); 
-            await initAuth(); 
         };
     </script>
 </body>
