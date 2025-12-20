@@ -716,25 +716,46 @@
 
         function renderTable(tbodyId, dataMap, isComp) {
             const tbody = document.getElementById(tbodyId);
-            const allItems = Array.from(new Set([...Object.keys(dataMap), ...Object.keys(ownedInventory).filter(k => {
-                const isC = recipeDb.some(r => r.item === k); return isComp ? isC : !isC;
-            })])).sort();
+            
+            // Collect all potential items (needed or owned)
+            const allPotentialItems = Array.from(new Set([...Object.keys(dataMap), ...Object.keys(ownedInventory)]));
+            
+            // Filter and sort items alphabetically
+            const sortedItems = allPotentialItems
+                .filter(item => {
+                    const isItemComp = recipeDb.some(r => r.item === item);
+                    return isComp === isItemComp;
+                })
+                .sort((a, b) => a.localeCompare(b));
+
             const activeRows = new Set();
-            allItems.forEach(item => {
+            
+            sortedItems.forEach(item => {
                 const needed = dataMap[item] || 0;
-                const isItemComp = recipeDb.some(r => r.item === item); 
-                if (isComp !== isItemComp) return;
                 const owned = ownedInventory[item] || 0;
+                
+                // Hide items that are neither needed nor owned
+                if (needed === 0 && owned === 0) return;
+
                 const deficit = Math.ceil(needed) - owned;
                 const rowId = `row-${item.replace(/[^a-zA-Z0-9]/g, '-')}`;
                 let tr = document.getElementById(rowId);
+                
                 if (!tr) {
                     tr = document.createElement('tr');
                     tr.id = rowId;
                     tr.innerHTML = `<td><div class="icon-small"></div><span class="item-name-cell"></span></td><td style="text-align:center;"><input type="number" class="owned-input" data-item="${item}"></td><td style="text-align:center;" class="need-qty"></td><td style="text-align:right;" class="status-cell"></td>`;
                     tbody.appendChild(tr);
-                    tr.querySelector('.owned-input').oninput = (e) => { ownedInventory[e.target.dataset.item] = parseInt(e.target.value) || 0; calculateMaterials(); saveToCloudDebounced(); };
+                    tr.querySelector('.owned-input').oninput = (e) => { 
+                        ownedInventory[e.target.dataset.item] = parseInt(e.target.value) || 0; 
+                        calculateMaterials(); 
+                        saveToCloudDebounced(); 
+                    };
                 }
+                
+                // Ensure alphabetical order by moving row to the end of the current sorted sequence
+                tbody.appendChild(tr);
+
                 tr.querySelector('.icon-small').style.backgroundImage = `url('${getIconUrl(item)}')`;
                 tr.querySelector('.item-name-cell').textContent = item;
                 tr.querySelector('.item-name-cell').style.color = needed > 0 ? '#eee' : '#444';
@@ -745,6 +766,8 @@
                 else { sCell.textContent = deficit <= 0 ? 'READY' : deficit.toLocaleString(); sCell.className = `status-cell ${deficit <= 0 ? 'ready' : 'deficit'}`; }
                 activeRows.add(rowId);
             });
+            
+            // Clean up rows for items that are no longer needed/owned
             [...tbody.rows].forEach(r => { if (r.id && !activeRows.has(r.id)) r.remove(); });
         }
 
