@@ -499,16 +499,19 @@
                     document.getElementById('user-display').textContent = user.isAnonymous ? "GUEST_SESSION" : `AUTH_ID: ${user.uid}`;
                     document.getElementById('sync-status').textContent = 'CONNECTED';
                     document.getElementById('sync-status').classList.add('active');
+                    
                     onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'barterState'), (snap) => {
-                        if (snap.exists() && !isSaving && !debounceTimer) { loadFromCloud(snap.data()); }
-                    }, (err) => console.error(err));
+                        if (snap.exists() && !isSaving && !debounceTimer) { 
+                            loadFromCloud(snap.data()); 
+                        }
+                    }, (err) => console.error("Firestore error:", err));
                 }
             });
         }
 
         const initAuth = async () => {
             if (!auth) return;
-            try { signInAnonymously(auth); } catch (e) { console.error(e); }
+            try { await signInAnonymously(auth); } catch (e) { console.error("Auth error:", e); }
         };
 
         // --- 4. PERSISTENCE ---
@@ -518,14 +521,26 @@
             document.getElementById('sync-status').className = 'sync-indicator saving';
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(async () => {
-                isSaving = true; debounceTimer = null;
+                isSaving = true; 
+                debounceTimer = null;
                 try {
                     await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'barterState'), {
-                        cargo: JSON.stringify(currentCargo), inventory: ownedInventory, buffs: activeBuffs, multiplier: weekMult, town: selectedTown, dest: targetDest, transport: document.getElementById('transport-select').value
+                        cargo: JSON.stringify(currentCargo), 
+                        inventory: ownedInventory, 
+                        buffs: activeBuffs, 
+                        multiplier: weekMult, 
+                        town: selectedTown, 
+                        dest: targetDest, 
+                        transport: document.getElementById('transport-select').value
                     });
                     document.getElementById('sync-status').textContent = 'SYNCED';
                     document.getElementById('sync-status').className = 'sync-indicator active';
-                } catch (e) { document.getElementById('sync-status').textContent = 'ERROR'; } finally { setTimeout(() => isSaving = false, 500); }
+                } catch (e) { 
+                    document.getElementById('sync-status').textContent = 'ERROR'; 
+                    console.error("Save error:", e);
+                } finally { 
+                    setTimeout(() => isSaving = false, 500); 
+                }
             }, DEBOUNCE_DELAY);
         };
 
@@ -683,13 +698,17 @@
         function addItem(itemData) {
             if (currentCargo.filter(c => c.item === itemData.item).length >= itemData.limit) return;
             currentCargo.push({ ...itemData });
-            calculateLoadout(); renderCatalog(); saveToCloudDebounced();
+            calculateLoadout(); 
+            renderCatalog(); 
+            saveToCloudDebounced();
         }
 
         window.removeItemFromManifest = (itemName) => {
             const idx = currentCargo.findLastIndex(c => c.item === itemName);
             if (idx !== -1) currentCargo.splice(idx, 1);
-            calculateLoadout(); renderCatalog(); saveToCloudDebounced();
+            calculateLoadout(); 
+            renderCatalog(); 
+            saveToCloudDebounced();
         };
 
         function calculateMaterials() {
@@ -716,11 +735,7 @@
 
         function renderTable(tbodyId, dataMap, isComp) {
             const tbody = document.getElementById(tbodyId);
-            
-            // Collect all potential items (needed or owned)
             const allPotentialItems = Array.from(new Set([...Object.keys(dataMap), ...Object.keys(ownedInventory)]));
-            
-            // Filter and sort items alphabetically
             const sortedItems = allPotentialItems
                 .filter(item => {
                     const isItemComp = recipeDb.some(r => r.item === item);
@@ -729,12 +744,9 @@
                 .sort((a, b) => a.localeCompare(b));
 
             const activeRows = new Set();
-            
             sortedItems.forEach(item => {
                 const needed = dataMap[item] || 0;
                 const owned = ownedInventory[item] || 0;
-                
-                // Hide items that are neither needed nor owned
                 if (needed === 0 && owned === 0) return;
 
                 const deficit = Math.ceil(needed) - owned;
@@ -753,9 +765,7 @@
                     };
                 }
                 
-                // Ensure alphabetical order by moving row to the end of the current sorted sequence
                 tbody.appendChild(tr);
-
                 tr.querySelector('.icon-small').style.backgroundImage = `url('${getIconUrl(item)}')`;
                 tr.querySelector('.item-name-cell').textContent = item;
                 tr.querySelector('.item-name-cell').style.color = needed > 0 ? '#eee' : '#444';
@@ -767,14 +777,17 @@
                 activeRows.add(rowId);
             });
             
-            // Clean up rows for items that are no longer needed/owned
             [...tbody.rows].forEach(r => { if (r.id && !activeRows.has(r.id)) r.remove(); });
         }
 
         // --- 7. LISTENERS ---
         document.getElementById('town-select').onchange = (e) => { selectedTown = e.target.value; renderCatalog(); saveToCloudDebounced(); };
         document.getElementById('dest-select').onchange = (e) => { targetDest = e.target.value; calculateLoadout(); saveToCloudDebounced(); };
-        document.getElementById('week-mult').oninput = (e) => { weekMult = parseInt(e.target.value) || 1; calculateLoadout(); saveToCloudDebounced(); };
+        document.getElementById('week-mult').oninput = (e) => { 
+            weekMult = parseInt(e.target.value) || 1; 
+            calculateMaterials();
+            saveToCloudDebounced(); 
+        };
         
         document.querySelectorAll('.toggle-input').forEach(chk => {
             chk.onchange = (e) => {
@@ -782,7 +795,8 @@
                 if (id === 'william' && e.target.checked) { document.getElementById('buff-alpaca').checked = false; activeBuffs.alpaca = false; }
                 if (id === 'alpaca' && e.target.checked) { document.getElementById('buff-william').checked = false; activeBuffs.william = false; }
                 activeBuffs[id] = e.target.checked;
-                calculateLoadout(); saveToCloudDebounced();
+                calculateLoadout(); 
+                saveToCloudDebounced();
             };
         });
 
