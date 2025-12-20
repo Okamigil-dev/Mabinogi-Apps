@@ -703,7 +703,7 @@
                         </label>
                         <div id="william-like-box" style="display:none; align-items: center; gap: 5px;">
                              <span style="font-size: 9px; color: #666;">LIKE</span>
-                             <input type="number" id="william-likeability" class="qty-input-compact" min="0" max="249" value="249" placeholder="249">
+                             <input type="number" id="william-likeability" class="qty-input-compact" style="width: 60px;" min="0" max="247" value="247" placeholder="247">
                         </div>
                     </div>
 
@@ -837,12 +837,13 @@
             "B": 0.05, "C": 0.04, "D": 0.03, "E": 0.02, "F": 0.01
         };
 
-        // NEW: Letter of Guarantee Data (Base)
+        // NEW: Letter of Guarantee Data (Updated per user request)
         const guaranteeLetters = {
             "None": { normal: 0, barter: 0, fine_normal: 0, fine_barter: 0 },
-            "Goblin": { normal: 0.15, barter: 0.05, fine_normal: 0.20, fine_barter: 0.075 },
-            "Imp": { normal: 0.30, barter: 0.10, fine_normal: 0.40, fine_barter: 0.15 },
-            "Ogre": { normal: 0.40, barter: 0.15, fine_normal: 0.50, fine_barter: 0.20 }
+            "Ogre": { normal: 0.30, barter: 0.15, fine_normal: 0.90, fine_barter: 0.45 },
+            "Goblin": { normal: 0.40, barter: 0.20, fine_normal: 1.20, fine_barter: 0.60 },
+            "Imp": { normal: 0.50, barter: 0.25, fine_normal: 1.50, fine_barter: 0.75 },
+            "Irusan's (Special)": { normal: 3.00, barter: 0.75, fine_normal: 3.00, fine_barter: 0.75 }
         };
 
         const marketData = {
@@ -1213,6 +1214,47 @@
             return { slots: b.slots + bS, weight: b.weight + bW };
         }
 
+        // Helper for Modifiers to avoid duplicate logic
+        function getActiveModifiers() {
+            const commerceType = document.getElementById('commerce-type-select').value;
+            const masteryRank = document.getElementById('mastery-rank').value;
+            const masteryBonus = masteryRanks[masteryRank] || 0;
+            
+            const letterName = document.getElementById('letter-select').value;
+            const isFine = document.getElementById('fine-letter-check').checked;
+            const letterInfo = guaranteeLetters[letterName] || guaranteeLetters["None"];
+            
+            let letterMultiplier = 0;
+            if (commerceType === "Barter") {
+                letterMultiplier = isFine ? letterInfo.fine_barter : letterInfo.barter;
+            } else {
+                letterMultiplier = isFine ? letterInfo.fine_normal : letterInfo.normal;
+            }
+
+            let williamBonus = 0;
+            if (document.getElementById('william-check').checked) {
+                const likeability = parseInt(document.getElementById('william-likeability').value) || 0;
+                
+                if (likeability >= 240) {
+                    williamBonus = 0.03;
+                } else if (likeability >= 130) {
+                    williamBonus = 0.02;
+                } else if (likeability >= 80) {
+                    williamBonus = 0.01;
+                } else {
+                    williamBonus = 0;
+                }
+            }
+
+            return {
+                mastery: masteryBonus,
+                letter: letterMultiplier,
+                william: williamBonus,
+                // ADDITIVE Stacking: (1 + Mastery% + Letter% + William%)
+                totalMultiplier: (1 + masteryBonus + letterMultiplier + williamBonus)
+            };
+        }
+
         // Core Profit Calculator to unify Logic
         function calculateItemProfit(item, targetCity, sellPriceOverride = null) {
             const sellVal = sellPriceOverride !== null ? sellPriceOverride : getPrice(item.name, targetCity);
@@ -1224,36 +1266,16 @@
             const baseProfit = (sellVal !== "") ? (sellVal - dBuy) * load : 0;
             
             // Modifiers
-            const commerceType = document.getElementById('commerce-type-select').value;
-            const masteryRank = document.getElementById('mastery-rank').value;
-            const masteryBonus = masteryRanks[masteryRank] || 0;
-            
-            const letterName = document.getElementById('letter-select').value;
-            const isFine = document.getElementById('fine-letter-check').checked;
-            const letterInfo = guaranteeLetters[letterName] || guaranteeLetters["None"];
-            
-            // Logic for Fine/Normal and Barter/Normal
-            let letterMultiplier = 0;
-            if (commerceType === "Barter") {
-                letterMultiplier = isFine ? letterInfo.fine_barter : letterInfo.barter;
-            } else {
-                letterMultiplier = isFine ? letterInfo.fine_normal : letterInfo.normal;
-            }
+            const mods = getActiveModifiers();
 
-            // William Bonus (Applies to Profit, NOT score)
-            // 0% to 3% based on 249 Likeability
-            let williamBonus = 0;
-            if (document.getElementById('william-check').checked) {
-                const likeability = parseInt(document.getElementById('william-likeability').value) || 0;
-                // Clamp 0-249
-                const validLike = Math.max(0, Math.min(249, likeability));
-                williamBonus = (validLike / 249) * 0.03; 
+            // Total Profit - Only apply multipliers if we are actually making a profit
+            let finalProfit = baseProfit;
+            if (baseProfit > 0) {
+                finalProfit = Math.floor(baseProfit * mods.totalMultiplier);
             }
-
-            // Total Profit = Base * (1 + Mastery + Letter + William)
-            const finalProfit = Math.floor(baseProfit * (1 + masteryBonus + letterMultiplier + williamBonus));
 
             // Score Logic - RAW (Sell - Buy) * Load / Divisor
+            const commerceType = document.getElementById('commerce-type-select').value;
             const divisor = (commerceType === "Barter") ? 34 : 17;
             const score = Math.max(0, Math.floor(((sellVal - (item.buy || 0)) * load) / divisor));
 
@@ -1282,30 +1304,8 @@
             let best = null;
             let maxP = -1;
             
-            // Need current Modifiers for accurate calculation
-            const commerceType = document.getElementById('commerce-type-select').value;
-            const masteryRank = document.getElementById('mastery-rank').value;
-            const masteryBonus = masteryRanks[masteryRank] || 0;
-            
-            const letterName = document.getElementById('letter-select').value;
-            const isFine = document.getElementById('fine-letter-check').checked;
-            const letterInfo = guaranteeLetters[letterName] || guaranteeLetters["None"];
-            
-            let letterMultiplier = 0;
-            if (commerceType === "Barter") {
-                letterMultiplier = isFine ? letterInfo.fine_barter : letterInfo.barter;
-            } else {
-                letterMultiplier = isFine ? letterInfo.fine_normal : letterInfo.normal;
-            }
-
-            let williamBonus = 0;
-            if (document.getElementById('william-check').checked) {
-                const likeability = parseInt(document.getElementById('william-likeability').value) || 0;
-                const validLike = Math.max(0, Math.min(249, likeability));
-                williamBonus = (validLike / 249) * 0.03; 
-            }
-
-            const totalMultiplier = (1 + masteryBonus + letterMultiplier + williamBonus);
+            // Get modifiers once
+            const mods = getActiveModifiers();
 
             // Loop through all target cities
             targetCities.forEach(targetCity => {
@@ -1324,8 +1324,10 @@
                         // Base Unit Profit
                         let unitP = sell - buy;
                         
-                        // Apply Modifiers to Unit Profit estimate
-                        unitP = unitP * totalMultiplier;
+                        // Apply Modifiers to Unit Profit estimate ONLY if positive
+                        if (unitP > 0) {
+                            unitP = unitP * mods.totalMultiplier;
+                        }
 
                         return { ...item, unitP, eff: unitP / Math.max(1, item.weight) };
                     }).filter(i => i.unitP > 0).sort((a, b) => b.eff - a.eff);
@@ -1337,8 +1339,10 @@
                         if (qty <= 0) return;
 
                         let slotsNeeded = Math.ceil(qty / item.max);
-                        itemsToBuy.push({ n: item.name, q: qty, p: Math.floor(qty * item.unitP), img: item.img, s: slotsNeeded, maxPerSlot: item.max });
-                        remWeight -= (qty * item.weight); remSlots -= slotsNeeded; totalP += Math.floor(qty * item.unitP);
+                        // Floor the final profit calculation for this item stack
+                        const stackProfit = Math.floor(qty * item.unitP);
+                        itemsToBuy.push({ n: item.name, q: qty, p: stackProfit, img: item.img, s: slotsNeeded, maxPerSlot: item.max });
+                        remWeight -= (qty * item.weight); remSlots -= slotsNeeded; totalP += stackProfit;
                     });
 
                     if (totalP > maxP) {
@@ -1626,8 +1630,8 @@
             const letterSelect = document.getElementById('letter-select');
             letterSelect.innerHTML = '';
             
-            // Explicit order based on profit: Ogre > Imp > Goblin
-            const letterOrder = ["None", "Ogre", "Imp", "Goblin"];
+            // Explicit order: Ogre -> Goblin -> Imp -> Irusan
+            const letterOrder = ["None", "Ogre", "Goblin", "Imp", "Irusan's (Special)"];
             
             letterOrder.forEach(name => {
                 const opt = document.createElement('option');
