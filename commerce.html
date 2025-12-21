@@ -853,9 +853,6 @@
             const sellVal = parseInt(val, 10) || 0;
             const priceKey = `${currentItem.name}_${city}`.replace(/[.#$[\]]/g, "_");
             publicPrices[priceKey] = sellVal;
-            
-            skipRender = true; // Fix focus loss
-            
             // Try to update DB, ignore errors
             if(rtdb) { try { rtdb.ref(`public_commerce/prices/${priceKey}`).set(sellVal); } catch(e){} }
             // Optimistic Row Update
@@ -876,9 +873,6 @@
         function updateStock(itemName, quantity) {
             const qty = parseInt(quantity) || 0;
             publicStocks[itemName] = qty;
-            
-            skipRender = true; // Fix focus loss
-            
             if(rtdb) { try { rtdb.ref(`public_commerce/stocks/${itemName}`).set(qty); } catch(e){} }
             refreshUI();
         }
