@@ -189,13 +189,24 @@
     </div>
 
     <script>
-        const firebaseConfig = { apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM", databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com" };
+        // Updated to use the EXACT configuration provided
+        const firebaseConfig = {
+            apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM",
+            authDomain: "mabinogi-tracker.firebaseapp.com",
+            databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com",
+            projectId: "mabinogi-tracker",
+            storageBucket: "mabinogi-tracker.firebasestorage.app",
+            messagingSenderId: "267690802644",
+            appId: "1:267690802644:web:fccdd005d5c8990504ea41",
+            measurementId: "G-VBDBKQ3M1B"
+        };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.database();
 
         let tasks = [], catOrder = [], currentSideView = 'daily', currentUser = null;
 
+        // This line is CRITICAL for the "Login once, use everywhere" logic
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
         auth.onAuthStateChanged(user => {
@@ -231,6 +242,7 @@
 
         function startSync() {
             if (!currentUser) return;
+            // Matches the path used in the rules: users/$uid
             db.ref(`users/${currentUser.uid}`).on('value', (snap) => {
                 const data = snap.val() || {};
                 tasks = data.tasks || [];
