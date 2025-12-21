@@ -223,6 +223,7 @@
 
     let tasks = [], chars = ["Main"], collapsed = {}, catOrder = [], lastReset = { daily: 0, thu: 0, sat: 0 };
     let currentView = 'daily', activeFilter = "ALL", currentUser = null;
+    let skipRender = false; // Prevents focus loss when typing
 
     auth.onAuthStateChanged(user => {
         if (user) { 
@@ -260,6 +261,7 @@
         } else {
             // Note: This maintains the simple users/$uid path used in this file
             db.ref(`users/${currentUser.uid}`).on('value', (snap) => {
+                if (skipRender) { skipRender = false; return; } // Skip re-rendering if this client caused the update
                 const data = snap.val() || {};
                 tasks = data.tasks || []; chars = data.chars || ["Main"]; catOrder = data.catOrder || []; lastReset = data.lastReset || { daily: 0, thu: 0, sat: 0 };
                 checkAndReset(); render();
@@ -391,7 +393,14 @@
         pushData(); 
     }
     
-    function upd(id, f, v) { const t = tasks.find(x => x.id == id); t[f] = (f==='max'?parseInt(v):v); pushData(); }
+    function upd(id, f, v) { 
+        const t = tasks.find(x => x.id == id); 
+        t[f] = (f==='max'?parseInt(v):v); 
+        // FIX: Prevent re-render loop on simple text updates to maintain focus
+        if(f === 'name' || f === 'max') skipRender = true;
+        pushData(); 
+    }
+    
     function del(id) { tasks = tasks.filter(x => x.id != id); pushData(); }
     function addTask(cat) { tasks.push({ id: Date.now(), name: "New Task", cat, done: 0, max: 1, type: currentView === 'daily' ? "daily" : "thu", char: chars[0] }); pushData(); }
     function addCat() { const i = document.getElementById('new-cat'); if(i.value.trim()){ addTask(i.value.trim()); i.value=''; } }
