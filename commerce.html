@@ -969,7 +969,14 @@
             document.getElementById('william-check').checked = !!saved.william;
             if(saved.williamLike) document.getElementById('william-likeability').value = saved.williamLike;
             document.getElementById('alpaca-check').checked = !!saved.alpaca;
-            if(saved.transports) transportOwnership = saved.transports;
+            if(saved.transports) {
+                transportOwnership = saved.transports;
+                // Sync checkboxes
+                Object.keys(transportOwnership).forEach(key => {
+                    const toggle = document.querySelector(`.transport-toggle[data-mount="${key}"]`);
+                    if(toggle) toggle.checked = transportOwnership[key];
+                });
+            }
             
             updateCityContext();
             updateTransportDropdown();
@@ -980,9 +987,14 @@
             function initApp() {
                 try {
                     const firebaseConfig = {
-                        apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM", // Key provided by env or set here
+                        apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM",
+                        authDomain: "mabinogi-tracker.firebaseapp.com",
                         databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com",
-                        projectId: "mabinogi-tracker-default"
+                        projectId: "mabinogi-tracker",
+                        storageBucket: "mabinogi-tracker.firebasestorage.app",
+                        messagingSenderId: "267690802644",
+                        appId: "1:267690802644:web:fccdd005d5c8990504ea41",
+                        measurementId: "G-VBDBKQ3M1B"
                     };
                     firebase.initializeApp(firebaseConfig);
                     rtdb = firebase.database();
@@ -999,7 +1011,20 @@
                     auth.onAuthStateChanged((user) => {
                         currentUser = user;
                         if (user) {
-                            rtdb.ref(`artifacts/${appId}/users/${user.uid}/settings`).on('value', (s) => { if(s.val()) { const d=s.val(); if(d.transports) transportOwnership=d.transports; refreshUI(); } });
+                            rtdb.ref(`artifacts/${appId}/users/${user.uid}/settings`).on('value', (s) => { 
+                                if(s.val()) { 
+                                    const d=s.val(); 
+                                    if(d.transports) {
+                                        transportOwnership=d.transports; 
+                                        // Sync Checkboxes from Firebase update
+                                        Object.keys(transportOwnership).forEach(key => {
+                                            const toggle = document.querySelector(`.transport-toggle[data-mount="${key}"]`);
+                                            if(toggle) toggle.checked = transportOwnership[key];
+                                        });
+                                    }
+                                    refreshUI(); 
+                                } 
+                            });
                             rtdb.ref(`artifacts/${appId}/users/${user.uid}/town_ranks`).on('value', (s) => { if(s.val()) { townRanks = s.val(); updateCityContext(); } });
                         }
                     });
