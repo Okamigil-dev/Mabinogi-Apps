@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Settings - Mabi-Apps</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #050505;
+            --card-bg: #111;
+            --accent: #00ff88;
+            --border: rgba(255,255,255,0.05);
+            --text-main: #d0d0d0;
+            --text-dim: #666;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-size: 14px;
+        }
+
+        .settings-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 40px;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+
+        .header {
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: var(--accent);
+            text-transform: uppercase;
+            margin-bottom: 30px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 20px;
+        }
+
+        .input-group { margin-bottom: 20px; }
+        label { display: block; color: var(--text-dim); font-size: 10px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; }
+        
+        input {
+            width: 100%;
+            background: #080808;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 12px;
+            border-radius: 4px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        input:focus { outline: none; border-color: var(--accent); }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #1a1a1a;
+            border: 1px solid var(--border);
+            color: #fff;
+            font-weight: 900;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: 0.2s;
+            margin-top: 10px;
+        }
+        .btn:hover { background: var(--accent); color: #000; }
+        .btn.secondary { background: transparent; border: 1px solid #333; color: #666; }
+        .btn.secondary:hover { border-color: #666; color: #fff; background: transparent; }
+
+        .avatar-preview {
+            width: 80px;
+            height: 80px;
+            background-color: #000;
+            border: 1px solid #333;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            background-size: cover;
+            background-position: center;
+            background-image: url('https://placehold.co/80x80/000/333?text=?');
+        }
+    </style>
+</head>
+<body>
+
+    <div class="settings-card">
+        <div class="header">User Profile Config</div>
+
+        <div class="avatar-preview" id="preview-img"></div>
+
+        <div class="input-group">
+            <label>Display Name</label>
+            <input type="text" id="username" placeholder="Enter username...">
+        </div>
+
+        <div class="input-group">
+            <label>Avatar URL (Image Link)</label>
+            <input type="text" id="avatar-url" placeholder="https://example.com/image.png" oninput="updatePreview(this.value)">
+        </div>
+
+        <button class="btn" onclick="saveProfile()">Save Changes</button>
+        <button class="btn secondary" onclick="window.location.href='index.html'">Back to Hub</button>
+        
+        <div id="status" style="text-align: center; margin-top: 15px; font-size: 10px; color: var(--accent); min-height: 14px;"></div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM",
+            authDomain: "mabinogi-tracker.firebaseapp.com",
+            databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com",
+            projectId: "mabinogi-tracker",
+            storageBucket: "mabinogi-tracker.firebasestorage.app",
+            messagingSenderId: "267690802644",
+            appId: "1:267690802644:web:fccdd005d5c8990504ea41",
+            measurementId: "G-VBDBKQ3M1B"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+        let currentUser = null;
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUser = user;
+                loadProfile();
+            } else {
+                window.location.href = 'index.html'; // Redirect if not logged in
+            }
+        });
+
+        function loadProfile() {
+            db.ref(`users/${currentUser.uid}/profile`).once('value', (snapshot) => {
+                const data = snapshot.val() || {};
+                document.getElementById('username').value = data.username || "";
+                document.getElementById('avatar-url').value = data.avatar || "";
+                updatePreview(data.avatar || "");
+            });
+        }
+
+        function updatePreview(url) {
+            const img = document.getElementById('preview-img');
+            if (url) {
+                img.style.backgroundImage = `url('${url}')`;
+            } else {
+                img.style.backgroundImage = `url('https://placehold.co/80x80/000/333?text=?')`;
+            }
+        }
+
+        function saveProfile() {
+            const username = document.getElementById('username').value.trim();
+            const avatar = document.getElementById('avatar-url').value.trim();
+            const status = document.getElementById('status');
+
+            status.innerText = "Saving...";
+            
+            db.ref(`users/${currentUser.uid}/profile`).update({
+                username: username,
+                avatar: avatar
+            }).then(() => {
+                status.innerText = "Profile Updated Successfully!";
+                setTimeout(() => status.innerText = "", 2000);
+            }).catch((error) => {
+                status.style.color = "#ff4444";
+                status.innerText = "Error: " + error.message;
+            });
+        }
+    </script>
+</body>
+</html>
