@@ -113,7 +113,7 @@
         .data-table td { padding: 8px 5px; border-bottom: 1px solid rgba(255,255,255,0.03); color: #ccc; vertical-align: middle; }
         
         .cell-flex { display: flex; align-items: center; gap: 10px; min-height: 28px; height: 100%; }
-        .cell-flex span { white-space: normal; line-height: 1.3; display: inline-block; word-break: break-word; }
+        .cell-flex span { white-space: normal; line-height: 1.3; display: inline-block; overflow-wrap: break-word; word-break: normal; }
 
         .owned-input { 
             background: var(--bg); border: 1px solid var(--border); color: var(--accent); 
@@ -140,12 +140,12 @@
         .toggle-input { display: none; }
 
         /* Sidebar Tabs / Picker Buttons */
-        .tab-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 8px; margin-bottom: 15px; }
+        .tab-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 8px; margin-bottom: 0px; }
         .picker-btn { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 4px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: 0.15s; }
         .picker-btn.active { background: var(--accent-dim); border-color: var(--accent); }
         
         .picker-icon { 
-            width: 48px; height: 48px; background-size: contain; background-repeat: no-repeat; background-position: center; 
+            width: 40px; height: 40px; background-size: contain; background-repeat: no-repeat; background-position: center; 
             border: 1px solid var(--border); border-radius: 4px; background-color: rgba(255, 255, 255, 0.03);
         }
         .picker-label { font-size: 9px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; text-align: center; }
@@ -160,6 +160,11 @@
         }
         summary::before { content: '▶'; font-size: 8px; transition: 0.2s; }
         details[open] summary::before { transform: rotate(90deg); color: var(--accent); }
+        
+        /* Drawer Content Padding */
+        .drawer-content {
+            padding: 0 20px 15px 20px;
+        }
 
         /* Transport Slots */
         .slot {
@@ -213,10 +218,14 @@
 
         <div class="content-grid">
             <div class="panel left-panel" id="left-panel">
-                <div style="padding:20px; border-bottom:1px solid var(--border);">
-                    <label style="font-size:11px; font-weight:600; color:var(--text-dim); display:block; text-transform:none; margin-bottom:10px;">Trade Post</label>
-                    <div id="town-tabs" class="tab-picker"></div>
-                </div>
+                <!-- TRADE POST DRAWER -->
+                <details class="drawer-wrap" open>
+                    <summary>Trade Post</summary>
+                    <div class="drawer-content">
+                        <div id="town-tabs" class="tab-picker"></div>
+                    </div>
+                </details>
+
                 <div id="catalog-container" class="item-list"></div>
             </div>
 
@@ -255,7 +264,7 @@
                 <!-- BUFFS DRAWER -->
                 <details class="drawer-wrap" open>
                     <summary>Buffs</summary>
-                    <div style="padding: 0 20px 15px 20px;">
+                    <div class="drawer-content">
                         <div style="display:flex; flex-direction:column; gap:8px;">
                             <label style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;"><span style="font-size:12px;">Grandmaster Merchant</span><input type="checkbox" id="buff-gm" class="toggle-input"><div class="toggle-switch"></div></label>
                             <label style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;"><span style="font-size:12px;">William (Partner)</span><input type="checkbox" id="buff-william" class="toggle-input"><div class="toggle-switch"></div></label>
@@ -270,8 +279,8 @@
                         <span>Transport A</span>
                         <span id="transport-stats-1" style="margin-left:auto; font-size:10px; color:var(--text-dim); font-family:'JetBrains Mono';">0 / 0 KG</span>
                     </summary>
-                    <div style="padding: 0 20px 15px 20px;">
-                        <div id="transport-tabs-1" class="tab-picker" style="grid-template-columns: repeat(4, 1fr);"></div>
+                    <div class="drawer-content">
+                        <div id="transport-tabs-1" class="tab-picker" style="grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px;"></div>
                         <div id="grid-1" style="display:grid; grid-template-columns: repeat(auto-fill, 50px); gap:2px; background:#000; padding:2px; border-radius:4px;"></div>
                     </div>
                 </details>
@@ -282,8 +291,8 @@
                         <span>Transport B</span>
                         <span id="transport-stats-2" style="margin-left:auto; font-size:10px; color:var(--text-dim); font-family:'JetBrains Mono';">0 / 0 KG</span>
                     </summary>
-                    <div style="padding: 0 20px 15px 20px;">
-                        <div id="transport-tabs-2" class="tab-picker" style="grid-template-columns: repeat(4, 1fr);"></div>
+                    <div class="drawer-content">
+                        <div id="transport-tabs-2" class="tab-picker" style="grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px;"></div>
                         <div id="grid-2" style="display:grid; grid-template-columns: repeat(auto-fill, 50px); gap:2px; background:#000; padding:2px; border-radius:4px;"></div>
                     </div>
                 </details>
@@ -347,31 +356,21 @@
         firebase.initializeApp({apiKey:"AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM",authDomain: "mabinogi-tracker.firebaseapp.com",databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com",projectId: "mabinogi-tracker",storageBucket: "mabinogi-tracker.firebasestorage.app",appId: "1:267690802644:web:fccdd005d5c8990504ea41"});
         const auth=firebase.auth();
         
-        // --- AUTHENTICATION LISTENER: UPDATED TO REMOVE TRANSFORMATION ---
         auth.onAuthStateChanged(user => {
             const displayElem = document.getElementById('user-display');
             if (user) {
                 currentUser = user;
-                
-                // 1. Initial fallback using email prefix (no transform)
                 displayElem.textContent = user.email.split('@')[0];
-
-                // 2. Try instant load from local settings cache (no transform)
                 const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
-                if (cached.username) {
-                    displayElem.textContent = cached.username;
-                }
+                if (cached.username) displayElem.textContent = cached.username;
 
-                // 3. Real-time sync with database profile (no transform)
                 firebase.database().ref(`users/${user.uid}/profile`).on('value', (snap) => {
                     const profile = snap.val();
                     if (profile && profile.username) {
                         displayElem.textContent = profile.username;
-                        // Update local cache
                         localStorage.setItem('mabi_user_cache_' + user.uid, JSON.stringify(profile));
                     }
                 });
-
                 startSync();
             } else {
                 currentUser = { uid: 'local_guest', isGuest: true };
