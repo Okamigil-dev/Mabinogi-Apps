@@ -169,9 +169,6 @@
         .toggle-input:checked + .toggle-slider { background: rgba(255, 215, 0, 0.15); border-color: var(--accent); }
         .toggle-input:checked + .toggle-slider::after { transform: translateX(12px); background: var(--accent); }
 
-        .partner-info { padding: 15px; border-bottom: 1px solid var(--border); }
-        .partner-name { font-size: 10px; font-weight: 900; color: var(--text-dim); margin-bottom: 5px; }
-        
         .recommendation-box {
             margin: 15px; padding: 15px; background: rgba(0,0,0,0.3);
             border: 1px solid var(--accent); border-radius: 4px; box-shadow: 0 0 15px rgba(255,255,255,0.05);
@@ -279,9 +276,9 @@
                         <div class="item-title" id="center-item-title">Initializing...</div>
                         <div style="display:flex; justify-content: space-between; align-items: center; width: 100%;">
                             <div class="item-inventory" id="max-inventory-display">Select an item to begin.</div>
-                            <div id="base-price-container" style="display:none; align-items: center; gap: 10px;">
+                            <div id="base-price-container" style="display:none; align-items: center; gap: 8px;">
                                 <span style="font-size: 10px; color: #666; font-weight: 900; letter-spacing: 0.5px;">BASE COST</span>
-                                <input type="number" id="base-price-input" class="qty-input" style="width: 100px; text-align: right; background: #000; border: 1px solid #333; color: var(--accent);" onchange="updateBasePrice(this.value)">
+                                <input type="number" id="base-price-input" class="qty-input" style="width: 70px; text-align: right; background: #000; border: 1px solid #333; color: var(--accent);" onchange="updateBasePrice(this.value)" onfocus="this.select()">
                             </div>
                         </div>
                     </div>
@@ -382,8 +379,6 @@
                         <span>Air Ship</span>
                     </label>
                 </div>
-
-                <!-- Removed empty partner-info section since dropdown moved to left -->
 
                 <div class="recommendation-box" id="manifest-box" style="display:none;">
                     <div class="rec-title">Local Best Loadout</div>
@@ -624,44 +619,55 @@
         function getStock(itemName) { return publicStocks[itemName] || 0; }
         function getPrice(itemName, city) { return publicPrices[`${itemName}_${city}`.replace(/[.#$[\]]/g, "_")] || 0; }
 
-        function getDiscountedBuyPrice(base) {
-            const r = parseInt(document.getElementById('merchant-rating-select').value, 10) || 1;
+        // Optimization: Read DOM once per refresh
+        function getUIState() {
+            return {
+                commerceType: document.getElementById('commerce-type-select').value,
+                transport: document.getElementById('transport-dropdown').value,
+                merchantRating: parseInt(document.getElementById('merchant-rating-select').value, 10) || 1,
+                trader: parseInt(document.getElementById('trader-qty').value, 10) || 0,
+                trust: parseInt(document.getElementById('trustworthy-qty').value, 10) || 0,
+                mastery: document.getElementById('mastery-rank').value,
+                letter: document.getElementById('letter-select').value,
+                fine: document.getElementById('fine-letter-check').checked,
+                gm: document.getElementById('gm-check').checked,
+                william: document.getElementById('william-check').checked,
+                williamLike: parseInt(document.getElementById('william-likeability').value) || 0,
+                alpaca: document.getElementById('alpaca-check').checked
+            };
+        }
+
+        function getDiscountedBuyPrice(base, uiState) {
+            const r = uiState.merchantRating;
             const mD = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 1, 6: 1, 7: 2, 8: 2, 9: 3 }[r] || 0;
-            const traderVal = parseInt(document.getElementById('trader-qty').value, 10) || 0;
-            const trustVal = parseInt(document.getElementById('trustworthy-qty').value, 10) || 0;
-            const gear = (traderVal * 3) + trustVal;
+            const gear = (uiState.trader * 3) + uiState.trust;
             return Math.floor(base * (1 - ((mD + gear) / 100)));
         }
 
-        function getModifiedStats(mName) {
+        function getModifiedStats(mName, uiState) {
             const b = transportData[mName];
             if (!b) return { slots: 0, weight: 0 };
             let bW = 0, bS = 0;
-            if (document.getElementById('gm-check').checked) { bW += 100; bS += 1; }
-            if (mName !== "Air Ship" && document.getElementById('william-check').checked) { bW += 200; bS += 1; }
-            if (mName === "Wagon" && document.getElementById('alpaca-check').checked) { bW += 200; bS += 2; }
+            if (uiState.gm) { bW += 100; bS += 1; }
+            if (mName !== "Air Ship" && uiState.william) { bW += 200; bS += 1; }
+            if (mName === "Wagon" && uiState.alpaca) { bW += 200; bS += 2; }
             return { slots: b.slots + bS, weight: b.weight + bW };
         }
 
-        function getActiveModifiers() {
-            const commerceType = document.getElementById('commerce-type-select').value;
-            const masteryRank = document.getElementById('mastery-rank').value;
-            const masteryBonus = masteryRanks[masteryRank] || 0;
-            
-            const letterName = document.getElementById('letter-select').value;
-            const isFine = document.getElementById('fine-letter-check').checked;
-            const letterInfo = guaranteeLetters[letterName] || guaranteeLetters["None"];
+        function getActiveModifiers(uiState) {
+            const masteryBonus = masteryRanks[uiState.mastery] || 0;
+            const letterInfo = guaranteeLetters[uiState.letter] || guaranteeLetters["None"];
             
             let letterMultiplier = 0;
-            if (commerceType === "Barter") {
-                letterMultiplier = isFine ? letterInfo.fine_barter : letterInfo.barter;
+            if (uiState.commerceType === "Barter") {
+                letterMultiplier = uiState.fine ? letterInfo.fine_barter : letterInfo.barter;
             } else {
-                letterMultiplier = isFine ? letterInfo.fine_normal : letterInfo.normal;
+                letterMultiplier = uiState.fine ? letterInfo.fine_normal : letterInfo.normal;
             }
 
             let williamBonus = 0;
-            if (document.getElementById('william-check').checked) {
-                const like = parseInt(document.getElementById('william-likeability').value) || 0;
+            if (uiState.william) {
+                const like = uiState.williamLike;
                 if (like >= 240) williamBonus = 0.03;
                 else if (like >= 130) williamBonus = 0.02;
                 else if (like >= 80) williamBonus = 0.01;
@@ -670,46 +676,47 @@
             return { totalMultiplier: (1 + masteryBonus + letterMultiplier + williamBonus) };
         }
 
-        function calculateItemProfit(item, targetCity, sellPriceOverride = null) {
+        function calculateItemProfit(item, targetCity, uiState, sellPriceOverride = null) {
             const sellVal = sellPriceOverride !== null ? sellPriceOverride : getPrice(item.name, targetCity);
             const basePrice = publicBasePrices[item.name] || item.buy;
-            const dBuy = getDiscountedBuyPrice(basePrice);
-            const stats = getModifiedStats(document.getElementById('transport-dropdown').value);
+            const dBuy = getDiscountedBuyPrice(basePrice, uiState);
+            const stats = getModifiedStats(uiState.transport, uiState);
             const load = Math.min(Math.floor(stats.weight / item.weight), stats.slots * item.max, item.limit);
             
             const baseProfit = (sellVal !== "") ? (sellVal - dBuy) * load : 0;
-            const mods = getActiveModifiers();
+            const mods = getActiveModifiers(uiState);
             let finalProfit = baseProfit > 0 ? Math.floor(baseProfit * mods.totalMultiplier) : baseProfit;
 
-            const commerceType = document.getElementById('commerce-type-select').value;
-            const divisor = (commerceType === "Barter") ? 34 : 17;
+            const divisor = (uiState.commerceType === "Barter") ? 34 : 17;
             const score = Math.max(0, Math.floor(((sellVal - (item.buy || 0)) * load) / divisor));
 
             return { profit: finalProfit, score: score, load: load };
         }
 
-        function getAvailableMounts() {
+        function getAvailableMounts(uiState) {
             const mounts = ['Back Pack'];
-            const type = document.getElementById('commerce-type-select').value;
             Object.keys(transportOwnership).forEach(key => {
                 if (transportOwnership[key]) {
-                    if (key === 'Air Ship' && type !== 'Group') return;
+                    if (key === 'Air Ship' && uiState.commerceType !== 'Group') return;
                     mounts.push(key);
                 }
             });
             return mounts;
         }
 
-        function calculateBestRouteForVector(originCity, targetCities, originItems, forcedMount = null) {
+        function calculateBestRouteForVector(originCity, targetCities, originItems, uiState, forcedMount = null) {
             let best = null, maxP = -1;
-            const mods = getActiveModifiers();
+            const mods = getActiveModifiers(uiState);
+            const mountsToCheck = forcedMount ? [forcedMount] : getAvailableMounts(uiState);
+
             targetCities.forEach(targetCity => {
-                (forcedMount ? [forcedMount] : getAvailableMounts()).forEach(mKey => {
-                    const stats = getModifiedStats(mKey);
+                mountsToCheck.forEach(mKey => {
+                    const stats = getModifiedStats(mKey, uiState);
                     let remWeight = stats.weight, remSlots = stats.slots, totalP = 0, itemsToBuy = [];
                     const potential = originItems.map(item => {
                         const basePrice = publicBasePrices[item.name] || item.buy;
-                        const unitP = (getPrice(item.name, targetCity) - getDiscountedBuyPrice(basePrice)) * (1 + (getPrice(item.name, targetCity) > getDiscountedBuyPrice(basePrice) ? (mods.totalMultiplier - 1) : 0));
+                        const dBuy = getDiscountedBuyPrice(basePrice, uiState);
+                        const unitP = (getPrice(item.name, targetCity) - dBuy) * (1 + (getPrice(item.name, targetCity) > dBuy ? (mods.totalMultiplier - 1) : 0));
                         return { ...item, unitP, eff: unitP / Math.max(1, item.weight) };
                     }).filter(i => i.unitP > 0).sort((a, b) => b.eff - a.eff);
 
@@ -728,19 +735,19 @@
             return { best, maxP };
         }
 
-        function runManifests() {
-            const type = document.getElementById('commerce-type-select').value;
+        function runManifests(uiState) {
             const origin = document.getElementById('city-select').value;
-            const targetPool = (type === "Barter" ? citiesByType["Normal"] : citiesByType[type]);
+            const targetPool = (uiState.commerceType === "Barter" ? citiesByType["Normal"] : citiesByType[uiState.commerceType]);
             const targets = targetPool.filter(c => c !== origin);
-            const originItems = (marketData[type] && marketData[type][origin]) || [];
+            const originItems = (marketData[uiState.commerceType] && marketData[uiState.commerceType][origin]) || [];
             
-            const localResult = calculateBestRouteForVector(origin, targets, originItems, null);
+            const localResult = calculateBestRouteForVector(origin, targets, originItems, uiState, null);
             renderManifest(localResult.best, 'manifest-box', 'manifest-list', 'manifest-total');
 
             let globalBest = null, globalMax = -1;
-            (citiesByType[type] || []).forEach(org => {
-                const res = calculateBestRouteForVector(org, targetPool.filter(c => c !== org), (marketData[type] && marketData[type][org]) || []);
+            (citiesByType[uiState.commerceType] || []).forEach(org => {
+                const orgItems = (marketData[uiState.commerceType] && marketData[uiState.commerceType][org]) || [];
+                const res = calculateBestRouteForVector(org, targetPool.filter(c => c !== org), orgItems, uiState, null);
                 if (res.maxP > globalMax) { globalMax = res.maxP; globalBest = res.best; }
             });
             const anchor = document.getElementById('global-manifest-anchor');
@@ -784,14 +791,27 @@
         }
 
         function refreshUI() {
-            if (document.activeElement && document.activeElement.classList.contains('price-input')) return;
-            updateMarketItems(); showPrices(); updatePreview(); updateRecommendationAndStats(); updateTownIcon(); runManifests();
+            // Check for any input focus to prevent destruction
+            if (document.activeElement && (
+                document.activeElement.classList.contains('price-input') || 
+                document.activeElement.classList.contains('qty-input') ||
+                document.activeElement.id === 'base-price-input'
+            )) return;
+            
+            const uiState = getUIState(); // Capture state ONCE
+            updateMarketItems(uiState); 
+            showPrices(uiState); 
+            updatePreview(uiState); 
+            updateRecommendationAndStats(); 
+            updateTownIcon(); 
+            runManifests(uiState);
+
             const wCheck = document.getElementById('william-check');
             const wBox = document.getElementById('william-like-box');
             if(wCheck && wBox) wBox.style.display = wCheck.checked ? 'flex' : 'none';
         }
 
-        function updatePreview() {
+        function updatePreview(uiState) {
             if (!currentItem) return;
             document.getElementById('center-item-icon').style.backgroundImage = `url('${getImagePath(currentItem.img)}')`;
             document.getElementById('center-item-title').textContent = currentItem.name;
@@ -809,10 +829,10 @@
             if (avatar && townIcons[city]) avatar.style.backgroundImage = `url('${getImagePath(townIcons[city])}')`;
         }
 
-        function updateMarketItems() {
+        function updateMarketItems(uiState) {
             const container = document.getElementById('market-items-container');
             container.innerHTML = '';
-            const type = document.getElementById('commerce-type-select').value;
+            const type = uiState.commerceType;
             const city = document.getElementById('city-select').value;
             if(!city) return; 
 
@@ -828,42 +848,62 @@
                 });
             } else { items = (marketData[type] && marketData[type][city]) || []; }
 
-            if (items.length > 0 && (!currentItem || !items.find(i => i.name === currentItem.name))) { currentItem = items[0]; updatePreview(); }
+            if (items.length > 0 && (!currentItem || !items.find(i => i.name === currentItem.name))) { currentItem = items[0]; updatePreview(uiState); }
 
+            const fragment = document.createDocumentFragment();
             items.forEach(item => {
                 const isSelected = currentItem && currentItem.name === item.name;
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'inventory-item' + (isSelected ? ' selected-item' : '');
                 const cStock = getStock(item.name);
-                itemDiv.innerHTML = `<div class="item-list-icon-box" style="background-image: url('${getImagePath(item.img)}')"></div><div class="item-list-content"><div><span class="item-name">${item.name}</span>${item._townName ? `<span class="item-town-badge">📍 ${item._townName}</span>` : ''}</div><div class="stock-input-row"><span style="font-size:9px; color:#aaa;">STOCK</span><input type="number" class="qty-input" value="${cStock || ''}" placeholder="0" onclick="event.stopPropagation()" onchange="updateStock('${item.name.replace(/'/g, "\\'")}', this.value)"></div></div>`;
+                itemDiv.innerHTML = `<div class="item-list-icon-box" style="background-image: url('${getImagePath(item.img)}')"></div><div class="item-list-content"><div><span class="item-name">${item.name}</span>${item._townName ? `<span class="item-town-badge">📍 ${item._townName}</span>` : ''}</div><div class="stock-input-row"><span style="font-size:9px; color:#aaa;">STOCK</span><input type="number" class="qty-input" value="${cStock || ''}" placeholder="0" onfocus="this.select()" onclick="event.stopPropagation()" onchange="updateStock('${item.name.replace(/'/g, "\\'")}', this.value)"></div></div>`;
                 itemDiv.addEventListener('click', () => { currentItem = item; refreshUI(); });
-                container.appendChild(itemDiv);
+                fragment.appendChild(itemDiv);
             });
+            container.appendChild(fragment);
         }
 
-        function showPrices() {
+        function showPrices(uiState) {
             const list = document.getElementById('profit-list');
             if (document.activeElement && document.activeElement.classList.contains('price-input')) return;
             list.innerHTML = '';
             if (!currentItem) return;
-            const type = document.getElementById('commerce-type-select').value;
+            const type = uiState.commerceType;
             const origin = currentItem._townName || document.getElementById('city-select').value;
+            
+            const fragment = document.createDocumentFragment();
             (type === "Barter" ? citiesByType["Normal"] : citiesByType[type]).filter(c => c !== origin).forEach(city => {
                 const sellVal = getPrice(currentItem.name, city);
-                const res = calculateItemProfit(currentItem, city, sellVal);
+                const res = calculateItemProfit(currentItem, city, uiState, sellVal);
                 const row = document.createElement('div');
                 row.className = 'market-row';
-                row.innerHTML = `<div class="market-left"><b>${city}</b></div><div class="col-price"><input type="number" class="price-input" value="${sellVal || ''}" oninput="updatePrice('${city}', this.value)"></div><div class="market-profit-col"><span class="${res.profit < 0 ? 'profit-val negative' : 'profit-val'}">${res.profit.toLocaleString()}</span></div><div class="market-score-col"><span class="season-val">${res.score.toLocaleString()}</span></div>`;
-                list.appendChild(row);
+                row.innerHTML = `<div class="market-left"><b>${city}</b></div><div class="col-price"><input type="number" class="price-input" value="${sellVal || ''}" onfocus="this.select()" oninput="updatePrice('${city}', this.value)"></div><div class="market-profit-col"><span class="${res.profit < 0 ? 'profit-val negative' : 'profit-val'}">${res.profit.toLocaleString()}</span></div><div class="market-score-col"><span class="season-val">${res.score.toLocaleString()}</span></div>`;
+                fragment.appendChild(row);
             });
+            list.appendChild(fragment);
         }
 
         function updateTransportDropdown() {
             const dropdown = document.getElementById('transport-dropdown');
             const current = dropdown.value || "Back Pack";
-            const available = getAvailableMounts();
-            dropdown.innerHTML = available.map(m => `<option value="${m}">${m}</option>`).join('');
-            if (available.includes(current)) dropdown.value = current; else dropdown.value = "Back Pack";
+            // Check transport ownership directly here as well to ensure latest state is reflected if needed, but uiState passed down is better. 
+            // However, getAvailableMounts logic relies on the global 'transportOwnership' variable which is updated by toggles.
+            // So we rely on that.
+            // We use a temporary uiState to check type
+            const tempState = { commerceType: document.getElementById('commerce-type-select').value };
+            
+            // Re-implement getAvailableMounts logic inline or call function? Call function but it needs uiState.
+            // Let's just create array here
+            const mounts = ['Back Pack'];
+            Object.keys(transportOwnership).forEach(key => {
+                if (transportOwnership[key]) {
+                    if (key === 'Air Ship' && tempState.commerceType !== 'Group') return;
+                    mounts.push(key);
+                }
+            });
+            
+            dropdown.innerHTML = mounts.map(m => `<option value="${m}">${m}</option>`).join('');
+            if (mounts.includes(current)) dropdown.value = current; else dropdown.value = "Back Pack";
         }
 
         function updateRecommendationAndStats() { /* handled in refreshUI */ }
@@ -884,14 +924,17 @@
             if (activeInput && activeInput.classList.contains('price-input')) {
                 const row = activeInput.closest('.market-row');
                 if (row) {
-                    const result = calculateItemProfit(currentItem, city, sellVal);
+                    // We need uiState for calc
+                    const uiState = getUIState();
+                    const result = calculateItemProfit(currentItem, city, uiState, sellVal);
                     const profitEl = row.querySelector('.market-profit-col span');
                     const scoreEl = row.querySelector('.market-score-col span');
                     if (profitEl) { profitEl.textContent = result.profit.toLocaleString(); profitEl.className = result.profit < 0 ? 'profit-val negative' : 'profit-val'; }
                     if (scoreEl) { scoreEl.textContent = result.score.toLocaleString(); }
                 }
             }
-            runManifests();
+            // Trigger manifest update without full re-render if possible, but runManifests needs uiState.
+            runManifests(getUIState());
         }
 
         function updateStock(itemName, quantity) {
@@ -901,7 +944,10 @@
             skipRender = true; // Fix focus loss
             
             if(rtdb) { try { rtdb.ref(`public_commerce/stocks/${itemName}`).set(qty); } catch(e){} }
-            refreshUI();
+            
+            // Don't call refreshUI() here to prevent focus loss.
+            // Update manifest calculations instead.
+            runManifests(getUIState());
         }
 
         function updateBasePrice(val) {
@@ -912,25 +958,24 @@
             skipRender = true; // Fix focus loss
             
             if(rtdb) { try { rtdb.ref(`public_commerce/base_prices/${currentItem.name}`).set(price); } catch(e){} }
-            refreshUI();
+            
+            // Recalculate profit display since base price affects it
+            const uiState = getUIState();
+            showPrices(uiState);
+            runManifests(uiState);
         }
 
         function savePrefs() {
-            const prefs = {
-                type: document.getElementById('commerce-type-select').value,
-                city: document.getElementById('city-select').value,
-                mount: document.getElementById('transport-dropdown').value,
-                gm: document.getElementById('gm-check').checked,
-                william: document.getElementById('william-check').checked,
-                williamLike: document.getElementById('william-likeability').value, 
-                alpaca: document.getElementById('alpaca-check').checked,
-                trader: document.getElementById('trader-qty').value,
-                trust: document.getElementById('trustworthy-qty').value,
-                mastery: document.getElementById('mastery-rank').value,
-                letter: document.getElementById('letter-select').value,
-                fineLetter: document.getElementById('fine-letter-check').checked,
-                transports: transportOwnership
-            };
+            const prefs = getUIState();
+            // Add transports manually since getUIState doesn't return the full ownership map
+            prefs.transports = transportOwnership;
+            // Clean up: type -> commerceType
+            prefs.type = prefs.commerceType; 
+            delete prefs.commerceType;
+            prefs.city = document.getElementById('city-select').value; // Add city
+            prefs.mount = prefs.transport; // Rename for consistency
+            delete prefs.transport;
+
             localStorage.setItem('mabi_prefs', JSON.stringify(prefs));
             localStorage.setItem('mabi_transports', JSON.stringify(transportOwnership));
             if (currentUser && rtdb) {
