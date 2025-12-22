@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Barter Tracker - v2.8</title>
     
-    <!-- Firebase SDKs (Compat for shared auth) -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -14,11 +14,10 @@
     
     <style>
         :root {
-            /* V2.7 Theme (Cyan Variant) */
             --bg: #09090b;
             --sidebar-bg: #121214;
             --card-bg: #18181b;
-            --accent: #00f3ff; /* Cyan for Barter */
+            --accent: #00f3ff;
             --accent-dim: rgba(0, 243, 255, 0.1);
             --border: #27272a;
             --text-main: #e4e4e7;
@@ -36,21 +35,13 @@
             background: var(--bg);
             color: var(--text-main);
             margin: 0;
-            padding: 0;
             font-size: 13px;
             overflow: hidden;
             height: 100vh;
             height: 100dvh;
             display: flex;
             flex-direction: column;
-            contain: content;
         }
-
-        /* Scrollbars */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
         /* Layout */
         .interface-container { 
@@ -66,8 +57,7 @@
         
         .header-bar { background: var(--sidebar-bg); border-bottom: 1px solid var(--border); padding: 10px 20px; flex-shrink: 0; }
         .title-section { display: flex; justify-content: space-between; align-items: center; }
-        .main-title { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 0.5px; }
-        .sub-title { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-left: 10px; }
+        .main-title { font-size: 16px; font-weight: 700; color: #fff; }
         
         .content-grid { display: grid; grid-template-columns: 340px 1fr 340px; flex-grow: 1; overflow: hidden; }
         
@@ -77,338 +67,91 @@
             flex-direction: column; 
             border-right: 1px solid var(--border); 
             overflow-y: auto; 
-            contain: layout style;
         }
         .panel:last-child { border-right: none; }
         .center-panel { background: #0c0c0e; }
 
-        /* Components */
-        .hub-btn { color: var(--text-dim); text-decoration: none; font-weight: 600; font-size: 12px; padding: 6px 12px; border-radius: 6px; transition: 0.1s; border: 1px solid transparent; background: transparent; cursor: pointer; }
-        .hub-btn:hover { color: #fff; background: var(--border); }
-
-        /* TAB PICKERS */
-        .tab-picker {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-            gap: 8px;
-            margin-bottom: 15px;
-        }
-        .picker-btn {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 10px 4px;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            transition: 0.15s;
-            min-height: 85px;
-            justify-content: center;
-        }
-        .picker-btn:hover { background: #27272a; border-color: var(--text-dim); }
-        .picker-btn.active {
-            background: var(--accent-dim);
-            border-color: var(--accent);
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.05);
-        }
-        .picker-icon {
-            width: 48px; height: 48px;
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            flex-shrink: 0;
-        }
-        .picker-label {
-            font-size: 9px;
-            font-weight: 700;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            text-align: center;
-            line-height: 1.1;
-        }
-
-        .panel-label { font-size: 11px; font-weight: 600; color: var(--text-dim); margin-bottom: 8px; display: block; text-transform: uppercase; }
-        .config-section { padding: 20px; border-bottom: 1px solid var(--border); }
-
-        /* Catalog entries */
+        /* Catalog Styling */
         .item-list { flex-grow: 1; overflow-y: auto; }
         .item-entry {
             display: flex; gap: 12px; padding: 12px 15px; border-bottom: 1px solid var(--border);
-            align-items: center; border-left: 2px solid transparent;
-            position: relative;
-            transition: background 0.05s;
+            align-items: center; transition: background 0.1s;
         }
         .item-entry:hover { background: var(--card-bg); }
-        .item-entry.at-limit { opacity: 0.6; }
-        .item-entry.pulse { animation: pulseCyan 0.4s ease; }
-        @keyframes pulseCyan {
-            0% { background: var(--accent-dim); }
-            100% { background: transparent; }
-        }
-
-        /* Qty Control Widget */
-        .qty-control {
-            display: flex; align-items: center; gap: 4px; background: #000; padding: 2px; border-radius: 6px; border: 1px solid var(--border); margin-left: auto; flex-shrink: 0;
-        }
-        .q-btn { width: 28px; height: 28px; border-radius: 4px; border: none; background: var(--card-bg); color: #fff; font-weight: 700; cursor: pointer; transition: 0.1s; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-        .q-btn:hover { background: #27272a; color: var(--accent); }
-        .q-btn.plus { color: var(--accent); }
-        .q-btn.minus { color: var(--danger); }
-        .q-val { width: 24px; text-align: center; font-family: 'JetBrains Mono'; font-size: 11px; font-weight: 700; color: #fff; }
-
-        .item-icon-box {
-            width: 40px; height: 40px; 
-            background-color: transparent; border: none;
-            border-radius: 4px; background-size: contain; background-repeat: no-repeat; 
-            background-position: center; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-        }
-        
-        .item-name { font-weight: 600; font-size: 13px; color: #fff; line-height: 1.2; }
+        .item-entry.at-limit { opacity: 0.5; }
+        .item-icon-box { width: 40px; height: 40px; background-size: contain; background-repeat: no-repeat; background-position: center; flex-shrink: 0; }
+        .item-name-sidebar { font-weight: 600; color: #fff; font-size: 13px; }
         .item-meta { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
 
-        /* Center Panel (Tables) */
+        .qty-control { display: flex; align-items: center; gap: 4px; background: #000; padding: 2px; border-radius: 6px; border: 1px solid var(--border); margin-left: auto; }
+        .q-btn { width: 28px; height: 28px; border-radius: 4px; border: none; background: var(--card-bg); color: #fff; cursor: pointer; font-weight: 700; }
+        .q-val { width: 24px; text-align: center; font-family: 'JetBrains Mono'; font-size: 11px; }
+
+        /* Materials Table */
         .table-container { padding: 20px; height: 100%; display: flex; flex-direction: column; overflow: hidden; width: 100%; }
-        .materials-dual-layout { 
-            display: grid; grid-template-columns: 1fr 1fr; gap: 20px; 
-            flex-grow: 1; min-height: 0; overflow: hidden; width: 100%;
-        }
-
-        .material-header-row {
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 15px; 
-            flex-shrink: 0; 
-            padding: 0 10px;
-        }
-        
-        .material-column {
-            display: flex; flex-direction: column; height: 100%; overflow: hidden;
-            background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;
-        }
-
-        .scroll-area { overflow-y: auto; flex-grow: 1; padding: 0; }
+        .materials-dual-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex-grow: 1; min-height: 0; overflow: hidden; }
+        .material-column { display: flex; flex-direction: column; height: 100%; overflow: hidden; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; }
+        .scroll-area { overflow-y: auto; flex-grow: 1; }
 
         .data-table { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed; }
-        .data-table th { 
-            text-align: left; color: var(--text-dim); font-size: 10px; font-weight: 600; 
-            padding: 10px 15px; border-bottom: 1px solid var(--border); 
-            position: sticky; top: 0; background: #121214; z-index: 10; 
-        }
-        .data-table td { 
-            padding: 6px 15px; 
-            border-bottom: 1px solid rgba(255,255,255,0.03); 
-            color: #ccc; 
-            vertical-align: middle; 
-            height: 40px; 
-        }
+        .data-table th { text-align: left; color: var(--text-dim); font-size: 10px; font-weight: 600; padding: 10px 5px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: #121214; z-index: 10; }
+
+        /* SYMMETRY FIX: Matching padding on both ends (15px) */
+        .data-table th:first-child, .data-table td:first-child { padding-left: 15px !important; }
+        .data-table th:last-child, .data-table td:last-child { padding-right: 15px !important; }
         
-        /* VERTICAL ALIGNMENT MASTER FIX */
-        .cell-flex { 
-            display: flex; 
-            align-items: center; 
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-            white-space: nowrap; 
-            height: 28px;
-            line-height: 28px;
-        }
+        .data-table td { padding: 8px 5px; border-bottom: 1px solid rgba(255,255,255,0.03); color: #ccc; vertical-align: middle; }
         
+        .cell-flex { display: flex; align-items: center; gap: 10px; min-height: 28px; height: 100%; }
+        .cell-flex span { white-space: normal; line-height: 1.3; display: inline-block; word-break: break-word; }
+
         .owned-input { 
             background: var(--bg); border: 1px solid var(--border); color: var(--accent); 
-            width: 100%; max-width: 120px; /* INCREASED WIDTH: Doubled for 4+ digits */
-            text-align: right; /* ALIGNMENT FIX: Align text to right */
-            font-size: 11px; padding: 0 8px; border-radius: 4px;
-            font-family: 'JetBrains Mono'; height: 28px; line-height: 28px;
+            width: 100%; max-width: 85px; text-align: right; font-size: 11px; padding: 0 8px; 
+            border-radius: 4px; font-family: 'JetBrains Mono'; height: 28px; line-height: 28px;
         }
         .owned-input:focus { border-color: var(--accent); }
         
-        .need-cell {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 28px;
-            line-height: 28px;
-            width: 100%;
-        }
-
-        .status-cell { 
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            font-family: 'JetBrains Mono'; 
-            font-weight: 700; 
-            font-size: 11px; 
-            white-space: nowrap; 
-            height: 28px;
-            line-height: 28px;
-            padding-right: 20px !important; /* Spacing from wall */
-        }
+        .status-cell { font-family: 'JetBrains Mono'; font-weight: 700; font-size: 11px; text-align: right; }
         .status-cell.deficit { color: var(--danger); }
         .status-cell.ready { color: var(--success); }
         
-        .icon-small {
-            width: 24px; height: 24px; margin-right: 10px; border-radius: 3px; flex-shrink: 0;
-            display: inline-flex; align-items: center; justify-content: center;
-            background-color: transparent; border: none;
-            background-size: cover; background-position: center;
-        }
-        
-        .empty-state { padding: 30px; text-align: center; color: var(--text-dim); font-size: 12px; font-style: italic; }
+        .icon-small { width: 24px; height: 24px; background-size: contain; background-repeat: no-repeat; background-position: center; flex-shrink: 0; }
 
-        /* Right Panel (Loadout) */
-        .loadout-header { 
-            display: flex; justify-content: space-between; align-items: center; 
-            margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px dashed var(--border);
-        }
-        .loadout-stats { font-family: 'JetBrains Mono'; font-size: 10px; color: var(--accent); }
-        .grid-container {
-            display: grid; grid-template-columns: repeat(auto-fill, var(--slot-size));
-            gap: 2px; background: #000; padding: 4px; border: 1px solid var(--border);
-            border-radius: 6px; margin-bottom: 20px;
-        }
-        .slot {
-            width: var(--slot-size); height: var(--slot-size); background: var(--card-bg); border: 1px solid #222;
-            position: relative; display: flex; align-items: center; justify-content: center;
-        }
-        .slot.filled { background: var(--accent-dim); border-color: rgba(0, 243, 255, 0.3); }
-        .item-icon { width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat; background-position: center; cursor: pointer; }
-        .stack-label { 
-            position: absolute; bottom: 1px; right: 2px; font-family: 'JetBrains Mono'; 
-            font-size: 9px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px #000; pointer-events: none; 
-        }
+        /* Sidebar Picking UI */
+        .tab-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 8px; margin-bottom: 15px; }
+        .picker-btn { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: 0.15s; }
+        .picker-btn.active { background: var(--accent-dim); border-color: var(--accent); }
+        .picker-icon { width: 32px; height: 32px; background-size: contain; background-repeat: no-repeat; background-position: center; }
+        .picker-label { font-size: 9px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; text-align: center; }
 
-        /* Toggles Redesigned */
-        .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.03); }
-        .toggle-row:last-child { border-bottom: none; }
-        .toggle-label { font-size: 12px; color: var(--text-main); font-weight: 500; }
-        .toggle-switch { width: 34px; height: 18px; background: var(--border); border-radius: 99px; position: relative; transition: 0.2s; flex-shrink: 0; }
-        .toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: #fff; border-radius: 50%; transition: 0.2s; }
-        input:checked + .toggle-switch { background: var(--accent); }
-        input:checked + .toggle-switch::after { transform: translateX(16px); }
-        .toggle-input { display: none; }
-
-        /* Tooltip System */
-        #item-tooltip {
-            position: fixed; z-index: 10000; background: rgba(18, 18, 20, 0.98); 
-            border: 1px solid var(--border); padding: 12px; border-radius: 6px;
-            pointer-events: none; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
-            min-width: 180px;
-        }
-        .tt-name { color: #fff; font-weight: 700; font-size: 12px; margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
-        .tt-stat { font-family: 'JetBrains Mono'; font-size: 10px; color: var(--text-dim); display: flex; justify-content: space-between; }
-        .tt-stat b { color: var(--accent); }
-
-        /* Mobile Adjustments */
+        /* Mobile Layout */
         @media (max-width: 1000px) {
-            .content-grid { display: block; height: calc(100dvh - 50px); width: 100%; }
+            .content-grid { display: block; height: calc(100dvh - 50px); }
             .header-bar { display: none; }
+            .mobile-nav { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border); height: 50px; flex-shrink: 0; z-index: 50; }
+            .nav-trigger { background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 14px; }
             
-            .interface-container { 
-                border: none !important; 
-                width: 100% !important; 
-                max-width: 100vw !important; 
-                margin: 0 !important; 
-                padding: 0 !important;
-            }
-
-            .mobile-nav { 
-                display: flex; justify-content: space-between; align-items: center;
-                padding: 10px 15px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border);
-                height: 50px; z-index: 50; flex-shrink: 0; width: 100%;
-            }
-            .nav-trigger { background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 14px; cursor: pointer; }
-
-            .panel { 
-                position: fixed; top: 0; bottom: 0; width: 300px; z-index: 1001; 
-                box-shadow: 0 0 50px rgba(0,0,0,0.8); 
-                transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.25s;
-                visibility: hidden;
-            }
-            
-            .left-panel, .right-panel { max-width: 85% !important; }
-
-            .left-panel { left: 0; transform: translateX(-100%); border-right: 1px solid var(--border); }
+            /* Sidebar restriction logic fix (z-index ensure sidebar is in front) */
+            .panel { position: fixed; top: 0; bottom: 0; width: 300px; z-index: 2000 !important; transition: 0.3s; visibility: hidden; }
             .left-panel.active { transform: translateX(0); visibility: visible; }
-            .right-panel { right: 0; transform: translateX(100%); border-left: 1px solid var(--border); }
             .right-panel.active { transform: translateX(0); visibility: visible; }
+            .left-panel { left: 0; transform: translateX(-100%); border-right: 1px solid var(--border); max-width: 85%; }
+            .right-panel { right: 0; transform: translateX(100%); border-left: 1px solid var(--border); max-width: 85%; }
             
-            .center-panel { 
-                height: 100%; 
-                width: 100% !important; 
-                max-width: 100% !important; 
-                border: none !important; 
-                visibility: visible; 
-                position: relative; 
-                z-index: 1; 
-                transform: none; 
-                box-shadow: none; 
-                display: flex; 
-                flex-direction: column;
-                margin: 0 !important; 
-                padding: 0 !important;
-                overflow-x: hidden;
-            }
-
-            .mobile-backdrop { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
-            .mobile-backdrop.active { opacity: 1; pointer-events: all; }
-
-            .drawer-header { 
-                display: flex; justify-content: space-between; align-items: center;
-                padding: 15px; border-bottom: 1px solid var(--border); background: var(--sidebar-bg);
-            }
-            .drawer-title { font-weight: 700; color: #fff; }
-            .drawer-close { background: none; border: none; color: var(--text-dim); font-size: 20px; padding: 0 5px; cursor: pointer; }
+            /* LAYER FIX: Materials must stay behind sidebars on mobile */
+            .center-panel { position: relative; visibility: visible; width: 100% !important; border: none; z-index: 1 !important; }
             
-            .materials-dual-layout { 
-                grid-template-columns: 1fr 1fr; 
-                gap: 12px !important; 
-                width: 100% !important; 
-                padding: 0 15px !important; 
-                margin: 0 !important;
-                border-radius: 0;
-            }
-            .table-container { 
-                padding: 10px 0px !important; 
-                width: 100% !important; 
-                margin: 0 !important;
-            }
-            .material-header-row { 
-                padding: 0 15px !important; 
-                width: 100% !important;
-                margin-bottom: 10px;
-            } 
-            
-            .material-column { border-radius: 4px; border: 1px solid var(--border); }
-            
-            .data-table { width: 100%; table-layout: fixed; font-size: 9px; }
-            .data-table th, .data-table td { 
-                padding: 4px 2px; 
-                font-size: 9px; 
-                white-space: nowrap; 
-                overflow: hidden; 
-                text-overflow: ellipsis; 
-                vertical-align: middle;
-            }
-            
-            .cell-flex { height: 24px; line-height: 24px; font-size: 9px; }
-            .owned-input { width: 80px; font-size: 9px; padding: 0 4px; line-height: 24px; height: 24px; } /* MOBILE WIDTH FIX */
-            .need-cell { height: 24px; line-height: 24px; font-size: 9px; }
-            .icon-small { width: 14px; height: 14px; margin-right: 4px; }
-            .status-cell { 
-                font-size: 9px; 
-                line-height: 24px; 
-                height: 24px;
-                padding-right: 10px !important; 
-            }
+            .materials-dual-layout { gap: 10px; padding: 0 10px; }
+            .mobile-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1500; }
+            .mobile-backdrop.active { display: block; }
         }
+
+        #item-tooltip { position: fixed; z-index: 10000; background: rgba(18, 18, 20, 0.98); border: 1px solid var(--border); padding: 12px; border-radius: 6px; pointer-events: none; display: none; min-width: 180px; }
     </style>
 </head>
 <body>
 
-    <!-- Mobile Navigation -->
     <div class="mobile-nav">
         <button class="nav-trigger" onclick="toggleSidebar('left')">☰ Catalog</button>
         <span style="font-weight:700; color:#fff;">Barter Tracker</span>
@@ -417,14 +160,13 @@
     <div class="mobile-backdrop" id="mobile-backdrop" onclick="closeSidebars()"></div>
 
     <div class="interface-container">
-        <!-- Desktop Header -->
         <div class="header-bar">
             <div class="title-section">
                 <div style="display:flex; align-items:center;">
                     <span class="main-title">BARTER TRACKER</span>
-                    <span class="sub-title">SYNC_V2.8</span>
+                    <span style="font-size:10px; color:var(--text-dim); text-transform:uppercase; margin-left:10px;">SYNC_V2.8</span>
                 </div>
-                <div style="display:flex; align-items:center; gap:15px;">
+                <div style="display:flex; gap:15px; align-items:center;">
                     <span id="user-display" style="font-size:11px; color:var(--accent);">GUEST</span>
                     <a href="index.html" class="hub-btn">Back to Hub</a>
                 </div>
@@ -432,49 +174,37 @@
         </div>
 
         <div class="content-grid">
-            <!-- LEFT: Catalog -->
             <div class="panel left-panel" id="left-panel">
-                <div class="drawer-header">
-                    <span class="drawer-title">Catalog</span>
-                    <button class="drawer-close" onclick="closeSidebars()">×</button>
+                <div style="padding:20px; border-bottom:1px solid var(--border);">
+                    <label style="font-size:11px; font-weight:600; color:var(--text-dim); display:block; text-transform:uppercase; margin-bottom:10px;">Post</label>
+                    <div id="town-tabs" class="tab-picker"></div>
                 </div>
-                
-                <div class="config-section">
-                    <label class="panel-label">Trading Post</label>
-                    <div id="town-tabs" class="tab-picker">
-                        <!-- Populated by JS -->
-                    </div>
-                </div>
-
-                <div class="panel-label" style="padding:0 20px;">Available Items</div>
                 <div id="catalog-container" class="item-list"></div>
             </div>
 
-            <!-- CENTER: Materials -->
             <div class="panel center-panel">
                 <div class="table-container">
-                    <div class="material-header-row">
-                        <span class="main-title" style="font-size:14px; letter-spacing:1px;">REQUIRED MATERIALS</span>
-                        <div id="sync-status" style="font-size:9px; color:var(--text-dim);">LOCAL</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; padding:0 15px;">
+                        <span style="font-weight:700; font-size:14px; color:var(--accent);">REQUIRED MATERIALS</span>
+                        <span id="sync-status" style="font-size:9px; color:var(--text-dim);">LOCAL</span>
                     </div>
 
                     <div class="materials-dual-layout">
                         <div class="material-column">
-                            <div style="padding:10px 15px; border-bottom:1px solid var(--border); font-weight:700; color:var(--text-main); font-size:11px; background:var(--sidebar-bg);">Raw Resources</div>
+                            <div style="padding:10px 15px; border-bottom:1px solid var(--border); font-weight:700; font-size:11px; background:var(--sidebar-bg);">Raw Resources</div>
                             <div class="scroll-area">
                                 <table class="data-table">
-                                    <!-- BALANCED PERCENTAGES: Resource(30%) / Have(30%) / Need(15%) / Status(25%) -->
-                                    <thead><tr><th style="width: 30%;">RESOURCE</th><th style="width: 30%; text-align:center;">HAVE</th><th style="width: 15%; text-align:center;">NEED</th><th style="width: 25%; text-align:right; padding-right:20px;">STATUS</th></tr></thead>
+                                    <thead><tr><th style="width: 40%;">RESOURCE</th><th style="width: 25%; text-align:center;">HAVE</th><th style="width: 15%; text-align:center;">NEED</th><th style="width: 20%; text-align:right;">STATUS</th></tr></thead>
                                     <tbody id="raw-tbody"></tbody>
                                 </table>
                             </div>
                         </div>
                         
                         <div class="material-column">
-                            <div style="padding:10px 15px; border-bottom:1px solid var(--border); font-weight:700; color:var(--text-main); font-size:11px; background:var(--sidebar-bg);">Crafted Components</div>
+                            <div style="padding:10px 15px; border-bottom:1px solid var(--border); font-weight:700; font-size:11px; background:var(--sidebar-bg);">Crafted Components</div>
                             <div class="scroll-area">
                                 <table class="data-table">
-                                    <thead><tr><th style="width: 30%;">COMPONENT</th><th style="width: 30%; text-align:center;">HAVE</th><th style="width: 15%; text-align:center;">NEED</th><th style="width: 25%; text-align:right; padding-right:20px;">STATUS</th></tr></thead>
+                                    <thead><tr><th style="width: 40%;">COMPONENT</th><th style="width: 25%; text-align:center;">HAVE</th><th style="width: 15%; text-align:center;">NEED</th><th style="width: 20%; text-align:right;">STATUS</th></tr></thead>
                                     <tbody id="crafted-tbody"></tbody>
                                 </table>
                             </div>
@@ -483,68 +213,37 @@
                 </div>
             </div>
 
-            <!-- RIGHT: Loadout -->
             <div class="panel right-panel" id="right-panel">
-                <div class="drawer-header">
-                    <span class="drawer-title">Loadout</span>
-                    <button class="drawer-close" onclick="closeSidebars()">×</button>
-                </div>
-
-                <div class="config-section">
-                    <label class="panel-label">ACTIVE BUFFS</label>
-                    <div class="buff-list">
-                        <label class="toggle-row">
-                            <span class="toggle-label">Grandmaster Merchant</span>
-                            <input type="checkbox" id="buff-gm" class="toggle-input">
-                            <div class="toggle-switch"></div>
-                        </label>
-                        <label class="toggle-row">
-                            <span class="toggle-label">William (Partner)</span>
-                            <input type="checkbox" id="buff-william" class="toggle-input">
-                            <div class="toggle-switch"></div>
-                        </label>
-                        <label class="toggle-row">
-                            <span class="toggle-label">Alpaca</span>
-                            <input type="checkbox" id="buff-alpaca" class="toggle-input">
-                            <div class="toggle-switch"></div>
-                        </label>
+                <div style="padding:20px; border-bottom:1px solid var(--border);">
+                    <label style="font-size:11px; font-weight:600; color:var(--text-dim); display:block; text-transform:uppercase; margin-bottom:10px;">Buffs</label>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <label style="display:flex; justify-content:space-between; cursor:pointer;"><span style="font-size:12px;">William</span><input type="checkbox" id="buff-william" class="toggle-input"></label>
+                        <label style="display:flex; justify-content:space-between; cursor:pointer;"><span style="font-size:12px;">Alpaca</span><input type="checkbox" id="buff-alpaca" class="toggle-input"></label>
                     </div>
                 </div>
-
+                <!-- RESTORED LOADOUT STRUCTURE -->
                 <div style="padding:20px; overflow-y:auto;">
-                    <div class="loadout-header">
-                        <span class="panel-label" style="margin:0">Transport A</span>
-                        <div id="transport-stats-1" class="loadout-stats">0 / 0</div>
-                    </div>
-                    <div id="transport-tabs-1" class="tab-picker" style="grid-template-columns: repeat(4, 1fr);">
-                        <!-- Populated by JS -->
-                    </div>
-                    <div id="grid-1" class="grid-container"></div>
+                    <div style="font-size:10px; color:var(--accent); margin-bottom:5px;">TRANSPORT A</div>
+                    <div id="transport-stats-1" style="font-size:10px; color:var(--text-dim); margin-bottom:10px;">0 / 0 KG</div>
+                    <div id="transport-tabs-1" class="tab-picker" style="grid-template-columns: repeat(4, 1fr);"></div>
+                    <div id="grid-1" style="display:grid; grid-template-columns: repeat(auto-fill, 50px); gap:2px; background:#000; padding:2px; border-radius:4px; margin-bottom:20px;"></div>
 
-                    <div class="loadout-header" style="margin-top:20px;">
-                        <span class="panel-label" style="margin:0">Transport B</span>
-                        <div id="transport-stats-2" class="loadout-stats">0 / 0</div>
-                    </div>
-                    <div id="transport-tabs-2" class="tab-picker" style="grid-template-columns: repeat(4, 1fr);">
-                        <!-- Populated by JS -->
-                    </div>
-                    <div id="grid-2" class="grid-container"></div>
+                    <div style="font-size:10px; color:var(--accent); margin-bottom:5px;">TRANSPORT B</div>
+                    <div id="transport-stats-2" style="font-size:10px; color:var(--text-dim); margin-bottom:10px;">0 / 0 KG</div>
+                    <div id="transport-tabs-2" class="tab-picker" style="grid-template-columns: repeat(4, 1fr);"></div>
+                    <div id="grid-2" style="display:grid; grid-template-columns: repeat(auto-fill, 50px); gap:2px; background:#000; padding:2px; border-radius:4px;"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Fixed Tooltip Container -->
-    <div id="item-tooltip" style="position: fixed; z-index: 10000; background: rgba(18, 18, 20, 0.98); border: 1px solid var(--border); padding: 12px; border-radius: 6px; pointer-events: none; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5); min-width: 180px;">
-        <div class="tt-name" id="tt-name" style="color: #fff; font-weight: 700; font-size: 12px; margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 6px;"></div>
-        <div class="tt-stat" style="font-family: 'JetBrains Mono'; font-size: 10px; color: var(--text-dim); display: flex; justify-content: space-between;">Weight: <b id="tt-weight" style="color: var(--accent);"></b></div>
-        <div class="tt-stat" style="font-family: 'JetBrains Mono'; font-size: 10px; color: var(--text-dim); display: flex; justify-content: space-between;">Max Stack: <b id="tt-stack" style="color: var(--accent);"></b></div>
+    <div id="item-tooltip">
+        <div id="tt-name" style="color:#fff; font-weight:700; font-size:12px; margin-bottom:5px; border-bottom:1px solid var(--border);"></div>
+        <div style="font-family:'JetBrains Mono'; font-size:10px; color:var(--text-dim);">Weight: <b id="tt-weight"></b></div>
     </div>
 
     <script>
-        // --- 1. CONFIG & DATA ---
         const townIcons={"Karu Forest":"tradeposts/Commerce_Karu_Forest_Icon.png","Oasis":"tradeposts/Commerce_Oasis_Icon.png","Lake Calida":"tradeposts/Commerce_Calida_Icon.png","Pera Volcano":"tradeposts/Commerce_Pera_Icon.png","Scathach Beach":"tradeposts/Commerce_Beach_of_Scathach_Icon.png"};
-
         const barterDb = [
             { town: "Pera Volcano", item: "Volcanic Mud Pack", weight: 15, stack: 10, limit: 25, img: "tradeposts/barter/pera/Volcanic_Mud_Pack_Icon.png", mats: { "Copper Plate": 2, "Mysterious Herb Powder": 3 } },
             { town: "Pera Volcano", item: "Magma Stone", weight: 15, stack: 7, limit: 15, img: "tradeposts/barter/pera/Magma_Stone_Icon.png", mats: { "Mythril Plate": 2, "Barley Flour": 3 } },
@@ -575,416 +274,122 @@
             { town: "Scathach Beach", item: "Fish", weight: 5, stack: 20, limit: 100, img: "tradeposts/barter/scathach/Unidentified_Fish.png", mats: { "Unknown": 0 } },
             { town: "Scathach Beach", item: "Crystal Blade", weight: 15, stack: 10, limit: 100, img: "tradeposts/barter/scathach/Crystal_Blade.png", mats: { "Unknown": 0 } }
         ];
+        const transportData = {"Elephant":{slots:7,weight:1700},"Wagon":{slots:8,weight:900},"Camel":{slots:7,weight:1400},"Husky":{slots:11,weight:700},"Hand Cart":{slots:6,weight:800},"Back Pack":{slots:4,weight:400}};
+        const recipeDb = [{item:"Artificial Turf",mats:{"Fresh Grass":20,"Bundle of Flowers":5}},{item:"Cotton Cushion Stuffing",mats:{"Fine Wool":20,"Thin Thread":5}},{item:"Hay Bale",mats:{"Wheat Chaff":20,"Finest Leather Strap":1}},{item:"Poison Tip Wyvern Ballista Bolt",mats:{"Firewood":1,"Wyvern Claw":1,"Poison Potion":1}},{item:"Average Firewood",mats:{Firewood:3}},{item:"Fine Firewood",mats:{"Average Firewood":3}},{item:"Finest Firewood",mats:{"Fine Firewood":3}},{item:"Special Firewood",mats:{"Finest Firewood":1,"Purified Enhancer":1}},{item:"Braid",mats:{"Thick Thread":1,"Thin Thread":1}},{item:"Fine Fabric",mats:{"Thick Thread":5}},{item:"Fine Leather Strap",mats:{"Fine Leather":1}},{item:"Fine Silk",mats:{"Thin Thread":5}},{item:"Finest Fabric",mats:{"Thick Thread":6}},{item:"Finest Leather Strap",mats:{"Finest Leather":1}},{item:"Finest Silk",mats:{"Thin Thread":6}},{item:"Sturdy Loop",mats:{Braid:1,"Infernal Blade Fragment":1}},{item:"Tough String",mats:{"Thick Thread":5}},{item:"Tough Thread",mats:{"Thin Thread":5}},{item:"Copper Plate",mats:{"Cooper Ingot":1}},{item:"Gold Plate",mats:{"Gold Ingot":1}},{item:"Large Mythril Nail",mats:{"Mythril Ingot":20}},{item:"Mythril Plate",mats:{"Mythril Ingot":1}},{item:"Silver Plate",mats:{"Silver Ingot":1}},{item:"Emerald Fuse",mats:{"Emerald Core":1}},{item:"Energy Amplifier",mats:{"Emerald Core":3,"Energy Converter":3}},{item:"Energy Converter",mats:{Hillwen:1,Shyllien:1}},{item:"Hillwen Alloy",mats:{"Soft Hillwen Ore Fragment":15}},{item:"Enchanted Firewood",mats:{Hillwen:1,Shyllien:1,"Average Firewood":1}},{item:"Mutant",mats:{"Mutant Rabbit Foot":10,"Mutant Plant Mucilage":5,"Sasquatch Heart":3}},{item:"Mysterious Herb Powder",mats:{"Bloody Herb":1,"Mana Herb":1,"Poison Herb":1}},{item:"Purified Rabbit Foot",mats:{"Mutant Rabbit Foot":1,Shyllien:1}},{item:"Shyllien",mats:{"Shyllien Crystal":5}},{item:"Sundew",mats:{"Mutant Plant Mucilage":1,Shyllien:1}},{item:"Glittering Paper",mats:{Paper:10,"Small Silver Gem":1,"Small Red Gem":1,"Small Blue Gem":1,"Small Green Gem":1}},{item:"HP 500 Potion",mats:{"Four-Leaf Clover":1,"HP 300 Potion":1,"Bottled Water":1}},{item:"Marionette 500 Potion",mats:{"Gold Herb":1,"Base Potion":1,"Tin Ore Fragment":1,"Zinc Ore Fragment":1,"Nickel Ore Fragment":1}},{item:"MP 500 Potion",mats:{"Four-Leaf Clover":1,"MP 300 Potion":1,"Bottled Water":1}},{item:"Spirit Liqueur",mats:{"White Herb":1,"Piece of Ancient Spirit Fossil":1,"Elemental Remover":2}},{item:"Stamina 500 Potion",mats:{"Four-Leaf Clover":1,"Stamina 300 Potion":1,"Bottled Water":1}},{item:"Shrimp Taming Bait",mats:{Shrimp:1,Sugar:1,Garlic:1}},{item:"Magic Parchment",mats:{"Soft Parchment":1,"Mana Herb":10,"Sunlight Herb":10}},{item:"Magic Quill Pen",mats:{"Vital Feather":1,"Mana Herb":10,"Gold Herb":10}},{item:"Harmonious Cosmos Perfume",mats:{"Empty Bottle":1,"Magic Powder":10,"Base Herb":10,"Cosmos Extract":1}},{item:"Pet Playset",mats:{"Pet's Favorite Knickknack":1,"Wood Board":1}},{item:"Barley Flour",mats:{Barley:10}},{item:"Wheat Flour",mats:{Wheat:10}}];
 
-        const transportData = {
-            "Back Pack": { slots: 4, weight: 400 },
-            "Hand Cart": { slots: 6, weight: 800 },
-            "Wagon": { slots: 8, weight: 900 },
-            "Elephant": { slots: 7, weight: 1700 },
-            "Husky": { slots: 11, weight: 700 },
-            "Camel": { slots: 7, weight: 1400 },
-            "Skiff": { slots: 8, weight: 1200 }
-        };
+        let currentCargo=[], ownedInventory={}, activeBuffs={william:false,alpaca:false}, selectedTown="Karu Forest", transportA="Elephant", transportB="Back Pack", currentUser=null, isSaving=false;
 
-        const recipeDb = [
-            { item: "Artificial Turf", mats: { "Fresh Grass": 20, "Bundle of Flowers": 5 } },
-            { item: "Cotton Cushion Stuffing", mats: { "Fine Wool": 20, "Thin Thread": 5 } },
-            { item: "Finest Vanilla Scented Candle", mats: { "Fine Vanilla Scented Candle": 1, "Refined Catalyst": 1 } },
-            { item: "Hay Bale", mats: { "Wheat Chaff": 20, "Finest Leather Strap": 1 } },
-            { item: "Poison Tip Wyvern Ballista Bolt", mats: { "Firewood": 1, "Wyvern Claw": 1, "Poison Potion": 1 } },
-            { item: "Average Firewood", mats: { "Firewood": 3 } },
-            { item: "Fine Firewood", mats: { "Average Firewood": 3 } },
-            { item: "Finest Firewood", mats: { "Fine Firewood": 3 } },
-            { item: "Special Firewood", mats: { "Finest Firewood": 1, "Purified Enhancer": 1 } },
-            { item: "Braid", mats: { "Thick Thread": 1, "Thin Thread": 1 } },
-            { item: "Fine Fabric", mats: { "Thick Thread": 5 } },
-            { item: "Fine Leather Strap", mats: { "Fine Leather": 1 } },
-            { item: "Fine Silk", mats: { "Thin Thread": 5 } },
-            { item: "Finest Fabric", mats: { "Thick Thread": 6 } },
-            { item: "Finest Leather Strap", mats: { "Finest Leather": 1 } },
-            { item: "Finest Silk", mats: { "Thin Thread": 6 } },
-            { item: "Sturdy Loop", mats: { "Braid": 1, "Infernal Blade Fragment": 1 } },
-            { item: "Tough String", mats: { "Thick Thread": 5 } },
-            { item: "Tough Thread", mats: { "Thin Thread": 5 } },
-            { item: "Copper Plate", mats: { "Cooper Ingot": 1 } },
-            { item: "Gold Plate", mats: { "Gold Ingot": 1 } },
-            { item: "Large Mythril Nail", mats: { "Mythril Ingot": 20 } },
-            { item: "Mythril Plate", mats: { "Mythril Ingot": 1 } },
-            { item: "Silver Plate", mats: { "Silver Ingot": 1 } },
-            { item: "Emerald Fuse", mats: { "Emerald Core": 1 } },
-            { item: "Energy Amplifier", mats: { "Emerald Core": 3, "Energy Converter": 3 } },
-            { item: "Energy Converter", mats: { "Hillwen": 1, "Shyllien": 1 } },
-            { item: "Hillwen Alloy", mats: { "Soft Hillwen Ore Fragment": 15 } },
-            { item: "Enchanted Firewood", mats: { "Hillwen": 1, "Shyllien": 1, "Average Firewood": 1 } },
-            { item: "Mutant", mats: { "Mutant Rabbit Foot": 10, "Mutant Plant Mucilage": 5, "Sasquatch Heart": 3 } },
-            { item: "Mysterious Herb Powder", mats: { "Bloody Herb": 1, "Mana Herb": 1, "Poison Herb": 1 } },
-            { item: "Purified Rabbit Foot", mats: { "Mutant Rabbit Foot": 1, "Shyllien": 1 } },
-            { item: "Shyllien", mats: { "Shyllien Crystal": 5 } },
-            { item: "Sundew", mats: { "Mutant Plant Mucilage": 1, "Shyllien": 1 } },
-            { item: "Glittering Paper", mats: { "Paper": 10, "Small Silver Gem": 1, "Small Red Gem": 1, "Small Blue Gem": 1, "Small Green Gem": 1 } },
-            { item: "HP 500 Potion", mats: { "Four-Leaf Clover": 1, "HP 300 Potion": 1, "Bottled Water": 1 } },
-            { item: "Marionette 500 Potion", mats: { "Gold Herb": 1, "Base Potion": 1, "Tin Ore Fragment": 1, "Zinc Ore Fragment": 1, "Nickel Ore Fragment": 1 } },
-            { item: "MP 500 Potion", mats: { "Four-Leaf Clover": 1, "MP 300 Potion": 1, "Bottled Water": 1 } },
-            { item: "Spirit Liqueur", mats: { "White Herb": 1, "Piece of Ancient Spirit Fossil": 1, "Elemental Remover": 2 } },
-            { item: "Stamina 500 Potion", mats: { "Four-Leaf Clover": 1, "Stamina 300 Potion": 1, "Bottled Water": 1 } },
-            { item: "Shrimp Taming Bait", mats: { "Shrimp": 1, "Sugar": 1, "Garlic": 1 } },
-            { item: "Magic Parchment", mats: { "Soft Parchment": 1, "Mana Herb": 10, "Sunlight Herb": 10 } },
-            { item: "Magic Quill Pen", mats: { "Vital Feather": 1, "Mana Herb": 10, "Gold Herb": 10 } },
-            { item: "Harmonious Cosmos Perfume", mats: { "Empty Bottle": 1, "Magic Powder": 10, "Base Herb": 10, "Cosmos Extract": 1 } },
-            { item: "Pet Playset", mats: { "Pet's Favorite Knickknack": 1, "Wood Board": 1 } },
-            { item: "Barley Flour", mats: { "Barley": 10 } },
-            { item: "Wheat Flour", mats: { "Wheat": 10 } }
-        ];
+        firebase.initializeApp({apiKey:"AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM",authDomain: "mabinogi-tracker.firebaseapp.com",databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com",projectId: "mabinogi-tracker",storageBucket: "mabinogi-tracker.firebasestorage.app",appId: "1:267690802644:web:fccdd005d5c8990504ea41"});
+        const auth=firebase.auth();
+        auth.onAuthStateChanged(user=>{ if(user){ currentUser=user; document.getElementById('user-display').textContent=user.email.split('@')[0].toUpperCase(); startSync(); } else { currentUser={uid:'local_guest',isGuest:true}; startSync(); }});
 
-        // --- 2. STATE ---
-        let currentCargo = [], ownedInventory = {}, activeBuffs = { gm: false, william: false, alpaca: false }, selectedTown = "Karu Forest", debounceTimer = null;
-        let transportA = "Elephant", transportB = "Back Pack";
-        const DEBOUNCE_DELAY = 1000;
-        let isFullCapacity = false;
-        let currentUser = null;
-        let isSaving = false;
-
-        // --- 3. HELPERS ---
-        function getImagePath(path) {
-            if (!path) return "";
-            return (path.startsWith('images/') || path.startsWith('http')) ? path : `images/${path}`;
-        }
-        
-        const applyIcon = (el, name) => {
-            let imagePath = null;
-            if (townIcons[name]) { imagePath = `images/${townIcons[name]}`; } 
-            else {
-                 const itemData = barterDb.find(i => i.item === name);
-                 if (itemData && itemData.img) imagePath = `images/${itemData.img}`;
-            }
-            if (imagePath) {
-                const url = `url('${getImagePath(imagePath)}')`;
-                if (el.style.backgroundImage !== url) el.style.backgroundImage = url;
-            } else {
-                el.style.backgroundImage = 'none';
-            }
-        };
-
-        // --- 4. AUTH & FIREBASE ---
-        firebase.initializeApp({
-            apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM",
-            authDomain: "mabinogi-tracker.firebaseapp.com",
-            databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com",
-            projectId: "mabinogi-tracker",
-            storageBucket: "mabinogi-tracker.firebasestorage.app",
-            appId: "1:267690802644:web:fccdd005d5c8990504ea41"
-        });
-        const auth = firebase.auth();
-        auth.onAuthStateChanged(user => {
-            const disp = document.getElementById('user-display');
-            if (user) {
-                currentUser = user;
-                disp.textContent = user.email.split('@')[0].toUpperCase();
-                startSync();
-            } else {
-                currentUser = { uid: 'local_guest', isGuest: true };
-                disp.textContent = "GUEST (LOCAL)";
-                startSync();
-            }
-        });
-
-        function startSync() {
-            if (currentUser.isGuest) {
-                const localData = JSON.parse(localStorage.getItem('barter_save_data') || '{}');
-                loadFromData(localData);
-            } else {
-                firebase.database().ref(`users/${currentUser.uid}/barter_data`).on('value', (snap) => {
-                    const data = snap.val();
-                    if (data && !isSaving && !debounceTimer) loadFromData(data); 
-                });
-            }
+        function startSync(){
+            if(currentUser.isGuest) loadFromData(JSON.parse(localStorage.getItem('barter_save_data')||'{}'));
+            else firebase.database().ref(`users/${currentUser.uid}/barter_data`).on('value', snap=>{ const data=snap.val(); if(data&&!isSaving) loadFromData(data); });
         }
 
-        function saveData() {
-            const payload = {
-                cargo: JSON.stringify(currentCargo), 
-                inventory: ownedInventory, 
-                buffs: activeBuffs, 
-                town: selectedTown, 
-                transport1: transportA,
-                transport2: transportB
-            };
-            localStorage.setItem('barter_save_data', JSON.stringify(payload));
-            if (currentUser.isGuest) return;
+        function saveData(){
+            const payload={cargo:JSON.stringify(currentCargo),inventory:ownedInventory,buffs:activeBuffs,town:selectedTown,transport1:transportA,transport2:transportB};
+            localStorage.setItem('barter_save_data',JSON.stringify(payload));
+            if(currentUser.isGuest) return;
+            isSaving=true; firebase.database().ref(`users/${currentUser.uid}/barter_data`).set(payload).then(()=>isSaving=false);
+        }
+
+        function loadFromData(data){
+            if(!data) return;
+            if(data.cargo) currentCargo=JSON.parse(data.cargo);
+            if(data.inventory) ownedInventory=data.inventory;
+            if(data.town) selectedTown=data.town;
+            if(data.buffs){ activeBuffs=data.buffs; document.getElementById('buff-william').checked=!!activeBuffs.william; document.getElementById('buff-alpaca').checked=!!activeBuffs.alpaca; }
+            if(data.transport1) transportA=data.transport1;
+            if(data.transport2) transportB=data.transport2;
+            renderTownTabs(); renderTransportTabs(1); renderTransportTabs(2); calculateLoadout();
+        }
+
+        function calculateLoadout(){
+            const s1=getStats(transportA); const s2=getStats(transportB);
+            document.getElementById('transport-stats-1').innerText=`${s1.slots} SLOTS / ${s1.weight} KG`;
+            document.getElementById('transport-stats-2').innerText=`${s2.slots} SLOTS / ${s2.weight} KG`;
             
-            document.getElementById('sync-status').textContent = 'SAVING...';
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => {
-                isSaving = true;
-                firebase.database().ref(`users/${currentUser.uid}/barter_data`).set(payload).then(() => {
-                    document.getElementById('sync-status').textContent = 'SYNCED';
-                    isSaving = false;
-                });
-                debounceTimer = null;
-            }, DEBOUNCE_DELAY);
-        }
-
-        function loadFromData(data) {
-            if (!data) return;
-            if (data.cargo) currentCargo = typeof data.cargo === 'string' ? JSON.parse(data.cargo) : data.cargo;
-            if (data.inventory) ownedInventory = data.inventory;
-            if (data.town) selectedTown = data.town;
-            if (data.buffs) {
-                activeBuffs = data.buffs;
-                document.getElementById('buff-gm').checked = !!activeBuffs.gm;
-                document.getElementById('buff-william').checked = !!activeBuffs.william;
-                document.getElementById('buff-alpaca').checked = !!activeBuffs.alpaca;
-            }
-            if (data.transport1) transportA = data.transport1;
-            if (data.transport2) transportB = data.transport2;
+            const counts={}; currentCargo.forEach(i=>counts[i.item]=(counts[i.item]||0)+1);
+            const slotStream=[]; barterDb.forEach(p=>{ if(counts[p.item]){ let rem=counts[p.item]; while(rem>0){ let take=Math.min(rem,p.stack); slotStream.push({...p,qtyInSlot:take}); rem-=take; } } });
             
-            renderTownTabs();
-            renderTransportTabs(1);
-            renderTransportTabs(2);
-            calculateLoadout();
-        }
-
-        // --- 5. LOGISTICS ---
-        function getStatsForTransport(name) {
-            const b = transportData[name] || {slots:0, weight:0};
-            let bW = 0, bS = 0;
-            if (activeBuffs.gm) { bW += 100; bS += 1; }
-            if (activeBuffs.william) { bW += 200; bS += 1; }
-            if (name === "Wagon" && activeBuffs.alpaca) { bW += 200; bS += 2; }
-            return { slots: b.slots + bS, weight: b.weight + bW };
-        }
-
-        function packCargo(cargoList) {
-            const counts = {}; cargoList.forEach(i => counts[i.item] = (counts[i.item] || 0) + 1);
-            const slotStream = [];
-            barterDb.forEach(p => {
-                if (counts[p.item]) {
-                    let rem = counts[p.item];
-                    while (rem > 0) { const take = Math.min(rem, p.stack); slotStream.push({ ...p, qtyInSlot: take }); rem -= take; }
+            ['grid-1','grid-2'].forEach((id,i)=>{
+                const g=document.getElementById(id); g.innerHTML=''; const stats=i===0?s1:s2;
+                // Simple slice/offset logic to spread slots across transport A and B
+                const offset=i===0?0:s1.slots;
+                for(let k=0;k<stats.slots;k++){
+                    const item=slotStream[k+offset];
+                    const slot=document.createElement('div'); slot.className='slot'+(item?' filled':'');
+                    slot.style.width='50px'; slot.style.height='50px'; slot.style.position='relative';
+                    if(item){ const icon=document.createElement('div'); icon.className='item-icon'; icon.style.width='100%'; icon.style.height='100%'; applyIcon(icon,item.item); icon.innerHTML=`<span class="stack-label" style="position:absolute;bottom:2px;right:2px;font-size:9px;color:#fff;">${item.qtyInSlot}</span>`; icon.onclick=()=>updateItemQty(item.item,-1); slot.appendChild(icon); }
+                    g.appendChild(slot);
                 }
-            });
-            const s1 = getStatsForTransport(transportA);
-            const s2 = getStatsForTransport(transportB);
-            const slots1 = [], slots2 = [];
-            let w1 = 0, c1 = 0, w2 = 0, c2 = 0, overflow = false;
-            for (const s of slotStream) {
-                const wt = s.qtyInSlot * s.weight;
-                if (c1 < s1.slots && (w1 + wt) <= s1.weight) { slots1.push(s); w1 += wt; c1++; }
-                else if (c2 < s2.slots && (w2 + wt) <= s2.weight) { slots2.push(s); w2 += wt; c2++; }
-                else overflow = true;
-            }
-            return { slots1, slots2, overflow, s1, s2 };
-        }
-
-        function calculateLoadout() {
-            const res = packCargo(currentCargo);
-            isFullCapacity = res.overflow;
-            document.getElementById('transport-stats-1').innerText = `${res.s1.slots} SLOTS / ${res.s1.weight} KG`;
-            document.getElementById('transport-stats-2').innerText = `${res.s2.slots} SLOTS / ${res.s2.weight} KG`;
-            
-            const grids = ['grid-1', 'grid-2'];
-            grids.forEach((id, i) => {
-                const g = document.getElementById(id); g.innerHTML = '';
-                const slots = i === 0 ? res.slots1 : res.slots2;
-                const max = i === 0 ? res.s1.slots : res.s2.slots;
-                const frag = document.createDocumentFragment();
-                for (let k = 0; k < max; k++) {
-                    const slot = document.createElement('div'); slot.className = 'slot' + (slots[k] ? ' filled' : '');
-                    if (slots[k]) {
-                        const icon = document.createElement('div'); icon.className = 'item-icon'; applyIcon(icon, slots[k].item);
-                        icon.innerHTML = `<span class="stack-label">${slots[k].qtyInSlot}</span>`;
-                        icon.onclick = () => updateItemQty(slots[k].item, -1);
-                        icon.onmouseenter = (e) => showTooltip(e, slots[k]);
-                        icon.onmouseleave = hideTooltip;
-                        slot.appendChild(icon);
-                    }
-                    frag.appendChild(slot);
-                }
-                g.appendChild(frag);
             });
             calculateMaterials(); renderCatalog();
         }
 
-        // --- 6. UI RENDERERS ---
-        function renderTownTabs() {
-            const container = document.getElementById('town-tabs');
-            container.innerHTML = '';
-            Object.keys(townIcons).forEach(town => {
-                const btn = document.createElement('div');
-                btn.className = `picker-btn ${selectedTown === town ? 'active' : ''}`;
-                btn.onclick = () => { selectedTown = town; renderTownTabs(); renderCatalog(); saveData(); };
-                const icon = document.createElement('div'); icon.className = 'picker-icon'; applyIcon(icon, town);
-                const label = document.createElement('div'); label.className = 'picker-label'; label.innerText = town;
-                btn.append(icon, label); container.appendChild(btn);
+        const applyIcon=(el,name)=>{
+            let p=townIcons[name]?`images/${townIcons[name]}`:null; if(!p){ const i=barterDb.find(x=>x.item===name); if(i) p=`images/${i.img}`; }
+            if(p) el.style.backgroundImage=`url('${p}')`; else el.style.backgroundImage='none';
+        };
+
+        function getStats(n){ const b=transportData[n]||{slots:0,weight:0}; let w=0,s=0; if(activeBuffs.william){w+=200;s+=1;} if(n==="Wagon"&&activeBuffs.alpaca){w+=200;s+=2;} return {slots:b.slots+s,weight:b.weight+w}; }
+
+        function renderTownTabs(){
+            const c=document.getElementById('town-tabs'); c.innerHTML='';
+            Object.keys(townIcons).forEach(t=>{ const b=document.createElement('div'); b.className=`picker-btn ${selectedTown===t?'active':''}`; b.onclick=()=>{selectedTown=t;renderTownTabs();renderCatalog();saveData();}; const i=document.createElement('div'); i.className='picker-icon'; applyIcon(i,t); const l=document.createElement('div'); l.className='picker-label'; l.innerText=t; b.append(i,l); c.appendChild(b); });
+        }
+
+        function renderTransportTabs(n){
+            const c=document.getElementById(`transport-tabs-${n}`), cur=n===1?transportA:transportB; c.innerHTML='';
+            Object.keys(transportData).forEach(t=>{ const b=document.createElement('div'); b.className=`picker-btn ${cur===t?'active':''}`; b.style.minHeight="40px"; b.onclick=()=>{if(n===1)transportA=t;else transportB=t;renderTransportTabs(n);calculateLoadout();saveData();}; const l=document.createElement('div'); l.className='picker-label'; l.innerText=t; b.append(l); c.appendChild(b); });
+        }
+
+        function renderCatalog(){
+            const c=document.getElementById('catalog-container'); c.innerHTML='';
+            barterDb.filter(b=>b.town === selectedTown).forEach(item=>{
+                const qty=currentCargo.filter(x=>x.item===item.item).length, e=document.createElement('div');
+                e.className=`item-entry ${qty>=item.limit?'at-limit':''}`;
+                e.innerHTML=`<div class="item-icon-box"></div><div style="flex-grow:1;"><div class="item-name-sidebar">${item.item}</div><div class="item-meta">${item.weight}kg | Limit: ${item.limit}</div></div><div class="qty-control"><button class="q-btn minus">−</button><div class="q-val">${qty}</div><button class="q-btn plus">+</button></div>`;
+                applyIcon(e.querySelector('.item-icon-box'),item.item);
+                e.querySelector('.minus').onclick=()=>updateItemQty(item.item,-1);
+                e.querySelector('.plus').onclick=()=>updateItemQty(item.item,1);
+                c.appendChild(e);
             });
         }
 
-        function renderTransportTabs(num) {
-            const container = document.getElementById(`transport-tabs-${num}`);
-            const current = num === 1 ? transportA : transportB;
-            container.innerHTML = '';
-            Object.keys(transportData).forEach(tName => {
-                const btn = document.createElement('div');
-                btn.className = `picker-btn ${current === tName ? 'active' : ''}`;
-                btn.style.minHeight = "40px"; btn.style.padding = "8px 4px";
-                btn.onclick = () => { if(num === 1) transportA = tName; else transportB = tName; renderTransportTabs(num); calculateLoadout(); saveData(); };
-                const label = document.createElement('div'); label.className = 'picker-label'; label.innerText = tName;
-                btn.append(label); container.appendChild(btn);
-            });
-        }
-
-        function renderCatalog() {
-            const container = document.getElementById('catalog-container');
-            container.innerHTML = '';
-            const frag = document.createDocumentFragment();
-            barterDb.filter(b => b.town === selectedTown).forEach(item => {
-                const count = currentCargo.filter(c => c.item === item.item).length;
-                const atLimit = count >= item.limit;
-                const entry = document.createElement('div');
-                entry.className = `item-entry ${atLimit ? 'at-limit' : ''}`;
-                entry.id = `catalog-${item.item.replace(/\s+/g, '-')}`;
-                const iconBox = document.createElement('div'); iconBox.className = 'item-icon-box'; applyIcon(iconBox, item.item);
-                const info = document.createElement('div'); info.style.flexGrow = '1';
-                info.innerHTML = `<div class="item-name">${item.item}</div><div class="item-meta">${item.weight}kg | Limit: ${item.limit}</div>`;
-                const control = document.createElement('div'); control.className = 'qty-control';
-                
-                const btnMinus = document.createElement('button'); btnMinus.className = 'q-btn minus'; btnMinus.innerText = '−';
-                btnMinus.onclick = (e) => { e.stopPropagation(); if(e.shiftKey) clearItem(item.item); else updateItemQty(item.item, -1); };
-                setupLongPress(btnMinus, () => clearItem(item.item));
-                
-                const val = document.createElement('div'); val.className = 'q-val'; val.innerText = count;
-                const btnPlus = document.createElement('button'); btnPlus.className = 'q-btn plus'; btnPlus.innerText = '+';
-                btnPlus.onclick = (e) => { e.stopPropagation(); if(e.shiftKey) fillMax(item); else updateItemQty(item.item, 1); };
-                setupLongPress(btnPlus, () => fillMax(item));
-
-                control.append(btnMinus, val, btnPlus);
-                entry.append(iconBox, info, control);
-                frag.appendChild(entry);
-            });
-            container.appendChild(frag);
-        }
-
-        // --- 7. CARGO ACTIONS ---
-        function updateItemQty(itemName, delta) {
-            const item = barterDb.find(i => i.item === itemName);
-            if (delta > 0) {
-                const currentCount = currentCargo.filter(c => c.item === itemName).length;
-                if (currentCount >= item.limit) return;
-                const test = [...currentCargo, item];
-                if (packCargo(test).overflow) return;
-                currentCargo.push(item);
-            } else {
-                const idx = currentCargo.findLastIndex(c => c.item === itemName);
-                if (idx !== -1) currentCargo.splice(idx, 1);
-            }
+        function updateItemQty(n,d){
+            if(d>0){ if(currentCargo.filter(x=>x.item===n).length<barterDb.find(x=>x.item===n).limit) currentCargo.push(barterDb.find(x=>x.item===n)); }
+            else { const i=currentCargo.findLastIndex(x=>x.item===n); if(i!==-1) currentCargo.splice(i,1); }
             calculateLoadout(); saveData();
         }
 
-        function fillMax(item) {
-            let added = 0;
-            while (true) {
-                const currentCount = currentCargo.filter(c => c.item === item.item).length;
-                if (currentCount >= item.limit) break;
-                const test = [...currentCargo, item];
-                if (packCargo(test).overflow) break;
-                currentCargo.push(item);
-                added++;
-            }
-            if (added > 0) { calculateLoadout(); saveData(); }
+        function calculateMaterials(){
+            const need={}; currentCargo.forEach(c=>{ if(c.mats) Object.entries(c.mats).forEach(([m,q])=>need[m]=(need[m]||0)+q); });
+            const raw={}; function resolve(n,q){ const r=recipeDb.find(x => x.item === n); if(!r){raw[n]=(raw[n]||0)+q;return;} Object.entries(r.mats).forEach(([m,a])=>resolve(m,a*q)); }
+            Object.entries(need).forEach(([n,c])=>{ let def=Math.max(0,c-(ownedInventory[n]||0)); if(def>0) resolve(n,def); });
+            renderTable('crafted-tbody',need); renderTable('raw-tbody',raw);
         }
 
-        function clearItem(itemName) {
-            currentCargo = currentCargo.filter(c => c.item !== itemName);
-            calculateLoadout(); saveData();
-        }
-
-        function setupLongPress(btn, onHold) {
-            let timer;
-            const start = () => { timer = setTimeout(() => { if("vibrate" in navigator) navigator.vibrate(40); onHold(); timer = null; }, 500); };
-            const cancel = () => clearTimeout(timer);
-            btn.addEventListener('mousedown', start); btn.addEventListener('mouseup', cancel); btn.addEventListener('mouseleave', cancel);
-            btn.addEventListener('touchstart', (e) => { start(); }, {passive: true});
-            btn.addEventListener('touchend', cancel);
-        }
-
-        // --- 8. UTILS ---
-        function showTooltip(e, data) {
-            const tt = document.getElementById('item-tooltip');
-            document.getElementById('tt-name').textContent = data.item;
-            document.getElementById('tt-weight').textContent = data.weight + 'kg';
-            document.getElementById('tt-stack').textContent = data.stack;
-            tt.style.display = 'block';
-            const rect = e.target.getBoundingClientRect();
-            tt.style.left = (rect.left - 170) + 'px'; tt.style.top = rect.top + 'px';
-        }
-        function hideTooltip() { document.getElementById('item-tooltip').style.display = 'none'; }
-
-        function calculateMaterials() {
-            const needed = {};
-            currentCargo.forEach(c => { if(c.mats) Object.entries(c.mats).forEach(([m,q]) => needed[m] = (needed[m]||0)+q); });
-            const raw = {};
-            function resolve(n, qty) {
-                const r = recipeDb.find(x => x.item === n);
-                if (!r) { raw[n] = (raw[n]||0)+qty; return; }
-                Object.entries(r.mats).forEach(([m,a]) => resolve(m, a*qty));
-            }
-            Object.entries(needed).forEach(([n,c]) => { const def = Math.max(0, c-(ownedInventory[n]||0)); if(def>0) resolve(n, def); });
-            renderTable('crafted-tbody', needed, true); renderTable('raw-tbody', raw, false);
-        }
-
-        function renderTable(id, data, isComp) {
-            const body = document.getElementById(id); body.innerHTML = '';
-            const items = Object.keys(data).sort();
-            if(!items.length) { body.innerHTML = '<tr><td colspan="4" class="empty-state">No materials needed</td></tr>'; return; }
-            const frag = document.createDocumentFragment();
-            items.forEach(item => {
-                const need = Math.ceil(data[item]); const have = ownedInventory[item]||0; const def = need-have;
-                const tr = document.createElement('tr');
-                
-                // Standardized structure with components for alignment
-                tr.innerHTML = `
-                    <td class="cell-flex-parent">
-                        <div class="cell-flex"></div>
-                    </td>
-                    <td style="text-align:center;">
-                        <input type="number" class="owned-input" value="${have}">
-                    </td>
-                    <td>
-                        <div class="need-cell">${need}</div>
-                    </td>
-                    <td>
-                        <div class="status-cell ${def<=0?'ready':'deficit'}">${def<=0?'READY':def}</div>
-                    </td>
-                `;
-                
-                const icon = document.createElement('div'); icon.className = 'icon-small'; applyIcon(icon, item);
-                const textSpan = document.createElement('span'); textSpan.textContent = item;
-                tr.querySelector('.cell-flex').append(icon, textSpan);
-                
-                const input = tr.querySelector('input');
-                // LOGIC FIX: Use onchange instead of oninput to allow multi-digit typing without losing focus
-                input.onchange = (e) => { 
-                    ownedInventory[item] = parseInt(e.target.value) || 0; 
-                    calculateMaterials(); 
-                    saveData(); 
-                };
-                frag.appendChild(tr);
+        function renderTable(id,data){
+            const b=document.getElementById(id); b.innerHTML=''; const items=Object.keys(data).sort();
+            if(!items.length){ b.innerHTML='<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text-dim);">No materials needed</td></tr>'; return; }
+            items.forEach(item=>{
+                const n=Math.ceil(data[item]), h=ownedInventory[item]||0, def=n-h, tr=document.createElement('tr');
+                tr.innerHTML=`<td><div class="cell-flex"></div></td><td><input type="number" class="owned-input" value="${h}"></td><td style="text-align:center;">${n}</td><td class="status-cell ${def<=0?'ready':'deficit'}">${def<=0?'READY':def}</td>`;
+                const icon=document.createElement('div'); icon.className='icon-small'; applyIcon(icon,item);
+                const span=document.createElement('span'); span.textContent=item;
+                tr.querySelector('.cell-flex').append(icon,span);
+                tr.querySelector('input').onchange=(e)=>{ ownedInventory[item]=parseInt(e.target.value)||0; calculateMaterials(); saveData(); };
+                b.appendChild(tr);
             });
-            body.appendChild(frag);
         }
 
-        document.querySelectorAll('.toggle-input').forEach(chk => {
-            chk.onchange = (e) => {
-                const id = e.target.id.replace('buff-', '');
-                if (id === 'william' && e.target.checked) { document.getElementById('buff-alpaca').checked = activeBuffs.alpaca = false; }
-                if (id === 'alpaca' && e.target.checked) { document.getElementById('buff-william').checked = activeBuffs.william = false; }
-                activeBuffs[id] = e.target.checked; calculateLoadout(); saveData();
-            };
-        });
-
-        window.toggleSidebar = (side) => { document.getElementById(side+'-panel').classList.add('active'); document.getElementById('mobile-backdrop').classList.add('active'); };
-        window.closeSidebars = () => { document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active')); document.getElementById('mobile-backdrop').classList.remove('active'); };
-        window.onload = () => { calculateLoadout(); };
+        document.querySelectorAll('.toggle-input').forEach(chk=>{ chk.onchange=(e)=>{ const id=e.target.id.replace('buff-',''); if(id==='william'&&e.target.checked) document.getElementById('buff-alpaca').checked=activeBuffs.alpaca=false; if(id==='alpaca'&&e.target.checked) document.getElementById('buff-william').checked=activeBuffs.william=false; activeBuffs[id]=e.target.checked; calculateLoadout(); saveData(); }; });
+        window.toggleSidebar=(s)=>{document.getElementById(s+'-panel').classList.add('active');document.getElementById('mobile-backdrop').classList.add('active');};
+        window.closeSidebars=()=>{document.getElementById('left-panel').classList.remove('active');document.getElementById('right-panel').classList.remove('active');document.getElementById('mobile-backdrop').classList.remove('active');};
+        window.onload=calculateLoadout;
     </script>
 </body>
 </html>
