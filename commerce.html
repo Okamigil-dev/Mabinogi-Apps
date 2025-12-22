@@ -247,7 +247,6 @@
             <div class="title-section">
                 <div style="display:flex; align-items:center;">
                     <span class="main-title">TRADING POST</span>
-                    <span class="sub-title">SYNC_V2.7</span>
                 </div>
                 <a href="index.html" class="hub-btn">Back to Hub</a>
             </div>
@@ -306,9 +305,10 @@
                     <div class="big-icon" id="center-item-icon"></div>
                     <div class="item-title-box">
                         <div class="item-title-large" id="center-item-title">Select Item</div>
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div class="item-meta" id="max-inventory-display">...</div>
-                            <div id="base-price-container" style="display:none; align-items: center; gap: 8px;">
+                        <div style="display:grid; grid-template-columns: 1fr 1fr 1.5fr; align-items: center; width: 100%; margin-top: 8px;">
+                            <div class="item-inventory" id="weight-display" style="text-align: left;">Weight: -</div>
+                            <div class="item-inventory" id="stack-display" style="text-align: center;">Stack: -</div>
+                            <div id="base-price-container" style="display:none; justify-content: flex-end; align-items: center; gap: 8px;">
                                 <span style="font-size: 10px; color: var(--text-dim); font-weight: 600;">BASE</span>
                                 <input type="number" id="base-price-input" class="input-dark" style="width: 70px; text-align: right; padding: 4px;" onchange="updateBasePrice(this.value)" onfocus="this.select()">
                             </div>
@@ -666,7 +666,8 @@
             document.getElementById('base-price-input').value = currentBase;
             document.getElementById('base-price-container').style.display = 'flex';
 
-            document.getElementById('max-inventory-display').textContent = `Weight: ${currentItem.weight} | Stack: ${currentItem.max}`;
+            document.getElementById('weight-display').textContent = `Weight: ${currentItem.weight}`;
+            document.getElementById('stack-display').textContent = `Stack: ${currentItem.max}`;
         }
 
         function updateTownIcon() {
