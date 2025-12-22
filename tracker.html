@@ -103,7 +103,7 @@
             flex-shrink: 0; 
         }
         
-        /* New Filter Bar Styles */
+        /* Filter Bar Styles (Pills) */
         #char-filters {
             padding: 10px 20px;
             border-bottom: 1px solid var(--border);
@@ -113,6 +113,7 @@
             background: var(--bg);
             flex-shrink: 0;
             white-space: nowrap;
+            /* Hide scrollbar visually but allow scrolling */
             scrollbar-width: none; 
             -ms-overflow-style: none;
         }
@@ -147,6 +148,14 @@
         .task-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; align-items: center; position: relative; overflow: hidden; transition: 0.2s; }
         .task-card:hover { border-color: #3f3f46; }
         .task-card.complete { opacity: 0.4; filter: grayscale(1); background: var(--bg); }
+        .task-card.type-mon { border-left: 2px solid var(--mon); }
+        .task-card.type-thu { border-left: 2px solid var(--thu); }
+        .task-card.type-sat { border-left: 2px solid var(--sat); }
+
+        .type-tag { font-size: 9px; padding: 2px 5px; border-radius: 3px; font-weight: 700; color: #000; margin-left: 6px; }
+        .tag-mon { background: var(--mon); }
+        .tag-thu { background: var(--thu); }
+        .tag-sat { background: var(--sat); }
         
         .t-info { flex-grow: 1; display: flex; align-items: center; gap: 12px; overflow: hidden; z-index: 2; position: relative; }
         .t-char-tag { font-size: 10px; font-weight: 700; color: var(--accent); background: var(--accent-dim); padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
@@ -297,7 +306,7 @@
                     <button id="nav-weekly" class="tab-btn" style="flex:1;" onclick="setView('weekly')">Weekly Tasks</button>
                 </div>
 
-                <!-- New Dedicated Filter Bar -->
+                <!-- Dedicated Filter Bar (Pills) -->
                 <div id="char-filters"></div>
 
                 <div id="list-container" class="task-list"></div>
@@ -377,7 +386,7 @@
     const auth = firebase.auth();
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
-    let tasks = [], chars = ["Main"], collapsed = {}, catOrder = [], lastReset = { daily: 0, thu: 0, sat: 0 };
+    let tasks = [], chars = ["Main"], collapsed = {}, catOrder = [], lastReset = { daily: 0, mon: 0, thu: 0, sat: 0 };
     let timerSettings = { daily: true, mon: true, thu: true, sat: true };
     let currentView = 'daily', activeFilter = "ALL", currentUser = null;
     let skipRender = false;
@@ -412,7 +421,7 @@
     function startSync() {
         if (currentUser.isGuest) {
             const localData = JSON.parse(localStorage.getItem('mabi_tracker_guest_data') || '{}');
-            tasks = localData.tasks || []; chars = localData.chars || ["Main"]; catOrder = localData.catOrder || []; lastReset = localData.lastReset || { daily: 0, thu: 0, sat: 0 };
+            tasks = localData.tasks || []; chars = localData.chars || ["Main"]; catOrder = localData.catOrder || []; lastReset = localData.lastReset || { daily: 0, mon: 0, thu: 0, sat: 0 };
             collapsed = localData.collapsed || {};
             timerSettings = localData.timerSettings || { daily: true, mon: true, thu: true, sat: true };
             checkAndReset(); render(); renderPendingSidebar(); applyTimerSettings();
@@ -420,7 +429,11 @@
             db.ref(`users/${currentUser.uid}`).on('value', (snap) => {
                 if (skipRender) { skipRender = false; return; }
                 const data = snap.val() || {};
-                tasks = data.tasks || []; chars = data.chars || ["Main"]; catOrder = data.catOrder || []; lastReset = data.lastReset || { daily: 0, thu: 0, sat: 0 };
+                tasks = data.tasks || []; chars = data.chars || ["Main"]; catOrder = data.catOrder || []; 
+                lastReset = data.lastReset || { daily: 0, mon: 0, thu: 0, sat: 0 };
+                // Safety check for missing Monday in old data
+                if (typeof lastReset.mon === 'undefined') lastReset.mon = 0;
+                
                 collapsed = data.collapsed || {};
                 timerSettings = data.timerSettings || { daily: true, mon: true, thu: true, sat: true };
                 
@@ -453,22 +466,21 @@
             if (pac < r) r.setDate(r.getDate() - (dayNum !== null ? 7 : 1));
             return r.getTime();
         };
-        const rd = getR(null), rt = getR(4), rs = getR(6);
+        const rd = getR(null), rm = getR(1), rt = getR(4), rs = getR(6);
         let changed = false;
         if (lastReset.daily < rd) { tasks.forEach(t => { if(t.type === 'daily') t.done = 0; }); lastReset.daily = rd; changed = true; }
+        if (lastReset.mon < rm) { tasks.forEach(t => { if(t.type === 'mon') t.done = 0; }); lastReset.mon = rm; changed = true; }
         if (lastReset.thu < rt) { tasks.forEach(t => { if(t.type === 'thu') t.done = 0; }); lastReset.thu = rt; changed = true; }
         if (lastReset.sat < rs) { tasks.forEach(t => { if(t.type === 'sat') t.done = 0; }); lastReset.sat = rs; changed = true; }
         if (changed) pushData();
     }
 
     function applyTimerSettings() {
-        // Sync toggles with state
         document.getElementById('toggle-timer-daily').checked = timerSettings.daily !== false;
         document.getElementById('toggle-timer-mon').checked = timerSettings.mon !== false;
         document.getElementById('toggle-timer-thu').checked = timerSettings.thu !== false;
         document.getElementById('toggle-timer-sat').checked = timerSettings.sat !== false;
 
-        // Apply visibility
         document.getElementById('timer-card-daily').style.display = (timerSettings.daily !== false) ? 'block' : 'none';
         document.getElementById('timer-card-mon').style.display = (timerSettings.mon !== false) ? 'block' : 'none';
         document.getElementById('timer-card-thu').style.display = (timerSettings.thu !== false) ? 'block' : 'none';
@@ -489,7 +501,6 @@
         if(!list) return;
         list.innerHTML = '';
         
-        // Filter tasks that are NOT done
         const pending = tasks.filter(t => t.done < t.max);
         
         if(pending.length === 0) {
@@ -500,8 +511,11 @@
         pending.forEach(t => {
             const div = document.createElement('div');
             div.className = 'mini-task-row';
-            // Use color to indicate urgency (Red for Weekly, Green for Daily)
-            const color = t.type === 'daily' ? 'var(--accent)' : (t.type === 'thu' ? 'var(--thu)' : 'var(--sat)');
+            let color = 'var(--accent)';
+            if(t.type === 'mon') color = 'var(--mon)';
+            if(t.type === 'thu') color = 'var(--thu)';
+            if(t.type === 'sat') color = 'var(--sat)';
+            
             div.innerHTML = `<span style="color:${color}; margin-right:5px;">●</span> ${t.name}`;
             list.appendChild(div);
         });
@@ -511,11 +525,9 @@
         if(!currentUser) return;
         const isEdit = document.getElementById('app').classList.contains('show-mgmt');
         
-        // Update nav button active states
         document.getElementById('nav-daily').classList.toggle('active', currentView === 'daily');
         document.getElementById('nav-weekly').classList.toggle('active', currentView === 'weekly');
 
-        // Update Inputs (without triggering change event)
         const charInp = document.getElementById('char-input');
         if (document.activeElement !== charInp) charInp.value = chars.join(', ');
 
@@ -533,7 +545,6 @@
 
             const wrap = document.createElement('div'); wrap.className = 'group-wrap'; wrap.dataset.catname = cat;
             const det = document.createElement('details'); det.open = collapsed[cat] !== false;
-            // Only update collapse state when toggled, skip render to prevent flicker
             det.ontoggle = () => { collapsed[cat] = det.open; skipRender = true; pushData(); };
 
             const sum = document.createElement('summary');
@@ -560,11 +571,16 @@
                 card.className = `task-card type-${t.type} ${t.done >= t.max ? 'complete' : ''}`; 
                 card.dataset.id = t.id;
                 
+                let tagHtml = "";
+                if(t.type === 'mon') tagHtml = `<span class="type-tag tag-mon">MON</span>`;
+                if(t.type === 'thu') tagHtml = `<span class="type-tag tag-thu">THU</span>`;
+                if(t.type === 'sat') tagHtml = `<span class="type-tag tag-sat">SAT</span>`;
+
                 card.innerHTML = `
                     <div class="drag-handle">::</div>
                     <div class="t-info">
                         <div class="view-ui t-char-tag">${t.char || 'GB'}</div>
-                        <div class="view-ui t-name">${t.name}</div>
+                        <div class="view-ui t-name">${t.name} ${tagHtml}</div>
                         <div class="view-ui pips">${Array.from({length:t.max}, (_,i) => `<div class="pip ${i<t.done?'on':''}"></div>`).join('')}</div>
                         
                         <div class="edit-ui">
@@ -575,6 +591,7 @@
                             </select>
                             <select class="input-dark" onchange="upd(${t.id},'type',this.value)">
                                 <option value="daily" ${t.type==='daily'?'selected':''}>Daily</option>
+                                <option value="mon" ${t.type==='mon'?'selected':''}>Mon</option>
                                 <option value="thu" ${t.type==='thu'?'selected':''}>Thu</option>
                                 <option value="sat" ${t.type==='sat'?'selected':''}>Sat</option>
                             </select>
