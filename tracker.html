@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mabi Tracker</title>
+    <title>Task Tracker</title>
     
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -20,6 +20,7 @@
             --card-bg: #18181b;
             --accent: #00ff88;
             --accent-dim: rgba(0, 255, 136, 0.1);
+            --mon: #ff9900;
             --thu: #0088ff;
             --sat: #cc44ff;
             --border: #27272a;
@@ -37,6 +38,7 @@
             margin: 0;
             font-size: 13px;
             overflow: hidden;
+            /* Use dvh for mobile address bar handling, fallback to vh */
             height: 100vh;
             height: 100dvh;
             display: flex;
@@ -77,10 +79,11 @@
 
         /* Left Panel Specifics */
         .user-profile-box { display: flex; align-items: center; gap: 12px; padding: 15px; border-bottom: 1px solid var(--border); }
-        .user-avatar { width: 100px; height: 100px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; flex-shrink: 0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"); }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; flex-shrink: 0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"); }
         #user-info { font-size: 13px; font-weight: 600; color: var(--text-main); word-break: break-all; line-height: 1.2; }
         
         .timer-card { background: var(--card-bg); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); border-left: 3px solid var(--accent); margin-bottom: 8px; }
+        .timer-card.mon { border-left-color: var(--mon); }
         .timer-card.thu { border-left-color: var(--thu); }
         .timer-card.sat { border-left-color: var(--sat); }
         .t-label { font-size: 11px; color: var(--text-dim); font-weight: 500; }
@@ -243,7 +246,7 @@
         <div class="header-bar">
             <div class="title-section">
                 <div style="display:flex; align-items:center;">
-                    <span class="main-title">Mabi Tracker</span>
+                    <span class="main-title">Task Tracker</span>
                 </div>
                 <a href="index.html" class="hub-btn">Back to Hub</a>
             </div>
@@ -259,7 +262,7 @@
                 
                 <!-- Mobile Only: Back to Hub -->
                 <div class="mobile-only" style="padding: 10px 15px; border-bottom: 1px solid var(--border);">
-                    <button class="hub-btn" style="width:100%; text-align:center;" onclick="window.location.href='index.html'">← Back to Hub</button>
+                    <button class="hub-btn" style="width:100%; text-align:center;" onclick="window.location.href='index.html'">Back to Hub</button>
                 </div>
 
                 <div class="user-profile-box">
@@ -272,9 +275,10 @@
                 
                 <div class="config-section">
                     <label class="panel-label">Server Resets</label>
-                    <div class="timer-card"><span class="t-label">Daily</span><span id="timer-daily" class="t-val">00:00:00</span></div>
-                    <div class="timer-card thu"><span class="t-label">Thursday</span><span id="timer-thu" class="t-val">00:00:00</span></div>
-                    <div class="timer-card sat"><span class="t-label">Saturday</span><span id="timer-sat" class="t-val">00:00:00</span></div>
+                    <div class="timer-card" id="timer-card-daily"><span class="t-label">Daily</span><span id="timer-daily" class="t-val">00:00:00</span></div>
+                    <div class="timer-card mon" id="timer-card-mon"><span class="t-label">Monday</span><span id="timer-mon" class="t-val">00:00:00</span></div>
+                    <div class="timer-card thu" id="timer-card-thu"><span class="t-label">Thursday</span><span id="timer-thu" class="t-val">00:00:00</span></div>
+                    <div class="timer-card sat" id="timer-card-sat"><span class="t-label">Saturday</span><span id="timer-sat" class="t-val">00:00:00</span></div>
                 </div>
 
                 <!-- Remaining Tasks List (Replaces Desktop Button) -->
@@ -321,6 +325,26 @@
                 </div>
 
                 <div class="config-section">
+                    <label class="panel-label" style="margin-bottom:12px;">TIMER VISIBILITY</label>
+                    <div class="toggle-row" style="padding:4px 0;">
+                        <span class="toggle-label" style="font-size:12px;">Daily Timer</span>
+                        <label><input type="checkbox" id="toggle-timer-daily" class="toggle-input" onchange="updateTimerSettings()"><div class="toggle-switch"></div></label>
+                    </div>
+                    <div class="toggle-row" style="padding:4px 0;">
+                        <span class="toggle-label" style="font-size:12px;">Monday Timer</span>
+                        <label><input type="checkbox" id="toggle-timer-mon" class="toggle-input" onchange="updateTimerSettings()"><div class="toggle-switch"></div></label>
+                    </div>
+                    <div class="toggle-row" style="padding:4px 0;">
+                        <span class="toggle-label" style="font-size:12px;">Thursday Timer</span>
+                        <label><input type="checkbox" id="toggle-timer-thu" class="toggle-input" onchange="updateTimerSettings()"><div class="toggle-switch"></div></label>
+                    </div>
+                    <div class="toggle-row" style="padding:4px 0;">
+                        <span class="toggle-label" style="font-size:12px;">Saturday Timer</span>
+                        <label><input type="checkbox" id="toggle-timer-sat" class="toggle-input" onchange="updateTimerSettings()"><div class="toggle-switch"></div></label>
+                    </div>
+                </div>
+
+                <div class="config-section">
                     <label class="panel-label">ADD NEW GROUP</label>
                     <div style="display:flex; gap:8px;">
                         <input type="text" id="new-cat" class="input-dark" placeholder="Group Name...">
@@ -354,6 +378,7 @@
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
     let tasks = [], chars = ["Main"], collapsed = {}, catOrder = [], lastReset = { daily: 0, thu: 0, sat: 0 };
+    let timerSettings = { daily: true, mon: true, thu: true, sat: true };
     let currentView = 'daily', activeFilter = "ALL", currentUser = null;
     let skipRender = false;
 
@@ -368,7 +393,6 @@
             status.innerText = "Online & Syncing";
             status.style.color = "var(--accent)";
             
-            // Try cache for immediate display
             try {
                 const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
                 uInfo.innerText = cached.username || user.email;
@@ -390,28 +414,29 @@
             const localData = JSON.parse(localStorage.getItem('mabi_tracker_guest_data') || '{}');
             tasks = localData.tasks || []; chars = localData.chars || ["Main"]; catOrder = localData.catOrder || []; lastReset = localData.lastReset || { daily: 0, thu: 0, sat: 0 };
             collapsed = localData.collapsed || {};
-            checkAndReset(); render(); renderPendingSidebar();
+            timerSettings = localData.timerSettings || { daily: true, mon: true, thu: true, sat: true };
+            checkAndReset(); render(); renderPendingSidebar(); applyTimerSettings();
         } else {
             db.ref(`users/${currentUser.uid}`).on('value', (snap) => {
                 if (skipRender) { skipRender = false; return; }
                 const data = snap.val() || {};
                 tasks = data.tasks || []; chars = data.chars || ["Main"]; catOrder = data.catOrder || []; lastReset = data.lastReset || { daily: 0, thu: 0, sat: 0 };
                 collapsed = data.collapsed || {};
+                timerSettings = data.timerSettings || { daily: true, mon: true, thu: true, sat: true };
                 
-                // Update profile info from DB if available
                 if (data.profile) {
                     document.getElementById('user-info').innerText = data.profile.username || currentUser.email;
                     if(data.profile.avatar) document.getElementById('user-avatar').style.backgroundImage = `url('${data.profile.avatar}')`;
                 }
 
-                checkAndReset(); render(); renderPendingSidebar();
+                checkAndReset(); render(); renderPendingSidebar(); applyTimerSettings();
             });
         }
     }
 
     function pushData() { 
         if (!currentUser) return;
-        const dataToSave = { tasks, chars, catOrder, lastReset, collapsed };
+        const dataToSave = { tasks, chars, catOrder, lastReset, collapsed, timerSettings };
         if (currentUser.isGuest) {
             localStorage.setItem('mabi_tracker_guest_data', JSON.stringify(dataToSave));
         } else {
@@ -434,6 +459,29 @@
         if (lastReset.thu < rt) { tasks.forEach(t => { if(t.type === 'thu') t.done = 0; }); lastReset.thu = rt; changed = true; }
         if (lastReset.sat < rs) { tasks.forEach(t => { if(t.type === 'sat') t.done = 0; }); lastReset.sat = rs; changed = true; }
         if (changed) pushData();
+    }
+
+    function applyTimerSettings() {
+        // Sync toggles with state
+        document.getElementById('toggle-timer-daily').checked = timerSettings.daily !== false;
+        document.getElementById('toggle-timer-mon').checked = timerSettings.mon !== false;
+        document.getElementById('toggle-timer-thu').checked = timerSettings.thu !== false;
+        document.getElementById('toggle-timer-sat').checked = timerSettings.sat !== false;
+
+        // Apply visibility
+        document.getElementById('timer-card-daily').style.display = (timerSettings.daily !== false) ? 'block' : 'none';
+        document.getElementById('timer-card-mon').style.display = (timerSettings.mon !== false) ? 'block' : 'none';
+        document.getElementById('timer-card-thu').style.display = (timerSettings.thu !== false) ? 'block' : 'none';
+        document.getElementById('timer-card-sat').style.display = (timerSettings.sat !== false) ? 'block' : 'none';
+    }
+
+    function updateTimerSettings() {
+        timerSettings.daily = document.getElementById('toggle-timer-daily').checked;
+        timerSettings.mon = document.getElementById('toggle-timer-mon').checked;
+        timerSettings.thu = document.getElementById('toggle-timer-thu').checked;
+        timerSettings.sat = document.getElementById('toggle-timer-sat').checked;
+        applyTimerSettings();
+        pushData();
     }
 
     function renderPendingSidebar() {
@@ -556,7 +604,6 @@
             new Sortable(list, { group: 'tasks', handle: '.drag-handle', animation: 150, onEnd: saveTaskOrder });
         });
         new Sortable(cont, { handle: '.group-handle', animation: 150, onEnd: saveCatOrder });
-        renderPendingSidebar(); // Update sidebar list whenever we render
     }
 
     function haptic() { if ("vibrate" in navigator) navigator.vibrate(12); }
@@ -618,7 +665,10 @@
         const dElem = document.getElementById('timer-daily');
         const tElem = document.getElementById('timer-thu');
         const sElem = document.getElementById('timer-sat');
+        const mElem = document.getElementById('timer-mon');
+        
         if(dElem) dElem.innerText = formatDiff(getNextReset(null));
+        if(mElem) mElem.innerText = formatDiff(getNextReset(1)); // 1 is Monday
         if(tElem) tElem.innerText = formatDiff(getNextReset(4));
         if(sElem) sElem.innerText = formatDiff(getNextReset(6));
     }
@@ -628,4 +678,3 @@
     </script>
 </body>
 </html>
-
