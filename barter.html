@@ -319,7 +319,7 @@
 
         firebase.initializeApp({apiKey:"AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM",authDomain: "mabinogi-tracker.firebaseapp.com",databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com",projectId: "mabinogi-tracker",storageBucket: "mabinogi-tracker.firebasestorage.app",appId: "1:267690802644:web:fccdd005d5c8990504ea41"});
         const auth=firebase.auth();
-        auth.onAuthStateChanged(user=>{ if(user){ currentUser=user; document.getElementById('user-display').textContent=user.email.split('@')[0].toUpperCase(); startSync(); } else { currentUser={uid:'local_guest',isGuest:true}; startSync(); }});
+        auth.onAuthStateChanged(user=>{ if(user){ currentUser=user; document.getElementById('user-display').textContent=user.email.split('@')[0]; startSync(); } else { currentUser={uid:'local_guest',isGuest:true}; startSync(); }});
 
         function startSync(){
             if(currentUser.isGuest) loadFromData(JSON.parse(localStorage.getItem('barter_save_data')||'{}'));
