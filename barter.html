@@ -36,6 +36,7 @@
             background: var(--bg);
             color: var(--text-main);
             margin: 0;
+            padding: 0;
             font-size: 13px;
             overflow: hidden;
             height: 100vh;
@@ -52,7 +53,16 @@
         ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
         /* Layout */
-        .interface-container { display: flex; flex-direction: column; height: 100%; width: 100%; max-width: 1500px; margin: 0 auto; border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+        .interface-container { 
+            display: flex; 
+            flex-direction: column; 
+            height: 100%; 
+            width: 100%; 
+            max-width: 1500px; 
+            margin: 0 auto; 
+            border-left: 1px solid var(--border); 
+            border-right: 1px solid var(--border); 
+        }
         
         .header-bar { background: var(--sidebar-bg); border-bottom: 1px solid var(--border); padding: 10px 20px; flex-shrink: 0; }
         .title-section { display: flex; justify-content: space-between; align-items: center; }
@@ -118,14 +128,12 @@
             text-align: center;
             line-height: 1.1;
         }
-        .picker-btn.active .picker-label { color: var(--accent); }
 
         .panel-label { font-size: 11px; font-weight: 600; color: var(--text-dim); margin-bottom: 8px; display: block; text-transform: uppercase; }
         .config-section { padding: 20px; border-bottom: 1px solid var(--border); }
 
-        /* Left Panel Specifics */
+        /* Catalog entries */
         .item-list { flex-grow: 1; overflow-y: auto; }
-        
         .item-entry {
             display: flex; gap: 12px; padding: 12px 15px; border-bottom: 1px solid var(--border);
             align-items: center; border-left: 2px solid transparent;
@@ -161,11 +169,19 @@
         .item-meta { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
 
         /* Center Panel (Tables) */
-        .table-container { padding: 20px; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
-        
+        .table-container { padding: 20px; height: 100%; display: flex; flex-direction: column; overflow: hidden; width: 100%; }
         .materials-dual-layout { 
             display: grid; grid-template-columns: 1fr 1fr; gap: 20px; 
-            flex-grow: 1; min-height: 0; overflow: hidden;
+            flex-grow: 1; min-height: 0; overflow: hidden; width: 100%;
+        }
+
+        .material-header-row {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 15px; 
+            flex-shrink: 0; 
+            padding: 0 10px;
         }
         
         .material-column {
@@ -175,24 +191,61 @@
 
         .scroll-area { overflow-y: auto; flex-grow: 1; padding: 0; }
 
-        .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed; }
         .data-table th { 
             text-align: left; color: var(--text-dim); font-size: 10px; font-weight: 600; 
             padding: 10px 15px; border-bottom: 1px solid var(--border); 
             position: sticky; top: 0; background: #121214; z-index: 10; 
         }
-        .data-table td { padding: 8px 15px; border-bottom: 1px solid rgba(255,255,255,0.03); color: #ccc; }
+        .data-table td { 
+            padding: 6px 15px; 
+            border-bottom: 1px solid rgba(255,255,255,0.03); 
+            color: #ccc; 
+            vertical-align: middle; 
+            height: 40px; 
+        }
         
-        .cell-flex { display: flex; align-items: center; }
-
+        /* VERTICAL ALIGNMENT MASTER FIX */
+        .cell-flex { 
+            display: flex; 
+            align-items: center; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            white-space: nowrap; 
+            height: 28px;
+            line-height: 28px;
+        }
+        
         .owned-input { 
             background: var(--bg); border: 1px solid var(--border); color: var(--accent); 
-            width: 50px; text-align: center; font-size: 11px; padding: 4px; border-radius: 4px;
-            font-family: 'JetBrains Mono';
+            width: 100%; max-width: 120px; /* INCREASED WIDTH: Doubled for 4+ digits */
+            text-align: right; /* ALIGNMENT FIX: Align text to right */
+            font-size: 11px; padding: 0 8px; border-radius: 4px;
+            font-family: 'JetBrains Mono'; height: 28px; line-height: 28px;
         }
         .owned-input:focus { border-color: var(--accent); }
         
-        .status-cell { font-family: 'JetBrains Mono'; font-weight: 700; font-size: 11px; }
+        .need-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 28px;
+            line-height: 28px;
+            width: 100%;
+        }
+
+        .status-cell { 
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            font-family: 'JetBrains Mono'; 
+            font-weight: 700; 
+            font-size: 11px; 
+            white-space: nowrap; 
+            height: 28px;
+            line-height: 28px;
+            padding-right: 20px !important; /* Spacing from wall */
+        }
         .status-cell.deficit { color: var(--danger); }
         .status-cell.ready { color: var(--success); }
         
@@ -211,7 +264,6 @@
             margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px dashed var(--border);
         }
         .loadout-stats { font-family: 'JetBrains Mono'; font-size: 10px; color: var(--accent); }
-        
         .grid-container {
             display: grid; grid-template-columns: repeat(auto-fill, var(--slot-size));
             gap: 2px; background: #000; padding: 4px; border: 1px solid var(--border);
@@ -222,7 +274,6 @@
             position: relative; display: flex; align-items: center; justify-content: center;
         }
         .slot.filled { background: var(--accent-dim); border-color: rgba(0, 243, 255, 0.3); }
-        
         .item-icon { width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat; background-position: center; cursor: pointer; }
         .stack-label { 
             position: absolute; bottom: 1px; right: 2px; font-family: 'JetBrains Mono'; 
@@ -233,15 +284,13 @@
         .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.03); }
         .toggle-row:last-child { border-bottom: none; }
         .toggle-label { font-size: 12px; color: var(--text-main); font-weight: 500; }
-        
         .toggle-switch { width: 34px; height: 18px; background: var(--border); border-radius: 99px; position: relative; transition: 0.2s; flex-shrink: 0; }
         .toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: #fff; border-radius: 50%; transition: 0.2s; }
-        
         input:checked + .toggle-switch { background: var(--accent); }
         input:checked + .toggle-switch::after { transform: translateX(16px); }
         .toggle-input { display: none; }
 
-        /* Tooltip */
+        /* Tooltip System */
         #item-tooltip {
             position: fixed; z-index: 10000; background: rgba(18, 18, 20, 0.98); 
             border: 1px solid var(--border); padding: 12px; border-radius: 6px;
@@ -252,37 +301,55 @@
         .tt-stat { font-family: 'JetBrains Mono'; font-size: 10px; color: var(--text-dim); display: flex; justify-content: space-between; }
         .tt-stat b { color: var(--accent); }
 
-        /* Mobile Nav */
-        .mobile-nav { display: none; }
-        .mobile-backdrop { display: none; }
-        .drawer-header { display: none; }
-
+        /* Mobile Adjustments */
         @media (max-width: 1000px) {
-            .content-grid { display: block; height: calc(100dvh - 50px); }
+            .content-grid { display: block; height: calc(100dvh - 50px); width: 100%; }
             .header-bar { display: none; }
             
+            .interface-container { 
+                border: none !important; 
+                width: 100% !important; 
+                max-width: 100vw !important; 
+                margin: 0 !important; 
+                padding: 0 !important;
+            }
+
             .mobile-nav { 
                 display: flex; justify-content: space-between; align-items: center;
                 padding: 10px 15px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border);
-                height: 50px; z-index: 50; flex-shrink: 0;
+                height: 50px; z-index: 50; flex-shrink: 0; width: 100%;
             }
             .nav-trigger { background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 14px; cursor: pointer; }
 
             .panel { 
-                position: fixed; top: 0; bottom: 0; width: 300px; max-width: 85%; z-index: 1001; 
+                position: fixed; top: 0; bottom: 0; width: 300px; z-index: 1001; 
                 box-shadow: 0 0 50px rgba(0,0,0,0.8); 
                 transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.25s;
                 visibility: hidden;
             }
+            
+            .left-panel, .right-panel { max-width: 85% !important; }
+
             .left-panel { left: 0; transform: translateX(-100%); border-right: 1px solid var(--border); }
             .left-panel.active { transform: translateX(0); visibility: visible; }
             .right-panel { right: 0; transform: translateX(100%); border-left: 1px solid var(--border); }
             .right-panel.active { transform: translateX(0); visibility: visible; }
             
             .center-panel { 
-                height: 100%; width: 100%; border: none; 
-                visibility: visible; position: relative; z-index: 1; 
-                transform: none; box-shadow: none; display: flex; flex-direction: column;
+                height: 100%; 
+                width: 100% !important; 
+                max-width: 100% !important; 
+                border: none !important; 
+                visibility: visible; 
+                position: relative; 
+                z-index: 1; 
+                transform: none; 
+                box-shadow: none; 
+                display: flex; 
+                flex-direction: column;
+                margin: 0 !important; 
+                padding: 0 !important;
+                overflow-x: hidden;
             }
 
             .mobile-backdrop { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
@@ -295,34 +362,62 @@
             .drawer-title { font-weight: 700; color: #fff; }
             .drawer-close { background: none; border: none; color: var(--text-dim); font-size: 20px; padding: 0 5px; cursor: pointer; }
             
-            .materials-dual-layout { grid-template-columns: 1fr 1fr; gap: 8px; }
-            .table-container { padding: 10px 5px; }
+            .materials-dual-layout { 
+                grid-template-columns: 1fr 1fr; 
+                gap: 12px !important; 
+                width: 100% !important; 
+                padding: 0 15px !important; 
+                margin: 0 !important;
+                border-radius: 0;
+            }
+            .table-container { 
+                padding: 10px 0px !important; 
+                width: 100% !important; 
+                margin: 0 !important;
+            }
+            .material-header-row { 
+                padding: 0 15px !important; 
+                width: 100% !important;
+                margin-bottom: 10px;
+            } 
             
-            .data-table th, .data-table td { padding: 6px 2px; font-size: 9px; }
-            .owned-input { width: 30px; font-size: 9px; padding: 2px; }
-            .icon-small { width: 16px; height: 16px; margin-right: 4px; }
-            .status-cell { font-size: 9px; }
-            .status-cell.ready { font-size: 9px; }
+            .material-column { border-radius: 4px; border: 1px solid var(--border); }
+            
+            .data-table { width: 100%; table-layout: fixed; font-size: 9px; }
+            .data-table th, .data-table td { 
+                padding: 4px 2px; 
+                font-size: 9px; 
+                white-space: nowrap; 
+                overflow: hidden; 
+                text-overflow: ellipsis; 
+                vertical-align: middle;
+            }
+            
+            .cell-flex { height: 24px; line-height: 24px; font-size: 9px; }
+            .owned-input { width: 80px; font-size: 9px; padding: 0 4px; line-height: 24px; height: 24px; } /* MOBILE WIDTH FIX */
+            .need-cell { height: 24px; line-height: 24px; font-size: 9px; }
+            .icon-small { width: 14px; height: 14px; margin-right: 4px; }
+            .status-cell { 
+                font-size: 9px; 
+                line-height: 24px; 
+                height: 24px;
+                padding-right: 10px !important; 
+            }
         }
     </style>
 </head>
 <body>
 
-    <div id="item-tooltip">
-        <div class="tt-name" id="tt-name">Item Name</div>
-        <div class="tt-stat">Weight: <b id="tt-weight">0kg</b></div>
-        <div class="tt-stat">Max Stack: <b id="tt-stack">0</b></div>
-    </div>
-
-    <!-- Mobile Nav -->
+    <!-- Mobile Navigation -->
     <div class="mobile-nav">
         <button class="nav-trigger" onclick="toggleSidebar('left')">☰ Catalog</button>
-        <span style="font-weight:700; color:#fff;">Barter</span>
+        <span style="font-weight:700; color:#fff;">Barter Tracker</span>
         <button class="nav-trigger" onclick="toggleSidebar('right')">Loadout</button>
     </div>
     <div class="mobile-backdrop" id="mobile-backdrop" onclick="closeSidebars()"></div>
 
     <div class="interface-container">
+        <!-- Desktop Header -->
         <div class="header-bar">
             <div class="title-section">
                 <div style="display:flex; align-items:center;">
@@ -358,7 +453,7 @@
             <!-- CENTER: Materials -->
             <div class="panel center-panel">
                 <div class="table-container">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-shrink:0;">
+                    <div class="material-header-row">
                         <span class="main-title" style="font-size:14px; letter-spacing:1px;">REQUIRED MATERIALS</span>
                         <div id="sync-status" style="font-size:9px; color:var(--text-dim);">LOCAL</div>
                     </div>
@@ -368,7 +463,8 @@
                             <div style="padding:10px 15px; border-bottom:1px solid var(--border); font-weight:700; color:var(--text-main); font-size:11px; background:var(--sidebar-bg);">Raw Resources</div>
                             <div class="scroll-area">
                                 <table class="data-table">
-                                    <thead><tr><th>RESOURCE</th><th style="text-align:center;">HAVE</th><th style="text-align:center;">NEED</th><th style="text-align:right;">STATUS</th></tr></thead>
+                                    <!-- BALANCED PERCENTAGES: Resource(30%) / Have(30%) / Need(15%) / Status(25%) -->
+                                    <thead><tr><th style="width: 30%;">RESOURCE</th><th style="width: 30%; text-align:center;">HAVE</th><th style="width: 15%; text-align:center;">NEED</th><th style="width: 25%; text-align:right; padding-right:20px;">STATUS</th></tr></thead>
                                     <tbody id="raw-tbody"></tbody>
                                 </table>
                             </div>
@@ -378,7 +474,7 @@
                             <div style="padding:10px 15px; border-bottom:1px solid var(--border); font-weight:700; color:var(--text-main); font-size:11px; background:var(--sidebar-bg);">Crafted Components</div>
                             <div class="scroll-area">
                                 <table class="data-table">
-                                    <thead><tr><th>COMPONENT</th><th style="text-align:center;">HAVE</th><th style="text-align:center;">NEED</th><th style="text-align:right;">STATUS</th></tr></thead>
+                                    <thead><tr><th style="width: 30%;">COMPONENT</th><th style="width: 30%; text-align:center;">HAVE</th><th style="width: 15%; text-align:center;">NEED</th><th style="width: 25%; text-align:right; padding-right:20px;">STATUS</th></tr></thead>
                                     <tbody id="crafted-tbody"></tbody>
                                 </table>
                             </div>
@@ -426,7 +522,7 @@
                     <div id="grid-1" class="grid-container"></div>
 
                     <div class="loadout-header" style="margin-top:20px;">
-                        <span class="panel-label" style="margin:0">Transport B (Spillover)</span>
+                        <span class="panel-label" style="margin:0">Transport B</span>
                         <div id="transport-stats-2" class="loadout-stats">0 / 0</div>
                     </div>
                     <div id="transport-tabs-2" class="tab-picker" style="grid-template-columns: repeat(4, 1fr);">
@@ -436,6 +532,13 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Fixed Tooltip Container -->
+    <div id="item-tooltip" style="position: fixed; z-index: 10000; background: rgba(18, 18, 20, 0.98); border: 1px solid var(--border); padding: 12px; border-radius: 6px; pointer-events: none; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5); min-width: 180px;">
+        <div class="tt-name" id="tt-name" style="color: #fff; font-weight: 700; font-size: 12px; margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 6px;"></div>
+        <div class="tt-stat" style="font-family: 'JetBrains Mono'; font-size: 10px; color: var(--text-dim); display: flex; justify-content: space-between;">Weight: <b id="tt-weight" style="color: var(--accent);"></b></div>
+        <div class="tt-stat" style="font-family: 'JetBrains Mono'; font-size: 10px; color: var(--text-dim); display: flex; justify-content: space-between;">Max Stack: <b id="tt-stack" style="color: var(--accent);"></b></div>
     </div>
 
     <script>
@@ -690,7 +793,7 @@
                     if (slots[k]) {
                         const icon = document.createElement('div'); icon.className = 'item-icon'; applyIcon(icon, slots[k].item);
                         icon.innerHTML = `<span class="stack-label">${slots[k].qtyInSlot}</span>`;
-                        icon.onclick = () => clearItem(slots[k].item); // Consistent click to clear
+                        icon.onclick = () => updateItemQty(slots[k].item, -1);
                         icon.onmouseenter = (e) => showTooltip(e, slots[k]);
                         icon.onmouseleave = hideTooltip;
                         slot.appendChild(icon);
@@ -710,17 +813,8 @@
                 const btn = document.createElement('div');
                 btn.className = `picker-btn ${selectedTown === town ? 'active' : ''}`;
                 btn.onclick = () => { selectedTown = town; renderTownTabs(); renderCatalog(); saveData(); };
-                
-                const icon = document.createElement('div'); 
-                icon.className = 'picker-icon'; 
-                icon.style.width = "48px";
-                icon.style.height = "48px";
-                applyIcon(icon, town);
-
-                const label = document.createElement('div'); 
-                label.className = 'picker-label'; 
-                label.innerText = town; 
-                
+                const icon = document.createElement('div'); icon.className = 'picker-icon'; applyIcon(icon, town);
+                const label = document.createElement('div'); label.className = 'picker-label'; label.innerText = town;
                 btn.append(icon, label); container.appendChild(btn);
             });
         }
@@ -732,12 +826,8 @@
             Object.keys(transportData).forEach(tName => {
                 const btn = document.createElement('div');
                 btn.className = `picker-btn ${current === tName ? 'active' : ''}`;
-                btn.style.minHeight = "40px";
-                btn.style.padding = "8px 4px";
-                btn.onclick = () => { 
-                    if(num === 1) transportA = tName; else transportB = tName; 
-                    renderTransportTabs(num); calculateLoadout(); saveData(); 
-                };
+                btn.style.minHeight = "40px"; btn.style.padding = "8px 4px";
+                btn.onclick = () => { if(num === 1) transportA = tName; else transportB = tName; renderTransportTabs(num); calculateLoadout(); saveData(); };
                 const label = document.createElement('div'); label.className = 'picker-label'; label.innerText = tName;
                 btn.append(label); container.appendChild(btn);
             });
@@ -759,18 +849,12 @@
                 const control = document.createElement('div'); control.className = 'qty-control';
                 
                 const btnMinus = document.createElement('button'); btnMinus.className = 'q-btn minus'; btnMinus.innerText = '−';
-                btnMinus.onclick = (e) => { 
-                    e.stopPropagation(); 
-                    if(e.shiftKey) clearItem(item.item); else updateItemQty(item.item, -1); 
-                };
+                btnMinus.onclick = (e) => { e.stopPropagation(); if(e.shiftKey) clearItem(item.item); else updateItemQty(item.item, -1); };
                 setupLongPress(btnMinus, () => clearItem(item.item));
                 
                 const val = document.createElement('div'); val.className = 'q-val'; val.innerText = count;
                 const btnPlus = document.createElement('button'); btnPlus.className = 'q-btn plus'; btnPlus.innerText = '+';
-                btnPlus.onclick = (e) => { 
-                    e.stopPropagation(); 
-                    if(e.shiftKey) fillMax(item); else updateItemQty(item.item, 1); 
-                };
+                btnPlus.onclick = (e) => { e.stopPropagation(); if(e.shiftKey) fillMax(item); else updateItemQty(item.item, 1); };
                 setupLongPress(btnPlus, () => fillMax(item));
 
                 control.append(btnMinus, val, btnPlus);
@@ -806,21 +890,12 @@
                 currentCargo.push(item);
                 added++;
             }
-            if (added > 0) {
-                const el = document.getElementById(`catalog-${item.item.replace(/\s+/g, '-')}`);
-                if(el) { el.classList.add('pulse'); setTimeout(() => el.classList.remove('pulse'), 400); }
-                calculateLoadout(); saveData();
-            }
+            if (added > 0) { calculateLoadout(); saveData(); }
         }
 
         function clearItem(itemName) {
-            const originalCount = currentCargo.length;
             currentCargo = currentCargo.filter(c => c.item !== itemName);
-            if (currentCargo.length !== originalCount) {
-                const el = document.getElementById(`catalog-${itemName.replace(/\s+/g, '-')}`);
-                if(el) { el.classList.add('pulse'); setTimeout(() => el.classList.remove('pulse'), 400); }
-                calculateLoadout(); saveData();
-            }
+            calculateLoadout(); saveData();
         }
 
         function setupLongPress(btn, onHold) {
@@ -865,14 +940,35 @@
             items.forEach(item => {
                 const need = Math.ceil(data[item]); const have = ownedInventory[item]||0; const def = need-have;
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td class="cell-flex"></td><td style="text-align:center;"><input type="number" class="owned-input" value="${have}"></td><td style="text-align:center;">${need}</td><td class="status-cell ${def<=0?'ready':'deficit'}" style="text-align:right;">${def<=0?'READY':def}</td>`;
+                
+                // Standardized structure with components for alignment
+                tr.innerHTML = `
+                    <td class="cell-flex-parent">
+                        <div class="cell-flex"></div>
+                    </td>
+                    <td style="text-align:center;">
+                        <input type="number" class="owned-input" value="${have}">
+                    </td>
+                    <td>
+                        <div class="need-cell">${need}</div>
+                    </td>
+                    <td>
+                        <div class="status-cell ${def<=0?'ready':'deficit'}">${def<=0?'READY':def}</div>
+                    </td>
+                `;
+                
                 const icon = document.createElement('div'); icon.className = 'icon-small'; applyIcon(icon, item);
+                const textSpan = document.createElement('span'); textSpan.textContent = item;
+                tr.querySelector('.cell-flex').append(icon, textSpan);
+                
                 const input = tr.querySelector('input');
-                input.oninput = (e) => { 
+                // LOGIC FIX: Use onchange instead of oninput to allow multi-digit typing without losing focus
+                input.onchange = (e) => { 
                     ownedInventory[item] = parseInt(e.target.value) || 0; 
-                    calculateMaterials(); saveData(); 
+                    calculateMaterials(); 
+                    saveData(); 
                 };
-                tr.cells[0].append(icon, item); frag.appendChild(tr);
+                frag.appendChild(tr);
             });
             body.appendChild(frag);
         }
@@ -880,17 +976,9 @@
         document.querySelectorAll('.toggle-input').forEach(chk => {
             chk.onchange = (e) => {
                 const id = e.target.id.replace('buff-', '');
-                // Partner Buff Mutually Exclusive logic
-                if (id === 'william' && e.target.checked) {
-                    document.getElementById('buff-alpaca').checked = false; 
-                    activeBuffs.alpaca = false;
-                }
-                if (id === 'alpaca' && e.target.checked) {
-                    document.getElementById('buff-william').checked = false; 
-                    activeBuffs.william = false;
-                }
-                activeBuffs[id] = e.target.checked;
-                calculateLoadout(); saveData();
+                if (id === 'william' && e.target.checked) { document.getElementById('buff-alpaca').checked = activeBuffs.alpaca = false; }
+                if (id === 'alpaca' && e.target.checked) { document.getElementById('buff-william').checked = activeBuffs.william = false; }
+                activeBuffs[id] = e.target.checked; calculateLoadout(); saveData();
             };
         });
 
