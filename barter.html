@@ -73,13 +73,6 @@
         .panel-label { font-size: 11px; font-weight: 600; color: var(--text-dim); margin-bottom: 6px; display: block; text-transform: uppercase; }
         .config-section { padding: 20px; border-bottom: 1px solid var(--border); }
 
-        /* Left Panel Specifics */
-        .town-visual-box {
-            width: 100%; height: 60px; background: var(--card-bg); border: 1px solid var(--border);
-            border-radius: 6px; display: flex; align-items: center; justify-content: center;
-            font-size: 10px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 10px;
-            background-size: cover; background-position: center;
-        }
 
         .item-list { flex-grow: 1; overflow-y: auto; }
         
@@ -92,7 +85,7 @@
         .item-entry.full-capacity { opacity: 0.5; border-left-color: var(--text-dim); }
 
         .item-icon-box {
-            width: 40px; height: 40px; background: var(--card-bg); border: 1px solid var(--border);
+            width: 48px; height: 48px; background: var(--card-bg); border: 1px solid var(--border);
             border-radius: 4px; background-size: contain; background-repeat: no-repeat; 
             background-position: center; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
             font-size: 14px; font-weight: 700; color: #555;
@@ -125,6 +118,9 @@
         }
         .data-table td { padding: 8px 15px; border-bottom: 1px solid rgba(255,255,255,0.03); color: #ccc; }
         
+        /* Flex wrapper for icon + text in cell */
+        .cell-flex { display: flex; align-items: center; }
+
         .owned-input { 
             background: var(--bg); border: 1px solid var(--border); color: var(--accent); 
             width: 50px; text-align: center; font-size: 11px; padding: 4px; border-radius: 4px;
@@ -135,6 +131,15 @@
         .status-cell { font-family: 'JetBrains Mono'; font-weight: 700; font-size: 11px; }
         .status-cell.deficit { color: var(--danger); }
         .status-cell.ready { color: var(--success); }
+        
+        /* Small icon for tables */
+        .icon-small {
+            width: 24px; height: 24px; margin-right: 10px; border-radius: 3px; flex-shrink: 0;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.7);
+            background: #27272a; border: 1px solid #3f3f46;
+            background-size: cover; background-position: center;
+        }
         
         .empty-state { padding: 30px; text-align: center; color: var(--text-dim); font-size: 12px; font-style: italic; }
 
@@ -221,20 +226,20 @@
             }
             .nav-trigger { background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 14px; cursor: pointer; }
 
-            /* Fixes: Explicitly target left/right panels for hiding, keep Center visible */
+            /* Only Left and Right panels act as drawers */
             .left-panel, .right-panel {
                 position: fixed; top: 0; bottom: 0; width: 300px; max-width: 85%; z-index: 1001; 
                 box-shadow: 0 0 50px rgba(0,0,0,0.8); 
                 transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s;
-                visibility: hidden; background: var(--bg);
+                visibility: hidden;
             }
             .left-panel { left: 0; transform: translateX(-100%); border-right: 1px solid var(--border); }
             .left-panel.active { transform: translateX(0); visibility: visible; }
             .right-panel { right: 0; transform: translateX(100%); border-left: 1px solid var(--border); }
             .right-panel.active { transform: translateX(0); visibility: visible; }
             
-            /* Center panel stays visible and flexible */
-            .center-panel { height: 100%; width: 100%; border: none; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+            /* Center panel VISIBLE by default */
+            .center-panel { height: 100%; width: 100%; border: none; visibility: visible; }
 
             .mobile-backdrop { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(4px); }
             .mobile-backdrop.active { opacity: 1; pointer-events: all; }
@@ -246,8 +251,16 @@
             .drawer-title { font-weight: 700; color: #fff; }
             .drawer-close { background: none; border: none; color: var(--text-dim); font-size: 20px; padding: 0 5px; cursor: pointer; }
             
-            .materials-dual-layout { grid-template-columns: 1fr; gap: 20px; }
-            .table-container { padding: 10px; }
+            /* FORCE SIDE BY SIDE on Mobile */
+            .materials-dual-layout { grid-template-columns: 1fr 1fr; gap: 8px; }
+            .table-container { padding: 10px 5px; }
+            
+            /* COMPACT TABLES for Mobile */
+            .data-table th, .data-table td { padding: 6px 2px; font-size: 9px; }
+            .owned-input { width: 30px; font-size: 9px; padding: 2px; }
+            .icon-small { width: 16px; height: 16px; margin-right: 4px; }
+            .status-cell { font-size: 9px; }
+            .status-cell.ready { font-size: 9px; }
         }
     </style>
 </head>
@@ -431,28 +444,41 @@
         }
         
         const applyIcon = (el, name) => {
-            el.style.backgroundColor = stringToColor(name);
+            // Clear previous styles first
+            el.style.backgroundColor = 'transparent';
             el.style.backgroundImage = 'none';
-            el.style.color = 'rgba(255,255,255,0.9)';
-            el.style.textShadow = '0 1px 3px rgba(0,0,0,0.8)';
-            el.innerText = name.charAt(0).toUpperCase();
+            el.innerText = '';
+            el.style.boxShadow = 'none';
 
-            // Explicit Image Logic from Data Object
             let imagePath = null;
-            const itemData = barterDb.find(i => i.item === name);
-            if (itemData && itemData.img) imagePath = itemData.img; // Use explicit path first
+            
+            // 1. Check if it's a Town (using townIcons from logic)
+            if (townIcons[name]) {
+                 imagePath = `images/${townIcons[name]}`;
+            } 
+            // 2. Check if it's an Item
+            else {
+                 const itemData = barterDb.find(i => i.item === name);
+                 if (itemData && itemData.img) imagePath = `images/${itemData.img}`;
+            }
             
             if (imagePath) {
                 const img = new Image();
-                img.src = getImagePath(imagePath);
+                img.src = imagePath;
                 img.onload = () => {
-                    el.style.backgroundColor = 'transparent'; 
-                    el.style.backgroundImage = `url('${getImagePath(imagePath)}')`;
-                    el.innerText = ''; 
-                    el.style.boxShadow = 'none'; 
+                    el.style.backgroundImage = `url('${imagePath}')`;
                 };
+                img.onerror = () => {
+                    // Fail silently, keep transparent/dark
+                    el.style.backgroundColor = '#1a1a1a';
+                }
+            } else {
+                 // No image path found -> Dark placeholder
+                 el.style.backgroundColor = '#1a1a1a';
             }
         };
+
+        const townIcons={"Karu Forest":"tradeposts/Commerce_Karu_Forest_Icon.png","Oasis":"tradeposts/Commerce_Oasis_Icon.png","Lake Calida":"tradeposts/Commerce_Calida_Icon.png","Pera Volcano":"tradeposts/Commerce_Pera_Icon.png","Scathach Beach":"tradeposts/Commerce_Beach_of_Scathach_Icon.png"};
 
         const barterDb = [
             { town: "Pera Volcano", item: "Volcanic Mud Pack", weight: 15, stack: 10, limit: 25, img: "tradeposts/barter/pera/Volcanic_Mud_Pack_Icon.png", mats: { "Copper Plate": 2, "Mysterious Herb Powder": 3 } },
@@ -485,7 +511,16 @@
             { town: "Scathach Beach", item: "Crystal Blade", weight: 15, stack: 10, limit: 100, img: "tradeposts/barter/scathach/Crystal_Blade.png", mats: { "Unknown": 0 } }
         ];
 
-        const transportData = { "Back Pack":{slots:4,weight:400,speed:100}, "Hand Cart":{slots:6,weight:800,speed:115}, "Wagon":{slots:8,weight:900,speed:135}, "Elephant":{slots:7,weight:1700,speed:110}, "Husky":{slots:11,weight:700,speed:165}, "Camel":{slots:7,weight:1400,speed:155}, "Skiff":{slots:8,weight:1200,speed:140}, "Air Ship":{slots:18,weight:2500,speed:200} };
+        const transportData = {
+            "Back Pack": { slots: 4, weight: 400, speed: 100 },
+            "Hand Cart": { slots: 6, weight: 800, speed: 115 },
+            "Wagon": { slots: 8, weight: 900, speed: 135 },
+            "Elephant": { slots: 7, weight: 1700, speed: 110 },
+            "Husky": { slots: 11, weight: 700, speed: 165 },
+            "Camel": { slots: 7, weight: 1400, speed: 155 },
+            "Skiff": { slots: 8, weight: 1200, speed: 140 },
+            "Air Ship": { slots: 18, weight: 2500, speed: 200 }
+        };
 
         const recipeDb = [
             { item: "Artificial Turf", mats: { "Fresh Grass": 20, "Bundle of Flowers": 5 } },
@@ -924,10 +959,19 @@
                 const tr = document.createElement('tr');
                 
                 const nameTd = document.createElement('td');
+                // Use cell-flex class to align icon and text
+                nameTd.className = 'cell-flex';
+                
+                const icon = document.createElement('div');
+                icon.className = 'icon-small';
+                applyIcon(icon, item);
+                nameTd.appendChild(icon);
+                
                 const nameSpan = document.createElement('span');
                 nameSpan.textContent = item;
                 nameSpan.style.color = needed > 0 ? '#fff' : '#666';
                 nameTd.appendChild(nameSpan);
+
                 tr.appendChild(nameTd);
 
                 const ownedTd = document.createElement('td');
