@@ -42,7 +42,6 @@
             height: 100dvh;
             display: flex;
             flex-direction: column;
-            /* PERFORMANCE: Isolate the whole body from expensive paint operations */
             contain: content;
         }
 
@@ -60,9 +59,8 @@
         .main-title { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 0.5px; }
         .sub-title { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-left: 10px; }
         
-        .content-grid { display: grid; grid-template-columns: 320px 1fr 320px; flex-grow: 1; overflow: hidden; }
+        .content-grid { display: grid; grid-template-columns: 340px 1fr 340px; flex-grow: 1; overflow: hidden; }
         
-        /* PERFORMANCE: 'contain' is much faster than 'will-change' for simple panels */
         .panel { 
             background: var(--bg); 
             display: flex; 
@@ -78,34 +76,50 @@
         .hub-btn { color: var(--text-dim); text-decoration: none; font-weight: 600; font-size: 12px; padding: 6px 12px; border-radius: 6px; transition: 0.1s; border: 1px solid transparent; background: transparent; cursor: pointer; }
         .hub-btn:hover { color: #fff; background: var(--border); }
 
-        /* PERFORMANCE: Removed heavy transitions from dropdowns to stop click-lag */
-        .input-dark { 
-            background: var(--card-bg); 
-            border: 1px solid var(--border); 
-            color: #fff; 
-            font-family: 'Inter', sans-serif; 
-            font-size: 13px; 
-            padding: 8px; 
-            border-radius: 6px; 
-            width: 100%; 
-            cursor: pointer;
-            appearance: none;
-            -webkit-appearance: none;
+        /* TAB PICKERS (Performance replacement for Dropdowns) */
+        .tab-picker {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 6px;
+            margin-bottom: 15px;
         }
-        .input-dark:focus { border-color: var(--accent); }
+        .picker-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 4px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            transition: 0.15s;
+        }
+        .picker-btn:hover { background: #27272a; }
+        .picker-btn.active {
+            background: var(--accent-dim);
+            border-color: var(--accent);
+        }
+        .picker-icon {
+            width: 24px; height: 24px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        .picker-label {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            text-align: center;
+            line-height: 1;
+        }
+        .picker-btn.active .picker-label { color: var(--accent); }
 
-        .panel-label { font-size: 11px; font-weight: 600; color: var(--text-dim); margin-bottom: 6px; display: block; text-transform: uppercase; }
+        .panel-label { font-size: 11px; font-weight: 600; color: var(--text-dim); margin-bottom: 8px; display: block; text-transform: uppercase; }
         .config-section { padding: 20px; border-bottom: 1px solid var(--border); }
 
         /* Left Panel Specifics */
-        .town-visual-box {
-            width: 48px; height: 48px; 
-            background-color: transparent; border: none;
-            display: flex; align-items: center; justify-content: center;
-            background-size: contain; background-position: center; background-repeat: no-repeat;
-            flex-shrink: 0;
-        }
-
         .item-list { flex-grow: 1; overflow-y: auto; }
         
         .item-entry {
@@ -178,7 +192,6 @@
         .status-cell.deficit { color: var(--danger); }
         .status-cell.ready { color: var(--success); }
         
-        /* Small icon for tables */
         .icon-small {
             width: 24px; height: 24px; margin-right: 10px; border-radius: 3px; flex-shrink: 0;
             display: inline-flex; align-items: center; justify-content: center;
@@ -326,15 +339,8 @@
                 
                 <div class="config-section">
                     <label class="panel-label">Trading Post</label>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <div id="town-icon-box" class="town-visual-box"></div>
-                        <select id="town-select" class="input-dark" style="flex-grow: 1;">
-                            <option value="Karu Forest">Karu Forest</option>
-                            <option value="Oasis">Oasis</option>
-                            <option value="Lake Calida">Lake Calida</option>
-                            <option value="Pera Volcano">Pera Volcano</option>
-                            <option value="Scathach Beach">Scathach Beach</option>
-                        </select>
+                    <div id="town-tabs" class="tab-picker">
+                        <!-- Populated by JS -->
                     </div>
                 </div>
 
@@ -351,7 +357,6 @@
                     </div>
 
                     <div class="materials-dual-layout">
-                        <!-- Left Col: Raw Materials -->
                         <div class="material-column">
                             <div style="padding:10px 15px; border-bottom:1px solid var(--border); font-weight:700; color:var(--text-main); font-size:11px; background:var(--sidebar-bg);">Raw Resources</div>
                             <div class="scroll-area">
@@ -362,7 +367,6 @@
                             </div>
                         </div>
                         
-                        <!-- Right Col: Crafted -->
                         <div class="material-column">
                             <div style="padding:10px 15px; border-bottom:1px solid var(--border); font-weight:700; color:var(--text-main); font-size:11px; background:var(--sidebar-bg);">Crafted Components</div>
                             <div class="scroll-area">
@@ -409,20 +413,18 @@
                         <span class="panel-label" style="margin:0">Transport A</span>
                         <div id="transport-stats-1" class="loadout-stats">0 / 0</div>
                     </div>
-                    <select id="transport-select-1" class="input-dark" style="margin-bottom:10px;">
-                        <option value="Back Pack">Back Pack</option><option value="Hand Cart">Hand Cart</option><option value="Wagon">Wagon</option>
-                        <option value="Elephant">Elephant</option><option value="Husky">Husky</option><option value="Camel">Camel</option><option value="Skiff">Skiff</option><option value="Air Ship">Air Ship</option>
-                    </select>
+                    <div id="transport-tabs-1" class="tab-picker" style="grid-template-columns: repeat(4, 1fr);">
+                        <!-- Populated by JS -->
+                    </div>
                     <div id="grid-1" class="grid-container"></div>
 
                     <div class="loadout-header" style="margin-top:20px;">
                         <span class="panel-label" style="margin:0">Transport B (Spillover)</span>
                         <div id="transport-stats-2" class="loadout-stats">0 / 0</div>
                     </div>
-                    <select id="transport-select-2" class="input-dark" style="margin-bottom:10px;">
-                        <option value="Back Pack">Back Pack</option><option value="Hand Cart">Hand Cart</option><option value="Wagon">Wagon</option>
-                        <option value="Elephant">Elephant</option><option value="Husky">Husky</option><option value="Camel">Camel</option><option value="Skiff">Skiff</option><option value="Air Ship">Air Ship</option>
-                    </select>
+                    <div id="transport-tabs-2" class="tab-picker" style="grid-template-columns: repeat(4, 1fr);">
+                        <!-- Populated by JS -->
+                    </div>
                     <div id="grid-2" class="grid-container"></div>
                 </div>
             </div>
@@ -431,29 +433,6 @@
 
     <script>
         // --- 1. CONFIG & DATA ---
-        function getImagePath(path) {
-            if (!path) return "";
-            return (path.startsWith('images/') || path.startsWith('http')) ? path : `images/${path}`;
-        }
-        
-        const applyIcon = (el, name) => {
-            let imagePath = null;
-            if (townIcons[name]) { imagePath = `images/${townIcons[name]}`; } 
-            else {
-                 const itemData = barterDb.find(i => i.item === name);
-                 if (itemData && itemData.img) imagePath = `images/${itemData.img}`;
-            }
-            
-            if (imagePath) {
-                const url = `url('${getImagePath(imagePath)}')`;
-                if (el.style.backgroundImage !== url) {
-                    el.style.backgroundImage = url;
-                }
-            } else {
-                el.style.backgroundImage = 'none';
-            }
-        };
-
         const townIcons={"Karu Forest":"tradeposts/Commerce_Karu_Forest_Icon.png","Oasis":"tradeposts/Commerce_Oasis_Icon.png","Lake Calida":"tradeposts/Commerce_Calida_Icon.png","Pera Volcano":"tradeposts/Commerce_Pera_Icon.png","Scathach Beach":"tradeposts/Commerce_Beach_of_Scathach_Icon.png"};
 
         const barterDb = [
@@ -488,14 +467,13 @@
         ];
 
         const transportData = {
-            "Back Pack": { slots: 4, weight: 400, speed: 100 },
-            "Hand Cart": { slots: 6, weight: 800, speed: 115 },
-            "Wagon": { slots: 8, weight: 900, speed: 135 },
-            "Elephant": { slots: 7, weight: 1700, speed: 110 },
-            "Husky": { slots: 11, weight: 700, speed: 165 },
-            "Camel": { slots: 7, weight: 1400, speed: 155 },
-            "Skiff": { slots: 8, weight: 1200, speed: 140 },
-            "Air Ship": { slots: 18, weight: 2500, speed: 200 }
+            "Back Pack": { slots: 4, weight: 400 },
+            "Hand Cart": { slots: 6, weight: 800 },
+            "Wagon": { slots: 8, weight: 900 },
+            "Elephant": { slots: 7, weight: 1700 },
+            "Husky": { slots: 11, weight: 700 },
+            "Camel": { slots: 7, weight: 1400 },
+            "Skiff": { slots: 8, weight: 1200 }
         };
 
         const recipeDb = [
@@ -513,7 +491,6 @@
             { item: "Fine Leather Strap", mats: { "Fine Leather": 1 } },
             { item: "Fine Silk", mats: { "Thin Thread": 5 } },
             { item: "Finest Fabric", mats: { "Thick Thread": 6 } },
-            { item: "Finest Leather Strap", mats: { "Finest Leather": 1 } },
             { item: "Finest Silk", mats: { "Thin Thread": 6 } },
             { item: "Sturdy Loop", mats: { "Braid": 1, "Infernal Blade Fragment": 1 } },
             { item: "Tough String", mats: { "Thick Thread": 5 } },
@@ -550,40 +527,52 @@
 
         // --- 2. STATE ---
         let currentCargo = [], ownedInventory = {}, activeBuffs = { gm: false, william: false, alpaca: false }, selectedTown = "Karu Forest", debounceTimer = null;
+        let transportA = "Elephant", transportB = "Back Pack";
         const DEBOUNCE_DELAY = 1000;
         let isFullCapacity = false;
         let currentUser = null;
         let isSaving = false;
 
-        // --- 3. FIREBASE INIT ---
+        // --- 3. HELPERS ---
+        function getImagePath(path) {
+            if (!path) return "";
+            return (path.startsWith('images/') || path.startsWith('http')) ? path : `images/${path}`;
+        }
+        
+        const applyIcon = (el, name) => {
+            let imagePath = null;
+            if (townIcons[name]) { imagePath = `images/${townIcons[name]}`; } 
+            else {
+                 const itemData = barterDb.find(i => i.item === name);
+                 if (itemData && itemData.img) imagePath = `images/${itemData.img}`;
+            }
+            if (imagePath) {
+                const url = `url('${getImagePath(imagePath)}')`;
+                if (el.style.backgroundImage !== url) el.style.backgroundImage = url;
+            } else {
+                el.style.backgroundImage = 'none';
+            }
+        };
+
+        // --- 4. AUTH & FIREBASE ---
         firebase.initializeApp({
             apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM",
             authDomain: "mabinogi-tracker.firebaseapp.com",
             databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com",
             projectId: "mabinogi-tracker",
             storageBucket: "mabinogi-tracker.firebasestorage.app",
-            messagingSenderId: "267690802644",
-            appId: "1:267690802644:web:fccdd005d5c8990504ea41",
-            measurementId: "G-VBDBKQ3M1B"
+            appId: "1:267690802644:web:fccdd005d5c8990504ea41"
         });
         const auth = firebase.auth();
-        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-
-        // --- 4. AUTH & SYNC ---
         auth.onAuthStateChanged(user => {
             const disp = document.getElementById('user-display');
             if (user) {
                 currentUser = user;
-                try {
-                    const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
-                    disp.textContent = (cached.username || user.email).split('@')[0].toUpperCase();
-                } catch(e) { disp.textContent = "ONLINE"; }
-                disp.style.color = "var(--accent)";
+                disp.textContent = user.email.split('@')[0].toUpperCase();
                 startSync();
             } else {
                 currentUser = { uid: 'local_guest', isGuest: true };
                 disp.textContent = "GUEST (LOCAL)";
-                disp.style.color = "var(--text-dim)";
                 startSync();
             }
         });
@@ -592,14 +581,10 @@
             if (currentUser.isGuest) {
                 const localData = JSON.parse(localStorage.getItem('barter_save_data') || '{}');
                 loadFromData(localData);
-                document.getElementById('sync-status').textContent = 'LOCAL_MODE';
             } else {
                 firebase.database().ref(`users/${currentUser.uid}/barter_data`).on('value', (snap) => {
                     const data = snap.val();
-                    if (data && !isSaving && !debounceTimer) { 
-                        loadFromData(data); 
-                        document.getElementById('sync-status').textContent = 'SYNCED';
-                    }
+                    if (data && !isSaving && !debounceTimer) loadFromData(data); 
                 });
             }
         }
@@ -610,8 +595,8 @@
                 inventory: ownedInventory, 
                 buffs: activeBuffs, 
                 town: selectedTown, 
-                transport1: document.getElementById('transport-select-1').value,
-                transport2: document.getElementById('transport-select-2').value
+                transport1: transportA,
+                transport2: transportB
             };
             localStorage.setItem('barter_save_data', JSON.stringify(payload));
             if (currentUser.isGuest) return;
@@ -632,22 +617,20 @@
             if (!data) return;
             if (data.cargo) currentCargo = typeof data.cargo === 'string' ? JSON.parse(data.cargo) : data.cargo;
             if (data.inventory) ownedInventory = data.inventory;
-            if (data.town) { 
-                selectedTown = data.town; 
-                if(document.getElementById('town-select').value !== selectedTown) {
-                    document.getElementById('town-select').value = selectedTown;
-                }
-            }
+            if (data.town) selectedTown = data.town;
             if (data.buffs) {
                 activeBuffs = data.buffs;
                 document.getElementById('buff-gm').checked = !!activeBuffs.gm;
                 document.getElementById('buff-william').checked = !!activeBuffs.william;
                 document.getElementById('buff-alpaca').checked = !!activeBuffs.alpaca;
             }
-            if (data.transport1) document.getElementById('transport-select-1').value = data.transport1;
-            if (data.transport2) document.getElementById('transport-select-2').value = data.transport2;
+            if (data.transport1) transportA = data.transport1;
+            if (data.transport2) transportB = data.transport2;
             
-            requestAnimationFrame(() => calculateLoadout());
+            renderTownTabs();
+            renderTransportTabs(1);
+            renderTransportTabs(2);
+            calculateLoadout();
         }
 
         // --- 5. LOGISTICS ---
@@ -669,8 +652,8 @@
                     while (rem > 0) { const take = Math.min(rem, p.stack); slotStream.push({ ...p, qtyInSlot: take }); rem -= take; }
                 }
             });
-            const s1 = getStatsForTransport(document.getElementById('transport-select-1').value);
-            const s2 = getStatsForTransport(document.getElementById('transport-select-2').value);
+            const s1 = getStatsForTransport(transportA);
+            const s2 = getStatsForTransport(transportB);
             const slots1 = [], slots2 = [];
             let w1 = 0, c1 = 0, w2 = 0, c2 = 0, overflow = false;
             for (const s of slotStream) {
@@ -693,14 +676,13 @@
                 const g = document.getElementById(id); g.innerHTML = '';
                 const slots = i === 0 ? res.slots1 : res.slots2;
                 const max = i === 0 ? res.s1.slots : res.s2.slots;
-                
                 const frag = document.createDocumentFragment();
                 for (let k = 0; k < max; k++) {
                     const slot = document.createElement('div'); slot.className = 'slot' + (slots[k] ? ' filled' : '');
                     if (slots[k]) {
                         const icon = document.createElement('div'); icon.className = 'item-icon'; applyIcon(icon, slots[k].item);
                         icon.innerHTML = `<span class="stack-label">${slots[k].qtyInSlot}</span>`;
-                        icon.onclick = () => window.removeItemFromManifest(slots[k].item);
+                        icon.onclick = () => clearItem(slots[k].item); // Consistent click to clear
                         icon.onmouseenter = (e) => showTooltip(e, slots[k]);
                         icon.onmouseleave = hideTooltip;
                         slot.appendChild(icon);
@@ -712,47 +694,66 @@
             calculateMaterials(); renderCatalog();
         }
 
-        // --- 6. CATALOG UI ---
-        function renderCatalog() {
-            const town = document.getElementById('town-select').value;
-            const container = document.getElementById('catalog-container');
-            applyIcon(document.getElementById('town-icon-box'), town);
+        // --- 6. TAB UI RENDERERS ---
+        function renderTownTabs() {
+            const container = document.getElementById('town-tabs');
             container.innerHTML = '';
+            Object.keys(townIcons).forEach(town => {
+                const btn = document.createElement('div');
+                btn.className = `picker-btn ${selectedTown === town ? 'active' : ''}`;
+                btn.onclick = () => { selectedTown = town; renderTownTabs(); renderCatalog(); saveData(); };
+                
+                const icon = document.createElement('div'); icon.className = 'picker-icon'; applyIcon(icon, town);
+                const label = document.createElement('div'); label.className = 'picker-label'; label.innerText = town.split(' ')[0];
+                
+                btn.append(icon, label); container.appendChild(btn);
+            });
+        }
 
+        function renderTransportTabs(num) {
+            const container = document.getElementById(`transport-tabs-${num}`);
+            const current = num === 1 ? transportA : transportB;
+            container.innerHTML = '';
+            Object.keys(transportData).forEach(tName => {
+                const btn = document.createElement('div');
+                btn.className = `picker-btn ${current === tName ? 'active' : ''}`;
+                btn.style.padding = "6px 2px";
+                btn.onclick = () => { 
+                    if(num === 1) transportA = tName; else transportB = tName; 
+                    renderTransportTabs(num); calculateLoadout(); saveData(); 
+                };
+                const label = document.createElement('div'); label.className = 'picker-label'; label.innerText = tName;
+                btn.append(label); container.appendChild(btn);
+            });
+        }
+
+        function renderCatalog() {
+            const container = document.getElementById('catalog-container');
+            container.innerHTML = '';
             const frag = document.createDocumentFragment();
-            barterDb.filter(b => b.town === town).forEach(item => {
+            barterDb.filter(b => b.town === selectedTown).forEach(item => {
                 const count = currentCargo.filter(c => c.item === item.item).length;
                 const atLimit = count >= item.limit;
-                
                 const entry = document.createElement('div');
                 entry.className = `item-entry ${atLimit ? 'at-limit' : ''}`;
                 entry.id = `catalog-${item.item.replace(/\s+/g, '-')}`;
-                
                 const iconBox = document.createElement('div'); iconBox.className = 'item-icon-box'; applyIcon(iconBox, item.item);
-                
                 const info = document.createElement('div'); info.style.flexGrow = '1';
                 info.innerHTML = `<div class="item-name">${item.item}</div><div class="item-meta">${item.weight}kg | Limit: ${item.limit}</div>`;
-                
                 const control = document.createElement('div'); control.className = 'qty-control';
                 
-                // Minus Button
                 const btnMinus = document.createElement('button'); btnMinus.className = 'q-btn minus'; btnMinus.innerText = '−';
                 btnMinus.onclick = (e) => { 
                     e.stopPropagation(); 
-                    if(e.shiftKey) clearItem(item.item);
-                    else updateItemQty(item.item, -1); 
+                    if(e.shiftKey) clearItem(item.item); else updateItemQty(item.item, -1); 
                 };
                 setupLongPress(btnMinus, () => clearItem(item.item));
                 
-                // Value Display
                 const val = document.createElement('div'); val.className = 'q-val'; val.innerText = count;
-                
-                // Plus Button
                 const btnPlus = document.createElement('button'); btnPlus.className = 'q-btn plus'; btnPlus.innerText = '+';
                 btnPlus.onclick = (e) => { 
                     e.stopPropagation(); 
-                    if(e.shiftKey) fillMax(item); 
-                    else updateItemQty(item.item, 1); 
+                    if(e.shiftKey) fillMax(item); else updateItemQty(item.item, 1); 
                 };
                 setupLongPress(btnPlus, () => fillMax(item));
 
@@ -815,8 +816,6 @@
             btn.addEventListener('touchend', cancel);
         }
 
-        window.removeItemFromManifest = (name) => updateItemQty(name, -1);
-
         // --- 8. UTILS ---
         function showTooltip(e, data) {
             const tt = document.getElementById('item-tooltip');
@@ -855,23 +854,13 @@
                 const input = tr.querySelector('input');
                 input.oninput = (e) => { 
                     ownedInventory[item] = parseInt(e.target.value) || 0; 
-                    calculateMaterials(); 
-                    saveData(); 
+                    calculateMaterials(); saveData(); 
                 };
                 tr.cells[0].append(icon, item); frag.appendChild(tr);
             });
             body.appendChild(frag);
         }
 
-        document.getElementById('town-select').onchange = (e) => { 
-            selectedTown = e.target.value; 
-            requestAnimationFrame(() => {
-                renderCatalog(); 
-                saveData(); 
-            });
-        };
-        document.getElementById('transport-select-1').onchange = () => { calculateLoadout(); saveData(); };
-        document.getElementById('transport-select-2').onchange = () => { calculateLoadout(); saveData(); };
         document.querySelectorAll('.toggle-input').forEach(chk => {
             chk.onchange = (e) => {
                 const id = e.target.id.replace('buff-', '');
@@ -884,7 +873,6 @@
 
         window.toggleSidebar = (side) => { document.getElementById(side+'-panel').classList.add('active'); document.getElementById('mobile-backdrop').classList.add('active'); };
         window.closeSidebars = () => { document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active')); document.getElementById('mobile-backdrop').classList.remove('active'); };
-
         window.onload = () => { calculateLoadout(); };
     </script>
 </body>
