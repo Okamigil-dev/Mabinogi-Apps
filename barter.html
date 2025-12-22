@@ -150,6 +150,17 @@
         }
         .picker-label { font-size: 9px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; text-align: center; }
 
+        /* Drawer Styling */
+        .drawer-wrap { border-bottom: 1px solid var(--border); }
+        summary { 
+            list-style: none; cursor: pointer; padding: 12px 20px; 
+            font-size: 11px; font-weight: 700; color: var(--text-dim); 
+            text-transform: uppercase; display: flex; align-items: center; gap: 10px;
+            user-select: none;
+        }
+        summary::before { content: '▶'; font-size: 8px; transition: 0.2s; }
+        details[open] summary::before { transform: rotate(90deg); color: var(--accent); }
+
         /* Transport Slots */
         .slot {
             width: var(--slot-size); height: var(--slot-size); background-color: rgba(255, 255, 255, 0.03); 
@@ -194,7 +205,6 @@
                     <span class="main-title">Barter Material Tracker</span>
                 </div>
                 <div style="display:flex; gap:15px; align-items:center;">
-                    <!-- Removed text-transform:uppercase from user-display style -->
                     <span id="user-display" style="font-size:11px; color:var(--accent);">GUEST</span>
                     <a href="index.html" class="hub-btn">Back to Hub</a>
                 </div>
@@ -242,25 +252,41 @@
             </div>
 
             <div class="panel right-panel" id="right-panel">
-                <div style="padding:20px; border-bottom:1px solid var(--border);">
-                    <label style="font-size:11px; font-weight:600; color:var(--text-dim); display:block; text-transform:uppercase; margin-bottom:10px;">Buffs</label>
-                    <div style="display:flex; flex-direction:column; gap:8px;">
-                        <label style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;"><span style="font-size:12px;">Grandmaster Merchant</span><input type="checkbox" id="buff-gm" class="toggle-input"><div class="toggle-switch"></div></label>
-                        <label style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;"><span style="font-size:12px;">William (Partner)</span><input type="checkbox" id="buff-william" class="toggle-input"><div class="toggle-switch"></div></label>
-                        <label style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;"><span style="font-size:12px;">Alpaca (Wagon Only)</span><input type="checkbox" id="buff-alpaca" class="toggle-input"><div class="toggle-switch"></div></label>
+                <!-- BUFFS DRAWER -->
+                <details class="drawer-wrap" open>
+                    <summary>Buffs</summary>
+                    <div style="padding: 0 20px 15px 20px;">
+                        <div style="display:flex; flex-direction:column; gap:8px;">
+                            <label style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;"><span style="font-size:12px;">Grandmaster Merchant</span><input type="checkbox" id="buff-gm" class="toggle-input"><div class="toggle-switch"></div></label>
+                            <label style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;"><span style="font-size:12px;">William (Partner)</span><input type="checkbox" id="buff-william" class="toggle-input"><div class="toggle-switch"></div></label>
+                            <label style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;"><span style="font-size:12px;">Alpaca (Wagon Only)</span><input type="checkbox" id="buff-alpaca" class="toggle-input"><div class="toggle-switch"></div></label>
+                        </div>
                     </div>
-                </div>
-                <div style="padding:20px; overflow-y:auto;">
-                    <div style="font-size:10px; color:var(--accent); margin-bottom:5px;">TRANSPORT A</div>
-                    <div id="transport-stats-1" style="font-size:10px; color:var(--text-dim); margin-bottom:10px;">0 / 0 KG</div>
-                    <div id="transport-tabs-1" class="tab-picker" style="grid-template-columns: repeat(4, 1fr);"></div>
-                    <div id="grid-1" style="display:grid; grid-template-columns: repeat(auto-fill, 50px); gap:2px; background:#000; padding:2px; border-radius:4px; margin-bottom:20px;"></div>
+                </details>
 
-                    <div style="font-size:10px; color:var(--accent); margin-bottom:5px;">TRANSPORT B</div>
-                    <div id="transport-stats-2" style="font-size:10px; color:var(--text-dim); margin-bottom:10px;">0 / 0 KG</div>
-                    <div id="transport-tabs-2" class="tab-picker" style="grid-template-columns: repeat(4, 1fr);"></div>
-                    <div id="grid-2" style="display:grid; grid-template-columns: repeat(auto-fill, 50px); gap:2px; background:#000; padding:2px; border-radius:4px;"></div>
-                </div>
+                <!-- TRANSPORT A DRAWER -->
+                <details class="drawer-wrap" open>
+                    <summary>
+                        <span>Transport A</span>
+                        <span id="transport-stats-1" style="margin-left:auto; font-size:10px; color:var(--text-dim); font-family:'JetBrains Mono';">0 / 0 KG</span>
+                    </summary>
+                    <div style="padding: 0 20px 15px 20px;">
+                        <div id="transport-tabs-1" class="tab-picker" style="grid-template-columns: repeat(4, 1fr);"></div>
+                        <div id="grid-1" style="display:grid; grid-template-columns: repeat(auto-fill, 50px); gap:2px; background:#000; padding:2px; border-radius:4px;"></div>
+                    </div>
+                </details>
+
+                <!-- TRANSPORT B DRAWER -->
+                <details class="drawer-wrap" open>
+                    <summary>
+                        <span>Transport B</span>
+                        <span id="transport-stats-2" style="margin-left:auto; font-size:10px; color:var(--text-dim); font-family:'JetBrains Mono';">0 / 0 KG</span>
+                    </summary>
+                    <div style="padding: 0 20px 15px 20px;">
+                        <div id="transport-tabs-2" class="tab-picker" style="grid-template-columns: repeat(4, 1fr);"></div>
+                        <div id="grid-2" style="display:grid; grid-template-columns: repeat(auto-fill, 50px); gap:2px; background:#000; padding:2px; border-radius:4px;"></div>
+                    </div>
+                </details>
             </div>
         </div>
     </div>
