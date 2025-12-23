@@ -39,7 +39,8 @@
             line-height: 1.5;
         }
         
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        /* Scrollbars */
+        ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
@@ -65,6 +66,7 @@
             border-right: 1px solid var(--border);
         }
         .panel:last-child { border-right: none; }
+        
         .center-panel { background: #0c0c0e; }
 
         /* --- Header Elements --- */
@@ -80,6 +82,7 @@
         }
         .hub-btn:hover { color: #fff; background: var(--border); }
 
+        /* --- Form Elements --- */
         .panel-label {
             font-size: 11px; font-weight: 600; color: var(--text-dim);
             margin-bottom: 8px; display: block; text-transform: uppercase;
@@ -186,7 +189,8 @@
         }
         input:checked + .toggle-switch { background: var(--accent); }
         input:checked + .toggle-switch::after { transform: translateX(16px); }
-        
+        .toggle-input { display: none; }
+
         /* --- Manifest Box --- */
         .manifest-container {
             margin: 20px; background: var(--card-bg); border: 1px solid var(--border);
@@ -237,7 +241,7 @@
             .left-panel { left: 0; transform: translateX(-100%); border-right: 1px solid var(--border); }
             .left-panel.active { transform: translateX(0); }
             
-            .right-panel { right: 0; transform: translateX(100%); border-left: 1px solid var(--border); }
+            .right-panel { right: 0; transform: translateX(100%); border-left: 1px solid var(--border); max-width: 85%; }
             .right-panel.active { transform: translateX(0); }
             
             .mobile-backdrop {
@@ -267,7 +271,11 @@
                 <div style="display:flex; align-items:center;">
                     <span class="main-title">TRADING POST</span>
                 </div>
-                <a href="index.html" class="hub-btn">Back to Hub</a>
+                <div style="display:flex; gap:15px; align-items:center;">
+                    <!-- Updated User Display: No Uppercase Transform -->
+                    <span id="user-display" style="font-size:11px; color:var(--accent);">GUEST</span>
+                    <a href="index.html" class="hub-btn">Back to Hub</a>
+                </div>
             </div>
         </div>
 
@@ -285,13 +293,13 @@
                     <div id="transport-tabs" class="horizontal-drawer"></div>
                 </details>
 
-                <!-- TRADING POST DRAWER (Combined Post Selection and Rating) -->
+                <!-- TRADING POST DRAWER -->
                 <details class="drawer-wrap" open>
                     <summary>
                         <span>Trading Post</span>
                         <div style="margin-left:auto; display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()">
                             <span style="font-size:10px; color:var(--text-dim);">RATING</span>
-                            <input type="number" id="merchant-rating-input" class="input-dark" style="width:45px; padding:2px; height:24px; text-align:center;" min="1" max="9" value="1">
+                            <input type="number" id="merchant-rating-input" class="input-dark" style="width:45px; padding:2px; height:24px; text-align:center;" min="1" max="9" value="1" onchange="validateRating(this)">
                         </div>
                     </summary>
                     <div id="city-tabs" class="horizontal-drawer"></div>
@@ -305,7 +313,7 @@
                     <div class="big-icon" id="center-item-icon"></div>
                     <div class="item-title-box">
                         <div class="item-title-large" id="center-item-title">Select Item</div>
-                        <div style="display:grid; grid-template-columns: 1fr 4fr 2fr; align-items: center; width: 100%; margin-top: 8px;">
+                        <div style="display:grid; grid-template-columns: 1fr 1fr 1.5fr; align-items: center; width: 100%; margin-top: 8px;">
                             <div class="item-inventory" id="weight-display" style="text-align: left;">Weight: -</div>
                             <div class="item-inventory" id="stack-display" style="text-align: center;">Stack: -</div>
                             <div id="base-price-container" style="display:none; justify-content: flex-end; align-items: center; gap: 8px;">
@@ -404,8 +412,10 @@
                         <span id="manifest-dest" style="color:#fff;">-</span>
                     </div>
                     <div id="manifest-list" class="manifest-slots"></div>
+                    <div id="manifest-total" class="manifest-total"></div>
                 </div>
 
+                <div id="global-manifest-anchor"></div>
             </div>
         </div>
     </div>
@@ -493,10 +503,16 @@
         
         const applyIcon = (el, name) => {
             let p = null; 
-            if(townIcons[name]) { p = getImagePath(townIcons[name]); } 
-            else if(name === "Wagon") { p = document.getElementById('alpaca-check').checked ? 'images/transports/Alpaca_Wagon_Icon.png' : 'images/transports/Wagon_Icon.png'; } 
-            else if(transportIcons[name]) { p = transportIcons[name]; } 
-            else { const i = commerceDbFind(name); if(i) p = getImagePath(i.img); }
+            if(townIcons[name]) {
+                p = getImagePath(townIcons[name]);
+            } else if(name === "Wagon") {
+                p = document.getElementById('alpaca-check').checked ? 'images/transports/Alpaca_Wagon_Icon.png' : 'images/transports/Wagon_Icon.png';
+            } else if(transportIcons[name]) {
+                p = transportIcons[name];
+            } else { 
+                const i = commerceDbFind(name);
+                if(i) p = getImagePath(i.img); 
+            }
             if(p) el.style.backgroundImage = `url('${p}')`; 
             else el.style.backgroundImage = 'none';
         };
@@ -593,6 +609,7 @@
                 };
                 const label = document.createElement('div');
                 label.className = 'picker-label';
+                label.style.padding = "5px 0";
                 label.innerText = type;
                 btn.append(label);
                 container.appendChild(btn);
@@ -681,7 +698,7 @@
         }
 
         function renderManifest(trip, boxId, listId, totalId) {
-            const box = document.getElementById(boxId), list = document.getElementById(listId);
+            const box = document.getElementById(boxId), list = document.getElementById(listId), total = document.getElementById(totalId);
             if (!trip || trip.profit <= 0) {
                 box.style.display = 'block';
                 list.innerHTML = `<div style="color:var(--text-dim); font-size:10px; padding:10px; text-align:center;">NO PROFITABLE ROUTES</div>`;
@@ -701,6 +718,7 @@
             });
             for (let i = filled; i < trip.maxSlots; i++) slotHtml += `<div class="slot"></div>`;
             list.innerHTML = slotHtml;
+            total.textContent = `+${trip.profit.toLocaleString()}`;
         }
 
         function refreshUI() {
@@ -798,6 +816,14 @@
             refreshUI();
         }
 
+        function validateRating(input) {
+            let val = parseInt(input.value);
+            if(val < 1) input.value = 1;
+            if(val > 9) input.value = 9;
+            refreshUI();
+            savePrefs();
+        }
+
         function savePrefs() {
             const prefs = getUIState();
             prefs.transports = transportOwnership;
@@ -828,7 +854,7 @@
             document.querySelectorAll('.transport-toggle').forEach(toggle => {
                 toggle.onchange = (e) => { transportOwnership[toggle.dataset.mount] = e.target.checked; savePrefs(); renderTransportTabs(); refreshUI(); };
             });
-            document.getElementById('merchant-rating-input').onchange = () => { refreshUI(); savePrefs(); };
+            document.getElementById('merchant-rating-input').onchange = (e) => validateRating(e.target);
             ['trader-qty', 'trustworthy-qty', 'mastery-rank', 'letter-select', 'fine-letter-check', 'gm-check', 'william-likeability'].forEach(id => {
                 document.getElementById(id).onchange = () => { refreshUI(); savePrefs(); };
             });
@@ -861,7 +887,36 @@
             rtdb.ref('public_commerce/prices').on('value', (s) => { if (!skipRender) { publicPrices = s.val() || {}; refreshUI(); } skipRender = false; });
             rtdb.ref('public_commerce/stocks').on('value', (s) => { if (!skipRender) { publicStocks = s.val() || {}; refreshUI(); } skipRender = false; });
             rtdb.ref('public_commerce/base_prices').on('value', (s) => { if (!skipRender) { publicBasePrices = s.val() || {}; refreshUI(); } skipRender = false; });
-            auth.onAuthStateChanged((user) => { currentUser = user; if(user) document.getElementById('user-display').textContent=user.email.split('@')[0].toUpperCase(); });
+            
+            // --- AUTHENTICATION LISTENER: UPDATED TO REMOVE TRANSFORMATION ---
+            auth.onAuthStateChanged(user => {
+                const displayElem = document.getElementById('user-display');
+                if (user) {
+                    currentUser = user;
+                    
+                    // 1. Initial fallback using email prefix (no transform)
+                    displayElem.textContent = user.email.split('@')[0];
+
+                    // 2. Try instant load from local settings cache (no transform)
+                    const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
+                    if (cached.username) {
+                        displayElem.textContent = cached.username;
+                    }
+
+                    // 3. Real-time sync with database profile (no transform)
+                    firebase.database().ref(`users/${user.uid}/profile`).on('value', (snap) => {
+                        const profile = snap.val();
+                        if (profile && profile.username) {
+                            displayElem.textContent = profile.username;
+                            // Update local cache
+                            localStorage.setItem('mabi_user_cache_' + user.uid, JSON.stringify(profile));
+                        }
+                    });
+                } else {
+                    currentUser = { uid: 'local_guest', isGuest: true };
+                    displayElem.textContent = "GUEST";
+                }
+            });
         });
     </script>
 </body>
