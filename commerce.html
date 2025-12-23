@@ -96,11 +96,11 @@
         .input-dark:focus { border-color: var(--accent); }
         
         /* --- Transparent Square UI --- */
-        .tab-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 8px; margin-bottom: 15px; }
-        .picker-btn { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 4px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: 0.15s; }
+        .tab-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 6px; margin-bottom: 15px; }
+        .picker-btn { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 6px 4px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: 0.15s; }
         .picker-btn.active { background: var(--accent-dim); border-color: var(--accent); }
         .picker-icon { 
-            width: 40px; height: 40px; background-size: contain; background-repeat: no-repeat; 
+            width: 32px; height: 32px; background-size: contain; background-repeat: no-repeat; 
             background-position: center; border: 1px solid var(--border); border-radius: 4px;
             background-color: rgba(255, 255, 255, 0.03);
         }
@@ -287,20 +287,22 @@
                     <div id="commerce-type-tabs" class="horizontal-drawer"></div>
                 </details>
 
-                <!-- TRANSPORT DRAWER -->
+                <!-- TRANSPORT DRAWER (UPDATED: No Horizontal Scroll) -->
                 <details class="drawer-wrap">
                     <summary>Transport Selection</summary>
-                    <div id="transport-tabs" class="horizontal-drawer"></div>
+                    <div style="padding: 0 20px 15px 20px;">
+                        <div id="transport-tabs" class="tab-picker" style="margin-bottom: 0;"></div>
+                    </div>
                 </details>
 
-                <!-- TRADING POST DRAWER (UPDATED: Grid layout instead of horizontal scrolling) -->
+                <!-- TRADING POST DRAWER -->
                 <details class="drawer-wrap" open>
                     <summary>
                         <span>Trading Post</span>
                         <!-- FIXED: stopPropagation on click AND mousedown to prevent drawer toggle -->
                         <div style="margin-left:auto; display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
                             <span style="font-size:10px; color:var(--text-dim);">RATING</span>
-                            <input type="number" id="merchant-rating-input" class="input-dark" style="width:45px; padding:2px; height:24px; text-align:center;" min="1" max="9" value="1" onchange="validateRating(this)" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
+                            <input type="number" id="merchant-rating-input" class="input-dark" style="width:45px; padding:2px; height:24px; text-align:center;" min="1" max="9" value="1" oninput="validateRating(this)" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
                         </div>
                     </summary>
                     <div style="padding: 0 20px 15px 20px;">
@@ -591,9 +593,12 @@
             const dBuy = getDiscountedBuyPrice(basePrice, uiState);
             const stats = getModifiedStats(uiState.transport, uiState);
             const load = Math.min(Math.floor(stats.weight / item.weight), stats.slots * item.max, item.limit);
+            
+            // Item Profit Logic: Total Base Profit for stack * Multiplier
             const baseProfit = (sellVal !== "" && sellVal > 0) ? (sellVal - dBuy) * load : 0;
             const mods = getActiveModifiers(uiState);
             let finalProfit = baseProfit > 0 ? Math.floor(baseProfit * mods.totalMultiplier) : baseProfit;
+            
             const divisor = (uiState.commerceType === "Barter") ? 34 : 17;
             const score = Math.max(0, Math.floor(((sellVal - (item.buy || 0)) * load) / divisor));
             return { profit: finalProfit, score: score, load: load };
@@ -698,19 +703,33 @@
             const stats = getModifiedStats(mount, uiState);
             targetCities.forEach(targetCity => {
                 let remWeight = stats.weight, remSlots = stats.slots, totalP = 0, itemsToBuy = [];
+                
+                // Calculate potential per unit
                 const potential = originItems.map(item => {
                     const basePrice = publicBasePrices[item.name] || item.buy;
                     const dBuy = getDiscountedBuyPrice(basePrice, uiState);
                     const sellVal = getPrice(item.name, targetCity);
-                    const unitP = (sellVal - dBuy) * (1 + (sellVal > dBuy ? (mods.totalMultiplier - 1) : 0));
-                    return { ...item, unitP, eff: unitP / Math.max(1, item.weight) };
-                }).filter(i => i.unitP > 0).sort((a, b) => b.eff - a.eff);
+                    
+                    // Raw unit profit (no multipliers) for sorting efficiency
+                    const rawUnitP = (sellVal - dBuy);
+                    
+                    // Multiplier applied to efficiency sort to favor high-base-value items correctly
+                    const effP = rawUnitP > 0 ? (rawUnitP * mods.totalMultiplier) : rawUnitP;
+                    
+                    return { ...item, rawUnitP, dBuy, sellVal, eff: effP / Math.max(1, item.weight) };
+                }).filter(i => i.rawUnitP > 0).sort((a, b) => b.eff - a.eff);
+                
                 potential.forEach(item => {
                     const stock = getStock(item.name);
                     let qty = Math.min(Math.floor(remWeight / item.weight), remSlots * item.max, item.limit, stock);
                     if (qty <= 0) return;
+                    
                     let slotsNeeded = Math.ceil(qty / item.max);
-                    const stackProfit = Math.floor(qty * item.unitP);
+                    
+                    // FIXED MATH: Total Base Profit * Multiplier -> Floor
+                    const totalBase = item.rawUnitP * qty;
+                    const stackProfit = Math.floor(totalBase * mods.totalMultiplier);
+                    
                     itemsToBuy.push({ n: item.name, q: qty, p: stackProfit, img: item.img, s: slotsNeeded, maxPerSlot: item.max });
                     remWeight -= (qty * item.weight); remSlots -= slotsNeeded; totalP += stackProfit;
                 });
@@ -805,7 +824,28 @@
                 const res = calculateItemProfit(currentItem, city, uiState, sellVal);
                 const row = document.createElement('div');
                 row.className = 'market-row';
-                row.innerHTML = `<div><b>${city}</b></div><div><input type="number" class="price-input input-dark" value="${sellVal || ''}" onfocus="this.select()" oninput="updatePrice('${city}', this.value)" style="text-align: right;"></div><div class="profit-val ${res.profit < 0 ? 'negative' : ''}">${res.profit.toLocaleString()}</div><div class="score-val">${res.score.toLocaleString()}</div>`;
+                
+                // Add input event to update siblings immediately
+                const priceInput = document.createElement('input');
+                priceInput.type = 'number';
+                priceInput.className = 'price-input input-dark';
+                priceInput.value = sellVal || '';
+                priceInput.style.textAlign = 'right';
+                priceInput.onfocus = function() { this.select(); };
+                priceInput.oninput = function() {
+                   const val = this.value;
+                   updatePrice(city, val);
+                   // Immediate UI update
+                   const newVal = parseInt(val) || 0;
+                   const updatedRes = calculateItemProfit(currentItem, city, getUIState(), newVal);
+                   row.querySelector('.profit-val').textContent = updatedRes.profit.toLocaleString();
+                   row.querySelector('.score-val').textContent = updatedRes.score.toLocaleString();
+                   if(updatedRes.profit < 0) row.querySelector('.profit-val').classList.add('negative');
+                   else row.querySelector('.profit-val').classList.remove('negative');
+                };
+
+                row.innerHTML = `<div><b>${city}</b></div><div></div><div class="profit-val ${res.profit < 0 ? 'negative' : ''}">${res.profit.toLocaleString()}</div><div class="score-val">${res.score.toLocaleString()}</div>`;
+                row.children[1].appendChild(priceInput);
                 fragment.appendChild(row);
             });
             list.appendChild(fragment);
@@ -906,6 +946,17 @@
                 const toggle = document.querySelector(`.transport-toggle[data-mount="${key}"]`);
                 if(toggle) toggle.checked = transportOwnership[key];
             });
+
+            // --- RESTORE MISSING PREFS ---
+            if (saved.mastery) document.getElementById('mastery-rank').value = saved.mastery;
+            if (saved.letter) document.getElementById('letter-select').value = saved.letter;
+            if (saved.fine !== undefined) document.getElementById('fine-letter-check').checked = saved.fine;
+            if (saved.gm !== undefined) document.getElementById('gm-check').checked = saved.gm;
+            if (saved.william !== undefined) document.getElementById('william-check').checked = saved.william;
+            if (saved.williamLike) document.getElementById('william-likeability').value = saved.williamLike;
+            if (saved.alpaca !== undefined) document.getElementById('alpaca-check').checked = saved.alpaca;
+            if (saved.trader) document.getElementById('trader-qty').value = saved.trader;
+            if (saved.trust) document.getElementById('trustworthy-qty').value = saved.trust;
             
             renderCommerceTabs(); renderTransportTabs(); renderCityTabs(); refreshUI();
 
