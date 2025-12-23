@@ -272,6 +272,7 @@
                     <span class="main-title">TRADING POST</span>
                 </div>
                 <div style="display:flex; gap:15px; align-items:center;">
+                    <!-- Updated User Display: No Uppercase Transform -->
                     <span id="user-display" style="font-size:11px; color:var(--accent);">GUEST</span>
                     <a href="index.html" class="hub-btn">Back to Hub</a>
                 </div>
@@ -292,7 +293,7 @@
                     <div id="transport-tabs" class="horizontal-drawer"></div>
                 </details>
 
-                <!-- TRADING POST DRAWER -->
+                <!-- TRADING POST DRAWER (UPDATED: Grid layout instead of horizontal scrolling) -->
                 <details class="drawer-wrap" open>
                     <summary>
                         <span>Trading Post</span>
@@ -302,7 +303,9 @@
                             <input type="number" id="merchant-rating-input" class="input-dark" style="width:45px; padding:2px; height:24px; text-align:center;" min="1" max="9" value="1" onchange="validateRating(this)" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
                         </div>
                     </summary>
-                    <div id="city-tabs" class="horizontal-drawer"></div>
+                    <div style="padding: 0 20px 15px 20px;">
+                        <div id="city-tabs" class="tab-picker" style="margin-bottom: 0;"></div>
+                    </div>
                 </details>
                 
                 <div id="market-items-container" class="item-list"></div>
