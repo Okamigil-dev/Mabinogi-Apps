@@ -45,6 +45,28 @@
         ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
+        /* --- Global Navigation (Copy this to other pages) --- */
+        .global-nav {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 0 20px;
+            height: 40px;
+            background: #050506; /* Slightly darker than sidebar for distinction */
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .global-nav a {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-decoration: none;
+            letter-spacing: 0.5px;
+            transition: color 0.2s;
+        }
+        .global-nav a:hover { color: #fff; }
+        .global-nav a.active { color: var(--accent); }
+
         /* --- Layout Containers --- */
         .interface-container {
             width: 100%; height: 100vh; display: flex; flex-direction: column;
@@ -222,6 +244,9 @@
             .content-grid { display: block; height: calc(100vh - 50px); }
             .header-bar { display: none; }
             
+            /* Hide Global Nav on Mobile */
+            .global-nav { display: none; }
+
             .mobile-nav {
                 display: flex; justify-content: space-between; align-items: center;
                 padding: 10px 15px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border);
@@ -266,14 +291,22 @@
     <div class="mobile-backdrop" id="mobile-backdrop" onclick="closeSidebars()"></div>
 
     <div class="interface-container">
+        <!-- GLOBAL NAVIGATION BAR -->
+        <nav class="global-nav">
+            <a href="index.html">HUB</a>
+            <a href="tracker.html">TRACKER</a>
+            <a href="Barter.html">BARTER</a>
+            <a href="commerce.html" class="active">COMMERCE</a>
+        </nav>
+
         <div class="header-bar">
             <div class="title-section">
                 <div style="display:flex; align-items:center;">
                     <span class="main-title">TRADING POST</span>
                 </div>
                 <div style="display:flex; gap:15px; align-items:center;">
+                    <!-- Updated User Display: No Uppercase Transform -->
                     <span id="user-display" style="font-size:11px; color:var(--accent);">GUEST</span>
-                    <a href="index.html" class="hub-btn">Back to Hub</a>
                 </div>
             </div>
         </div>
@@ -298,6 +331,7 @@
                 <details class="drawer-wrap" id="drawer-post" open>
                     <summary>
                         <span>Trading Post</span>
+                        <!-- FIXED: stopPropagation on click AND mousedown to prevent drawer toggle -->
                         <div style="margin-left:auto; display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
                             <span style="font-size:10px; color:var(--text-dim);">RATING</span>
                             <input type="number" id="merchant-rating-input" class="input-dark" style="width:45px; padding:2px; height:24px; text-align:center;" min="1" max="9" value="1" oninput="validateRating(this)" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
@@ -592,7 +626,14 @@
                 else if (like >= 130) williamBonus = 0.02;
                 else if (like >= 80) williamBonus = 0.01;
             }
-            return { totalMultiplier: (1 + masteryBonus + letterMultiplier + williamBonus) };
+            
+            const total = (1 + masteryBonus + letterMultiplier + williamBonus);
+            
+            // Update visual bonus indicator
+            const disp = document.getElementById('modifier-display');
+            if(disp) disp.innerText = `(Bonus: +${Math.round((total - 1) * 100)}%)`;
+            
+            return { totalMultiplier: total };
         }
 
         function calculateItemProfit(item, targetCity, uiState, sellPriceOverride = null) {
@@ -836,6 +877,8 @@
                 const res = calculateItemProfit(currentItem, city, uiState, sellVal);
                 const row = document.createElement('div');
                 row.className = 'market-row';
+                
+                // Add input event to update siblings immediately
                 const priceInput = document.createElement('input');
                 priceInput.type = 'number';
                 priceInput.className = 'price-input input-dark';
@@ -845,6 +888,7 @@
                 priceInput.oninput = function() {
                    const val = this.value;
                    updatePrice(city, val);
+                   // Immediate UI update
                    const newVal = parseInt(val) || 0;
                    const updatedRes = calculateItemProfit(currentItem, city, getUIState(), newVal);
                    row.querySelector('.profit-val').textContent = updatedRes.profit.toLocaleString();
@@ -852,6 +896,7 @@
                    if(updatedRes.profit < 0) row.querySelector('.profit-val').classList.add('negative');
                    else row.querySelector('.profit-val').classList.remove('negative');
                 };
+
                 row.innerHTML = `<div><b>${city}</b></div><div></div><div class="profit-val ${res.profit < 0 ? 'negative' : ''}">${res.profit.toLocaleString()}</div><div class="score-val">${res.score.toLocaleString()}</div>`;
                 row.children[1].appendChild(priceInput);
                 fragment.appendChild(row);
@@ -891,10 +936,7 @@
             if(val < 1) val = 1;
             if(val > 9) val = 9;
             input.value = val;
-            
-            // Save specific rating for current town
             townRatings[selectedCity] = val;
-            
             refreshUI();
             savePrefs();
         }
@@ -903,14 +945,58 @@
             const prefs = getUIState();
             prefs.transports = transportOwnership;
             prefs.activeTransport = activeTransport;
-            prefs.city = document.getElementById('city-select').value;
-            prefs.townRatings = townRatings; // SAVE MAP
+            prefs.townRatings = townRatings; 
+            prefs.city = selectedCity;
+            
+            // Save Drawer States
+            prefs.drawers = {};
+            document.querySelectorAll('details').forEach(d => {
+                if(d.id) prefs.drawers[d.id] = d.open;
+            });
 
             localStorage.setItem('mabi_prefs', JSON.stringify(prefs));
             if (currentUser && rtdb) {
                 clearTimeout(saveTimeout);
                 saveTimeout = setTimeout(() => { rtdb.ref(`users/${currentUser.uid}/settings`).update(prefs); }, 1000);
             }
+        }
+
+        function applySettings(data) {
+            if (!data) return;
+            if (data.townRatings) townRatings = data.townRatings;
+            if (data.commerceType) activeCommerceType = data.commerceType;
+            if (data.city) selectedCity = data.city;
+            if (data.activeTransport) activeTransport = data.activeTransport;
+            if (data.transports) transportOwnership = data.transports;
+            if (data.mastery) document.getElementById('mastery-rank').value = data.mastery;
+            if (data.letter) document.getElementById('letter-select').value = data.letter;
+            const fineCheck = document.getElementById('fine-letter-check');
+            if (fineCheck && data.fine !== undefined) fineCheck.checked = data.fine;
+            if (data.gm !== undefined) document.getElementById('gm-check').checked = data.gm;
+            if (data.william !== undefined) document.getElementById('william-check').checked = data.william;
+            if (data.williamLike) document.getElementById('william-likeability').value = data.williamLike;
+            if (data.alpaca !== undefined) document.getElementById('alpaca-check').checked = data.alpaca;
+            if (data.trader) document.getElementById('trader-qty').value = data.trader;
+            if (data.trust) document.getElementById('trustworthy-qty').value = data.trust;
+            
+            // Restore Drawers
+            if (data.drawers) {
+                for (const [id, isOpen] of Object.entries(data.drawers)) {
+                    const el = document.getElementById(id);
+                    if (el) el.open = isOpen;
+                }
+            }
+
+            document.getElementById('merchant-rating-input').value = townRatings[selectedCity] || 1;
+            Object.keys(transportOwnership).forEach(key => {
+                const toggle = document.querySelector(`.transport-toggle[data-mount="${key}"]`);
+                if(toggle) toggle.checked = transportOwnership[key];
+            });
+
+            renderCommerceTabs(); 
+            renderTransportTabs(); 
+            renderCityTabs(); 
+            refreshUI();
         }
 
         function toggleSidebar(side) {
@@ -1001,6 +1087,7 @@
                         const profile = snap.val();
                         if (profile && profile.username) {
                             displayElem.textContent = profile.username;
+                            // Update local cache
                             localStorage.setItem('mabi_user_cache_' + user.uid, JSON.stringify(profile));
                         }
                     });
@@ -1017,45 +1104,6 @@
                 }
             });
         });
-
-        // Add applySettings function which was missing in your last paste
-        function applySettings(data) {
-            if (!data) return;
-            if (data.townRatings) townRatings = data.townRatings;
-            if (data.commerceType) activeCommerceType = data.commerceType;
-            if (data.city) selectedCity = data.city;
-            if (data.activeTransport) activeTransport = data.activeTransport;
-            if (data.transports) transportOwnership = data.transports;
-            if (data.mastery) document.getElementById('mastery-rank').value = data.mastery;
-            if (data.letter) document.getElementById('letter-select').value = data.letter;
-            const fineCheck = document.getElementById('fine-letter-check');
-            if (fineCheck && data.fine !== undefined) fineCheck.checked = data.fine;
-            if (data.gm !== undefined) document.getElementById('gm-check').checked = data.gm;
-            if (data.william !== undefined) document.getElementById('william-check').checked = data.william;
-            if (data.williamLike) document.getElementById('william-likeability').value = data.williamLike;
-            if (data.alpaca !== undefined) document.getElementById('alpaca-check').checked = data.alpaca;
-            if (data.trader) document.getElementById('trader-qty').value = data.trader;
-            if (data.trust) document.getElementById('trustworthy-qty').value = data.trust;
-            
-            // Restore Drawers
-            if (data.drawers) {
-                for (const [id, isOpen] of Object.entries(data.drawers)) {
-                    const el = document.getElementById(id);
-                    if (el) el.open = isOpen;
-                }
-            }
-
-            document.getElementById('merchant-rating-input').value = townRatings[selectedCity] || 1;
-            Object.keys(transportOwnership).forEach(key => {
-                const toggle = document.querySelector(`.transport-toggle[data-mount="${key}"]`);
-                if(toggle) toggle.checked = transportOwnership[key];
-            });
-
-            renderCommerceTabs(); 
-            renderTransportTabs(); 
-            renderCityTabs(); 
-            refreshUI();
-        }
     </script>
 </body>
 </html>
