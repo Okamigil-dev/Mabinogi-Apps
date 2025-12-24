@@ -333,6 +333,7 @@
                 <details class="drawer-wrap" id="drawer-post" open>
                     <summary>
                         <span>Trading Post</span>
+                        <!-- FIXED: stopPropagation on click AND mousedown to prevent drawer toggle -->
                         <div style="margin-left:auto; display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
                             <span style="font-size:10px; color:var(--text-dim);">RATING</span>
                             <input type="number" id="merchant-rating-input" class="input-dark" style="width:45px; padding:2px; height:24px; text-align:center;" min="1" max="9" value="1" oninput="validateRating(this)" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
@@ -626,14 +627,7 @@
                 else if (like >= 130) williamBonus = 0.02;
                 else if (like >= 80) williamBonus = 0.01;
             }
-            
-            const total = (1 + masteryBonus + letterMultiplier + williamBonus);
-            
-            // Update visual bonus indicator
-            const disp = document.getElementById('modifier-display');
-            if(disp) disp.innerText = `(Bonus: +${Math.round((total - 1) * 100)}%)`;
-            
-            return { totalMultiplier: total };
+            return { totalMultiplier: (1 + masteryBonus + letterMultiplier + williamBonus) };
         }
 
         function calculateItemProfit(item, targetCity, uiState, sellPriceOverride = null) {
@@ -760,13 +754,8 @@
                     const basePrice = publicBasePrices[item.name] || item.buy;
                     const dBuy = getDiscountedBuyPrice(basePrice, uiState);
                     const sellVal = getPrice(item.name, targetCity);
-                    
-                    // Raw unit profit (no multipliers) for sorting efficiency
                     const rawUnitP = (sellVal - dBuy);
-                    
-                    // Multiplier applied to efficiency sort to favor high-base-value items correctly
                     const effP = rawUnitP > 0 ? (rawUnitP * mods.totalMultiplier) : rawUnitP;
-                    
                     return { ...item, rawUnitP, dBuy, sellVal, eff: effP / Math.max(1, item.weight) };
                 }).filter(i => i.rawUnitP > 0).sort((a, b) => b.eff - a.eff);
                 
@@ -774,13 +763,9 @@
                     const stock = getStock(item.name);
                     let qty = Math.min(Math.floor(remWeight / item.weight), remSlots * item.max, item.limit, stock);
                     if (qty <= 0) return;
-                    
                     let slotsNeeded = Math.ceil(qty / item.max);
-                    
-                    // FIXED MATH: Total Base Profit * Multiplier -> Floor
                     const totalBase = item.rawUnitP * qty;
                     const stackProfit = Math.floor(totalBase * mods.totalMultiplier);
-                    
                     itemsToBuy.push({ n: item.name, q: qty, p: stackProfit, img: item.img, s: slotsNeeded, maxPerSlot: item.max });
                     remWeight -= (qty * item.weight); remSlots -= slotsNeeded; totalP += stackProfit;
                 });
@@ -1061,30 +1046,40 @@
             firebase.initializeApp(firebaseConfig);
             rtdb = firebase.database();
             auth = firebase.auth();
+            // CRITICAL FIX: Set persistence to ensure session carries over from other pages
+            auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+            
             rtdb.ref('public_commerce/prices').on('value', (s) => { if (!skipRender) { publicPrices = s.val() || {}; refreshUI(); } skipRender = false; });
             rtdb.ref('public_commerce/stocks').on('value', (s) => { if (!skipRender) { publicStocks = s.val() || {}; refreshUI(); } skipRender = false; });
             rtdb.ref('public_commerce/base_prices').on('value', (s) => { if (!skipRender) { publicBasePrices = s.val() || {}; refreshUI(); } skipRender = false; });
             
             // --- AUTHENTICATION LISTENER: UPDATED TO REMOVE TRANSFORMATION ---
             auth.onAuthStateChanged(user => {
-                const displayElem = document.getElementById('user-display');
+                const uInfo = document.getElementById('user-info');
+                const uAvatar = document.getElementById('user-avatar');
+                const status = document.getElementById('connection-status');
+                
                 if (user) {
                     currentUser = user;
+                    status.innerText = "Online";
+                    status.style.color = "var(--accent)";
                     
                     // 1. Initial fallback using email prefix (no transform)
-                    displayElem.textContent = user.email.split('@')[0];
+                    uInfo.textContent = user.email.split('@')[0];
 
                     // 2. Try instant load from local settings cache (no transform)
                     const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
                     if (cached.username) {
-                        displayElem.textContent = cached.username;
+                        uInfo.textContent = cached.username;
                     }
+                    if(cached.avatar) uAvatar.style.backgroundImage = `url('${cached.avatar}')`;
 
                     // 3. Real-time sync with database profile (no transform)
                     firebase.database().ref(`users/${user.uid}/profile`).on('value', (snap) => {
                         const profile = snap.val();
-                        if (profile && profile.username) {
-                            displayElem.textContent = profile.username;
+                        if (profile) {
+                            if(profile.username) uInfo.textContent = profile.username;
+                            if(profile.avatar) uAvatar.style.backgroundImage = `url('${profile.avatar}')`;
                             // Update local cache
                             localStorage.setItem('mabi_user_cache_' + user.uid, JSON.stringify(profile));
                         }
@@ -1098,7 +1093,9 @@
 
                 } else {
                     currentUser = { uid: 'local_guest', isGuest: true };
-                    displayElem.textContent = "GUEST";
+                    uInfo.textContent = "Guest";
+                    status.innerText = "Local Mode";
+                    status.style.color = "var(--text-dim)";
                 }
             });
         });
