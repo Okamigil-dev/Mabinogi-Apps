@@ -13,7 +13,7 @@
 
     <style>
         :root {
-            /* V2.7 Theme from Hub */
+            /* V2.7 Theme */
             --bg: #09090b;
             --sidebar-bg: #121214;
             --card-bg: #18181b;
@@ -27,7 +27,6 @@
             --slot-size: 50px;
         }
 
-        /* --- Global & Reset --- */
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
         body {
             background-color: var(--bg);
@@ -88,7 +87,6 @@
             border-right: 1px solid var(--border);
         }
         .panel:last-child { border-right: none; }
-        
         .center-panel { background: #0c0c0e; }
 
         /* --- Header Elements --- */
@@ -450,7 +448,6 @@
                     </div>
                 </details>
 
-                <!-- OPTIMAL ROUTE (Remaining focused) -->
                 <div class="manifest-container" id="manifest-box" style="display:none;">
                     <div class="manifest-header">
                         <span>Optimal Route</span>
@@ -533,7 +530,7 @@
         let activeTransport = "Elephant";
         let activeCommerceType = "Normal";
         let selectedCity = "Tir Chonaill";
-        let townRatings = {}; // NEW STATE FOR RATINGS
+        let townRatings = {}; 
 
         let currentUser = null;
         let saveTimeout = null;
@@ -629,7 +626,14 @@
                 else if (like >= 130) williamBonus = 0.02;
                 else if (like >= 80) williamBonus = 0.01;
             }
-            return { totalMultiplier: (1 + masteryBonus + letterMultiplier + williamBonus) };
+            
+            const total = (1 + masteryBonus + letterMultiplier + williamBonus);
+            
+            // Update visual bonus indicator
+            const disp = document.getElementById('modifier-display');
+            if(disp) disp.innerText = `(Bonus: +${Math.round((total - 1) * 100)}%)`;
+            
+            return { totalMultiplier: total };
         }
 
         function calculateItemProfit(item, targetCity, uiState, sellPriceOverride = null) {
@@ -642,6 +646,8 @@
             // Item Profit Logic: Total Base Profit for stack * Multiplier
             const baseProfit = (sellVal !== "" && sellVal > 0) ? (sellVal - dBuy) * load : 0;
             const mods = getActiveModifiers(uiState);
+            
+            // Multiplier applies to PROFIT only
             let finalProfit = baseProfit > 0 ? Math.floor(baseProfit * mods.totalMultiplier) : baseProfit;
             
             const divisor = (uiState.commerceType === "Barter") ? 34 : 17;
@@ -873,8 +879,6 @@
                 const res = calculateItemProfit(currentItem, city, uiState, sellVal);
                 const row = document.createElement('div');
                 row.className = 'market-row';
-                
-                // Add input event to update siblings immediately
                 const priceInput = document.createElement('input');
                 priceInput.type = 'number';
                 priceInput.className = 'price-input input-dark';
@@ -884,7 +888,6 @@
                 priceInput.oninput = function() {
                    const val = this.value;
                    updatePrice(city, val);
-                   // Immediate UI update
                    const newVal = parseInt(val) || 0;
                    const updatedRes = calculateItemProfit(currentItem, city, getUIState(), newVal);
                    row.querySelector('.profit-val').textContent = updatedRes.profit.toLocaleString();
@@ -892,7 +895,6 @@
                    if(updatedRes.profit < 0) row.querySelector('.profit-val').classList.add('negative');
                    else row.querySelector('.profit-val').classList.remove('negative');
                 };
-
                 row.innerHTML = `<div><b>${city}</b></div><div></div><div class="profit-val ${res.profit < 0 ? 'negative' : ''}">${res.profit.toLocaleString()}</div><div class="score-val">${res.score.toLocaleString()}</div>`;
                 row.children[1].appendChild(priceInput);
                 fragment.appendChild(row);
@@ -932,10 +934,7 @@
             if(val < 1) val = 1;
             if(val > 9) val = 9;
             input.value = val;
-            
-            // Save specific rating for current town
             townRatings[selectedCity] = val;
-            
             refreshUI();
             savePrefs();
         }
