@@ -91,7 +91,6 @@
 
         /* --- Header Elements --- */
         .title-section {
-            /* Removed max-width 1500px to match full-width layout */
             display: flex; justify-content: space-between; align-items: center; width: 100%;
         }
         .main-title {
@@ -154,22 +153,55 @@
         .item-list { flex-grow: 1; overflow-y: auto; }
         
         .inventory-item {
-            display: flex; gap: 12px; padding: 10px 15px;
+            display: flex; gap: 10px; padding: 10px 15px;
             border-bottom: 1px solid var(--border); cursor: pointer;
-            align-items: center; transition: 0.15s;
+            align-items: center; transition: 0.1s; position: relative;
         }
         .inventory-item:hover { background: var(--card-bg); }
         .selected-item { background: var(--accent-dim); border-left: 3px solid var(--accent); }
         
         .item-icon-box {
-            width: 48px; height: 48px; background: var(--card-bg); border: 1px solid var(--border);
+            width: 42px; height: 42px; background: var(--card-bg); border: 1px solid var(--border);
             border-radius: 4px; background-size: contain; background-repeat: no-repeat; 
             background-position: center; flex-shrink: 0; background-color: rgba(255, 255, 255, 0.03);
         }
-        .item-name { font-weight: 600; font-size: 13px; color: #fff; }
-        .item-list-content { flex-grow: 1; }
-        .stock-input-row { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+        .item-name { font-weight: 600; font-size: 12px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+        .item-list-content { flex-grow: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+
+        /* Qty & Stock Controls */
+        .item-actions-row {
+            display: flex; align-items: center; justify-content: space-between; margin-top: 2px;
+        }
         
+        .stock-widget {
+            display: flex; align-items: center; gap: 4px;
+            background: #121214; border: 1px solid var(--border);
+            border-radius: 4px; padding: 0 4px; height: 22px;
+        }
+        .stock-label { font-size: 9px; color: #555; font-weight: 700; letter-spacing: 0.5px; }
+        .stock-input {
+            width: 40px; background: transparent; border: none; color: var(--text-dim);
+            font-family: 'JetBrains Mono'; font-size: 10px; text-align: right; outline: none;
+        }
+        .stock-input:focus { color: #fff; }
+
+        .qty-controls {
+            display: flex; align-items: center; gap: 2px;
+            background: #000; border: 1px solid var(--border); border-radius: 4px;
+            padding: 2px; height: 24px;
+        }
+        .qty-btn {
+            width: 20px; height: 100%;
+            background: var(--card-bg); border: none; color: var(--text-dim);
+            font-size: 10px; font-weight: 700; cursor: pointer;
+            border-radius: 2px; transition: 0.1s; display: flex; align-items: center; justify-content: center;
+        }
+        .qty-btn:hover { background: var(--border); color: #fff; }
+        .qty-val {
+            min-width: 20px; text-align: center; font-family: 'JetBrains Mono';
+            font-size: 11px; color: var(--accent); font-weight: 600; padding: 0 4px;
+        }
+
         /* --- Center Panel --- */
         .item-header {
             padding: 30px; border-bottom: 1px solid var(--border); display: flex;
@@ -238,8 +270,11 @@
         /* --- MOBILE STYLES --- */
         .mobile-nav { display: none; }
         .mobile-backdrop { display: none; }
+        .mobile-only { display: none; }
+        .drawer-header { display: none; }
 
         @media (max-width: 1000px) {
+            .mobile-only { display: block; }
             .content-grid { display: block; height: calc(100vh - 50px); }
             .header-bar { display: none; }
             
@@ -276,6 +311,20 @@
             .mobile-backdrop.active { opacity: 1; pointer-events: all; }
             
             .center-panel { height: 100%; width: 100%; border: none; z-index: 1 !important; position: relative; }
+
+            /* Mobile Sidebar Components */
+            .drawer-header { 
+                display: flex; justify-content: space-between; align-items: center;
+                padding: 15px; border-bottom: 1px solid var(--border); background: var(--sidebar-bg);
+            }
+            .drawer-title { font-weight: 700; color: #fff; }
+            .drawer-close { background: none; border: none; color: var(--text-dim); font-size: 20px; padding: 0 5px; cursor: pointer; }
+            
+            /* Mobile User Profile */
+            .user-profile-box { display: flex; align-items: center; gap: 12px; padding: 15px; border-bottom: 1px solid var(--border); }
+            .user-avatar-mobile { width: 40px; height: 40px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; flex-shrink: 0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"); }
+            .user-info-text-mobile { font-size: 13px; font-weight: 600; color: var(--text-main); word-break: break-all; line-height: 1.2; }
+            .user-status-mobile { font-size: 10px; color: var(--text-dim); }
         }
     </style>
 </head>
@@ -316,6 +365,24 @@
 
         <div class="content-grid">
             <div class="panel left-panel" id="left-panel">
+                <!-- Mobile Only: Sidebar Header & User Profile -->
+                <div class="drawer-header mobile-only">
+                    <span class="drawer-title">Menu</span>
+                    <button class="drawer-close" onclick="closeSidebars()">×</button>
+                </div>
+                
+                <div class="mobile-only" style="padding: 10px 15px; border-bottom: 1px solid var(--border);">
+                    <button class="hub-btn" style="width:100%; text-align:center;" onclick="window.location.href='index.html'">← Back to Hub</button>
+                </div>
+
+                <div class="user-profile-box mobile-only">
+                    <div id="mobile-user-avatar" class="user-avatar-mobile"></div>
+                    <div style="flex-grow:1; min-width:0;">
+                        <div id="mobile-user-info" class="user-info-text-mobile">Guest</div>
+                        <div id="mobile-connection-status" class="user-status-mobile">Local Mode</div>
+                    </div>
+                </div>
+
                 <!-- COMMERCE MODE DRAWER -->
                 <details class="drawer-wrap" id="drawer-mode" open>
                     <summary>Commerce Mode</summary>
@@ -334,7 +401,6 @@
                 <details class="drawer-wrap" id="drawer-post" open>
                     <summary>
                         <span>Trading Post</span>
-                        <!-- FIXED: stopPropagation on click AND mousedown to prevent drawer toggle -->
                         <div style="margin-left:auto; display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
                             <span style="font-size:10px; color:var(--text-dim);">RATING</span>
                             <input type="number" id="merchant-rating-input" class="input-dark" style="width:45px; padding:2px; height:24px; text-align:center;" min="1" max="9" value="1" oninput="validateRating(this)" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
@@ -376,6 +442,11 @@
             </div>
 
             <div class="panel right-panel" id="right-panel">
+                <div class="drawer-header mobile-only">
+                    <span class="drawer-title">Config</span>
+                    <button class="drawer-close" onclick="closeSidebars()">×</button>
+                </div>
+
                 <!-- RIGHT SIDE DRAWER 1: PROFIT MODIFIERS -->
                 <details class="drawer-wrap" id="drawer-profit" open>
                     <summary>
@@ -450,11 +521,17 @@
                     </div>
                 </details>
 
-                <!-- OPTIMAL ROUTE (Remaining focused) -->
+                <!-- LOADOUT / MANIFEST BOX -->
                 <div class="manifest-container" id="manifest-box" style="display:none;">
                     <div class="manifest-header">
-                        <span>Optimal Route</span>
-                        <span id="manifest-dest" style="color:#fff;">-</span>
+                        <span>Current Loadout</span>
+                        <!-- New Auto-Optimize Button -->
+                        <button class="hub-btn" style="font-size:10px; padding:3px 8px; border:1px solid var(--accent); color:var(--accent);" onclick="autoFillLoadout()">✨ Max Profit</button>
+                    </div>
+                    <!-- Clear Button -->
+                    <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+                        <span id="manifest-dest" style="color:#fff; font-size:11px; margin-right:auto;">Target: -</span>
+                        <button class="hub-btn" style="font-size:10px; padding:2px 6px; border-color:var(--danger); color:var(--danger);" onclick="clearLoadout()">Clear</button>
                     </div>
                     <div id="manifest-list" class="manifest-slots"></div>
                     <div id="manifest-total" class="manifest-total"></div>
@@ -535,6 +612,9 @@
         let selectedCity = "Tir Chonaill";
         let townRatings = {}; 
 
+        // LOADOUT STATE
+        let userLoadout = {}; // { itemName: qty }
+
         let currentUser = null;
         let saveTimeout = null;
         let rtdb = null;
@@ -549,16 +629,10 @@
         
         const applyIcon = (el, name) => {
             let p = null; 
-            if(townIcons[name]) {
-                p = getImagePath(townIcons[name]);
-            } else if(name === "Wagon") {
-                p = document.getElementById('alpaca-check').checked ? 'images/transports/Alpaca_Wagon_Icon.png' : 'images/transports/Wagon_Icon.png';
-            } else if(transportIcons[name]) {
-                p = transportIcons[name];
-            } else { 
-                const i = commerceDbFind(name);
-                if(i) p = getImagePath(i.img); 
-            }
+            if(townIcons[name]) { p = getImagePath(townIcons[name]); } 
+            else if(name === "Wagon") { p = document.getElementById('alpaca-check').checked ? 'images/transports/Alpaca_Wagon_Icon.png' : 'images/transports/Wagon_Icon.png'; } 
+            else if(transportIcons[name]) { p = transportIcons[name]; } 
+            else { const i = commerceDbFind(name); if(i) p = getImagePath(i.img); }
             if(p) el.style.backgroundImage = `url('${p}')`; 
             else el.style.backgroundImage = 'none';
         };
@@ -582,7 +656,6 @@
                 commerceType: activeCommerceType,
                 transport: activeTransport,
                 city: selectedCity,
-                // UI State reads directly from input for active calculation
                 merchantRating: parseInt(document.getElementById('merchant-rating-input').value, 10) || 1,
                 trader: parseInt(document.getElementById('trader-qty').value, 10) || 0,
                 trust: parseInt(document.getElementById('trustworthy-qty').value, 10) || 0,
@@ -616,20 +689,24 @@
         function getActiveModifiers(uiState) {
             const masteryBonus = masteryRanks[uiState.mastery] || 0;
             const letterInfo = guaranteeLetters[uiState.letter] || guaranteeLetters["None"];
-            // FIXED: Using uiState.fine boolean properly to select correct key
-            // Note: For Barter mode, guarantee letters use reduced multipliers
             let letterMultiplier = (uiState.commerceType === "Barter") ? 
                 (uiState.fine ? letterInfo.fine_barter : letterInfo.barter) : 
                 (uiState.fine ? letterInfo.fine_normal : letterInfo.normal);
                 
             let williamBonus = 0;
             if (uiState.william) {
-                const like = uiState.williamLike;
-                if (like >= 240) williamBonus = 0.03;
-                else if (like >= 130) williamBonus = 0.02;
-                else if (like >= 80) williamBonus = 0.01;
+                const like = userSettings.williamLike; 
+                const uiLike = parseInt(document.getElementById('william-likeability').value) || 0;
+                if (uiLike >= 240) williamBonus = 0.03;
+                else if (uiLike >= 130) williamBonus = 0.02;
+                else if (uiLike >= 80) williamBonus = 0.01;
             }
-            return { totalMultiplier: (1 + masteryBonus + letterMultiplier + williamBonus) };
+            const total = (1 + masteryBonus + letterMultiplier + williamBonus);
+            
+            const disp = document.getElementById('modifier-display');
+            if(disp) disp.innerText = `(Bonus: +${Math.round((total - 1) * 100)}%)`;
+            
+            return { totalMultiplier: total };
         }
 
         function calculateItemProfit(item, targetCity, uiState, sellPriceOverride = null) {
@@ -639,16 +716,171 @@
             const stats = getModifiedStats(uiState.transport, uiState);
             const load = Math.min(Math.floor(stats.weight / item.weight), stats.slots * item.max, item.limit);
             
-            // Item Profit Logic: Total Base Profit for stack * Multiplier
             const baseProfit = (sellVal !== "" && sellVal > 0) ? (sellVal - dBuy) * load : 0;
             const mods = getActiveModifiers(uiState);
             
-            // Multiplier applies to PROFIT only
             let finalProfit = baseProfit > 0 ? Math.floor(baseProfit * mods.totalMultiplier) : baseProfit;
             
             const divisor = (uiState.commerceType === "Barter") ? 34 : 17;
             const score = Math.max(0, Math.floor(((sellVal - (item.buy || 0)) * load) / divisor));
             return { profit: finalProfit, score: score, load: load };
+        }
+
+        // --- NEW LOADOUT LOGIC ---
+
+        function updateLoadout(itemName, change) {
+            if (!userLoadout[itemName]) userLoadout[itemName] = 0;
+            userLoadout[itemName] += change;
+            if (userLoadout[itemName] <= 0) delete userLoadout[itemName];
+            recalcLoadout();
+            refreshUI(); // Refresh list to update counts
+        }
+
+        function clearLoadout() {
+            userLoadout = {};
+            recalcLoadout();
+            refreshUI();
+        }
+        
+        // SHIFT+CLICK HANDLER
+        function handleQtyClick(event, itemName, dir) {
+            event.stopPropagation();
+            if (!itemName) return;
+            const itemData = commerceDbFind(itemName);
+            if (!itemData) return;
+
+            if (event.shiftKey) {
+                if (dir > 0) {
+                    // FILL REMAINING CAPACITY
+                    const uiState = getUIState();
+                    const stats = getModifiedStats(activeTransport, uiState);
+                    
+                    // Calculate current usage
+                    let usedWeight = 0;
+                    let usedSlots = 0;
+                    for (const [n, q] of Object.entries(userLoadout)) {
+                         const iData = commerceDbFind(n);
+                         if (iData) {
+                             usedWeight += iData.weight * q;
+                             usedSlots += Math.ceil(q / iData.max);
+                         }
+                    }
+                    
+                    // Add items one by one until full
+                    let added = 0;
+                    while (true) {
+                         // Proposed new state
+                         const newWeight = usedWeight + itemData.weight;
+                         // Check if adding 1 requires a new slot or fits in existing partial slot
+                         // Simplified: Calculate total slots needed for (current + 1)
+                         const currentQty = (userLoadout[itemName] || 0) + added;
+                         const newQty = currentQty + 1;
+                         
+                         // Check item limit
+                         if (itemData.limit !== Infinity && newQty > itemData.limit) break;
+                         
+                         // Calculate new slot usage for this specific item
+                         // We need to subtract old slot usage of this item and add new
+                         const oldItemSlots = Math.ceil(currentQty / itemData.max);
+                         const newItemSlots = Math.ceil(newQty / itemData.max);
+                         const slotDiff = newItemSlots - oldItemSlots;
+                         
+                         const newSlots = usedSlots + slotDiff;
+                         
+                         if (newWeight <= stats.weight && newSlots <= stats.slots) {
+                             usedWeight = newWeight;
+                             usedSlots = newSlots;
+                             added++;
+                         } else {
+                             break;
+                         }
+                         if (added > 2000) break; // Safety
+                    }
+                    
+                    if (added > 0) updateLoadout(itemName, added);
+
+                } else {
+                    // REMOVE FULL STACK
+                    const current = userLoadout[itemName] || 0;
+                    if (current > 0) {
+                        const toRemove = Math.min(current, itemData.max);
+                        updateLoadout(itemName, -toRemove);
+                    }
+                }
+            } else {
+                updateLoadout(itemName, dir);
+            }
+        }
+
+        function autoFillLoadout() {
+            const uiState = getUIState();
+            const origin = selectedCity;
+            if(!origin) return;
+            const targetPool = (activeCommerceType === "Barter" ? citiesByType["Normal"] : citiesByType[activeCommerceType]);
+            const targets = targetPool.filter(c => c !== origin);
+            const originItems = (marketData[activeCommerceType] && marketData[activeCommerceType][origin]) || [];
+            
+            const result = calculateBestRouteForVector(origin, targets, originItems, uiState, activeTransport);
+            
+            if (result.best) {
+                userLoadout = {};
+                result.best.items.forEach(i => {
+                    userLoadout[i.n] = i.q;
+                });
+                recalcLoadout();
+                refreshUI();
+            }
+        }
+
+        function recalcLoadout() {
+            const uiState = getUIState();
+            const stats = getModifiedStats(activeTransport, uiState);
+            const targetPool = (activeCommerceType === "Barter" ? citiesByType["Normal"] : citiesByType[activeCommerceType]);
+            const targets = targetPool.filter(c => c !== selectedCity);
+            
+            let bestTotalProfit = 0;
+            let bestDest = "-";
+
+            if (Object.keys(userLoadout).length === 0) {
+                 renderManifest(null, 'manifest-box', 'manifest-list', 'manifest-total');
+                 return;
+            }
+
+            const manifestItems = [];
+            for (const [name, qty] of Object.entries(userLoadout)) {
+                const itemData = commerceDbFind(name);
+                if (itemData) {
+                    manifestItems.push({ n: name, q: qty, img: itemData.img, weight: itemData.weight, max: itemData.max });
+                }
+            }
+            
+            targets.forEach(city => {
+                let cityTotal = 0;
+                manifestItems.forEach(item => {
+                    const sellVal = getPrice(item.n, city);
+                    const found = commerceDbFind(item.n);
+                    const buy = found ? (publicBasePrices[item.n] || found.buy) : 0;
+                    const dBuy = getDiscountedBuyPrice(buy, uiState);
+                    const unitProfit = (sellVal - dBuy);
+                    const mods = getActiveModifiers(uiState);
+                    const stackProfit = unitProfit > 0 ? Math.floor(unitProfit * item.q * mods.totalMultiplier) : (unitProfit * item.q);
+                    cityTotal += stackProfit;
+                });
+
+                if (cityTotal > bestTotalProfit) {
+                    bestTotalProfit = cityTotal;
+                    bestDest = city;
+                }
+            });
+
+            const trip = {
+                dest: bestDest,
+                profit: bestTotalProfit,
+                items: manifestItems.map(i => ({...i, s: Math.ceil(i.q/i.max), maxPerSlot: i.max})),
+                maxSlots: stats.slots
+            };
+
+            renderManifest(trip, 'manifest-box', 'manifest-list', 'manifest-total');
         }
 
         function renderCommerceTabs() {
@@ -662,13 +894,11 @@
                     activeCommerceType = type; 
                     const valid = citiesByType[type];
                     if(valid.length > 0) selectedCity = valid[0];
+                    userLoadout = {}; 
                     renderCommerceTabs(); 
                     renderCityTabs(); 
                     renderTransportTabs(); 
-                    
-                    // Update rating input for new city
                     document.getElementById('merchant-rating-input').value = townRatings[selectedCity] || 1;
-                    
                     refreshUI(); 
                     savePrefs(); 
                 };
@@ -715,10 +945,8 @@
                 btn.className = `picker-btn ${selectedCity === city ? 'active' : ''}`;
                 btn.onclick = () => { 
                     selectedCity = city; 
-                    
-                    // Update rating input for selected city
                     document.getElementById('merchant-rating-input').value = townRatings[city] || 1;
-                    
+                    userLoadout = {}; 
                     renderCityTabs(); 
                     refreshUI(); 
                     savePrefs(); 
@@ -734,25 +962,12 @@
             });
         }
 
-        function runManifests(uiState) {
-            const origin = selectedCity;
-            if(!origin) return;
-            const targetPool = (activeCommerceType === "Barter" ? citiesByType["Normal"] : citiesByType[activeCommerceType]);
-            const targets = targetPool.filter(c => c !== origin);
-            const originItems = (marketData[activeCommerceType] && marketData[activeCommerceType][origin]) || [];
-            
-            const localResult = calculateBestRouteForVector(origin, targets, originItems, uiState, activeTransport);
-            renderManifest(localResult.best, 'manifest-box', 'manifest-list', 'manifest-total');
-        }
-
         function calculateBestRouteForVector(originCity, targetCities, originItems, uiState, mount) {
             let best = null, maxP = -1;
             const mods = getActiveModifiers(uiState);
             const stats = getModifiedStats(mount, uiState);
             targetCities.forEach(targetCity => {
                 let remWeight = stats.weight, remSlots = stats.slots, totalP = 0, itemsToBuy = [];
-                
-                // Calculate potential per unit
                 const potential = originItems.map(item => {
                     const basePrice = publicBasePrices[item.name] || item.buy;
                     const dBuy = getDiscountedBuyPrice(basePrice, uiState);
@@ -761,7 +976,6 @@
                     const effP = rawUnitP > 0 ? (rawUnitP * mods.totalMultiplier) : rawUnitP;
                     return { ...item, rawUnitP, dBuy, sellVal, eff: effP / Math.max(1, item.weight) };
                 }).filter(i => i.rawUnitP > 0).sort((a, b) => b.eff - a.eff);
-                
                 potential.forEach(item => {
                     const stock = getStock(item.name);
                     let qty = Math.min(Math.floor(remWeight / item.weight), remSlots * item.max, item.limit, stock);
@@ -779,13 +993,14 @@
 
         function renderManifest(trip, boxId, listId, totalId) {
             const box = document.getElementById(boxId), list = document.getElementById(listId), total = document.getElementById(totalId);
+            box.style.display = 'block';
             if (!trip || trip.profit <= 0) {
-                box.style.display = 'block';
-                list.innerHTML = `<div style="color:var(--text-dim); font-size:10px; padding:10px; text-align:center;">NO PROFITABLE ROUTES</div>`;
+                document.getElementById('manifest-dest').innerText = "Target: -";
+                list.innerHTML = `<div style="color:var(--text-dim); font-size:10px; padding:10px; text-align:center;">Loadout Empty</div>`;
+                total.textContent = `+0`;
                 return;
             }
-            box.style.display = 'block';
-            document.getElementById('manifest-dest').innerText = trip.dest;
+            document.getElementById('manifest-dest').innerText = `Target: ${trip.dest}`;
             let slotHtml = '';
             let filled = 0;
             trip.items.forEach(item => {
@@ -802,17 +1017,14 @@
         }
 
         function refreshUI() {
-            // FIXED: Only prevent refresh if typing in a PRICE INPUT. 
-            // Allow refresh for sidebar toggles/selects even if they are active.
             const active = document.activeElement;
             if (active && active.classList.contains('price-input')) return;
-
             const uiState = getUIState(); 
             updateMarketItems(uiState); 
             showPrices(uiState); 
             updatePreview(uiState); 
             updateTownIcon(); 
-            runManifests(uiState);
+            recalcLoadout(); 
             const wCheck = document.getElementById('william-check');
             const wBox = document.getElementById('william-like-box');
             if(wCheck && wBox) wBox.style.display = wCheck.checked ? 'flex' : 'none';
@@ -848,12 +1060,54 @@
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'inventory-item' + (isSelected ? ' selected-item' : '');
                 const cStock = getStock(item.name);
-                itemDiv.innerHTML = `<div class="item-icon-box" style="background-image: url('${getImagePath(item.img)}')"></div><div class="item-list-content"><div><span class="item-name">${item.name}</span></div><div class="stock-input-row"><span style="font-size:9px; color:var(--text-dim);">STOCK</span><input type="number" class="qty-input input-dark" value="${cStock || ''}" placeholder="0" onfocus="this.select()" onclick="event.stopPropagation()" onchange="updateStock('${item.name.replace(/'/g, "\\'")}', this.value)" style="width: 70px; text-align: right; padding: 2px 6px; height: 22px;"></div></div>`;
-                itemDiv.addEventListener('click', () => { currentItem = item; refreshUI(); if (window.innerWidth <= 1000) closeSidebars(); });
+                const qtyInLoad = userLoadout[item.name] || 0;
+                
+                // Prevent click bubbling
+                itemDiv.onclick = () => { currentItem = item; refreshUI(); if (window.innerWidth <= 1000) closeSidebars(); };
+
+                const controlHtml = `
+                    <div class="item-actions" onclick="event.stopPropagation()">
+                        <button class="qty-btn" onclick="handleQtyClick(event, '${item.name.replace(/'/g, "\\'")}', -1)">-</button>
+                        <span class="qty-val">${qtyInLoad}</span>
+                        <button class="qty-btn" onclick="handleQtyClick(event, '${item.name.replace(/'/g, "\\'")}', 1)">+</button>
+                    </div>
+                `;
+
+                // Reorganized Item Row with Stock Input
+                itemDiv.innerHTML = `
+                    <div class="item-icon-box" style="background-image: url('${getImagePath(item.img)}')"></div>
+                    <div class="item-list-content">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span class="item-name">${item.name}</span>
+                            <div class="stock-widget">
+                                <span class="stock-label">STOCK</span>
+                                <input type="number" class="stock-input" value="${cStock}" onclick="event.stopPropagation()" oninput="updateStock('${item.name.replace(/'/g, "\\'")}', this.value)">
+                            </div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
+                            <div class="stock-display" style="font-size:9px;">${item.weight}g / ${item.max}</div>
+                             ${controlHtml}
+                        </div>
+                    </div>
+                `;
                 fragment.appendChild(itemDiv);
             });
             container.appendChild(fragment);
         }
+        
+        // CSS for new item actions
+        const style = document.createElement('style');
+        style.innerHTML = `
+            .item-actions { display: flex; align-items: center; gap: 2px; background: #000; border-radius: 4px; border: 1px solid var(--border); padding: 1px; height: 20px; }
+            .qty-btn { width: 18px; height: 100%; background: var(--card-bg); border: none; color: #aaa; border-radius: 2px; cursor: pointer; font-weight: 700; font-size: 10px; display: flex; align-items: center; justify-content: center; transition: 0.1s; }
+            .qty-btn:hover { background: var(--border); color: #fff; }
+            .qty-val { min-width: 20px; text-align: center; font-size: 10px; font-family: 'JetBrains Mono'; color: var(--accent); font-weight: 600; }
+            .stock-widget { display: flex; align-items: center; gap: 4px; background: #121214; border: 1px solid var(--border); border-radius: 3px; padding: 0 4px; height: 18px; }
+            .stock-label { font-size: 8px; color: #555; font-weight: 700; }
+            .stock-input { width: 30px; background: transparent; border: none; color: var(--text-dim); font-family: 'JetBrains Mono'; font-size: 9px; text-align: right; outline: none; }
+            .stock-input:focus { color: #fff; }
+        `;
+        document.head.appendChild(style);
 
         function showPrices(uiState) {
             const list = document.getElementById('profit-list');
@@ -897,7 +1151,7 @@
             publicPrices[priceKey] = sellVal;
             skipRender = true;
             if(rtdb) rtdb.ref(`public_commerce/prices/${priceKey}`).set(sellVal);
-            runManifests(getUIState());
+            recalcLoadout();
         }
 
         function updateStock(itemName, quantity) {
@@ -905,7 +1159,6 @@
             publicStocks[itemName] = qty;
             skipRender = true;
             if(rtdb) rtdb.ref(`public_commerce/stocks/${itemName}`).set(qty);
-            runManifests(getUIState());
         }
 
         function updateBasePrice(val) {
@@ -934,7 +1187,6 @@
             prefs.townRatings = townRatings; 
             prefs.city = selectedCity;
             
-            // Save Drawer States
             prefs.drawers = {};
             document.querySelectorAll('details').forEach(d => {
                 if(d.id) prefs.drawers[d.id] = d.open;
@@ -965,7 +1217,6 @@
             if (data.trader) document.getElementById('trader-qty').value = data.trader;
             if (data.trust) document.getElementById('trustworthy-qty').value = data.trust;
             
-            // Restore Drawers
             if (data.drawers) {
                 for (const [id, isOpen] of Object.entries(data.drawers)) {
                     const el = document.getElementById(id);
@@ -999,13 +1250,11 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             const saved = JSON.parse(localStorage.getItem('mabi_prefs')) || {};
-            
-            if (saved.townRatings) townRatings = saved.townRatings; // LOAD MAP
+            if (saved.townRatings) townRatings = saved.townRatings; 
 
             document.getElementById('mastery-rank').innerHTML = Object.keys(masteryRanks).map(r => `<option value="${r}">Rank ${r} (+${Math.round(masteryRanks[r]*100)}%)</option>`).join('');
             document.getElementById('letter-select').innerHTML = ["None", "Ogre", "Goblin", "Imp", "Irusan's (Special)"].map(n => `<option value="${n}">${n}</option>`).join('');
 
-            // --- Robust Event Listeners ---
             document.querySelectorAll('.transport-toggle').forEach(toggle => {
                 toggle.onchange = (e) => { transportOwnership[toggle.dataset.mount] = e.target.checked; savePrefs(); renderTransportTabs(); refreshUI(); };
             });
@@ -1014,11 +1263,8 @@
             });
             document.getElementById('merchant-rating-input').onchange = (e) => validateRating(e.target);
             
-            // Single listener for Fine Letter Check
             const fineCheck = document.getElementById('fine-letter-check');
-            if (fineCheck) {
-                fineCheck.onchange = () => { refreshUI(); savePrefs(); };
-            }
+            if (fineCheck) { fineCheck.onchange = () => { refreshUI(); savePrefs(); }; }
             
             ['trader-qty', 'trustworthy-qty', 'mastery-rank', 'letter-select', 'gm-check', 'william-likeability'].forEach(id => {
                 const el = document.getElementById(id);
@@ -1034,7 +1280,6 @@
                 renderTransportTabs(); refreshUI(); savePrefs(); 
             };
             
-            // 1. Load Local
             const localSaved = JSON.parse(localStorage.getItem('mabi_prefs')) || {};
             applySettings(localSaved);
 
@@ -1049,46 +1294,46 @@
             firebase.initializeApp(firebaseConfig);
             rtdb = firebase.database();
             auth = firebase.auth();
-            // CRITICAL FIX: Set persistence to ensure session carries over from other pages
             auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
             
             rtdb.ref('public_commerce/prices').on('value', (s) => { if (!skipRender) { publicPrices = s.val() || {}; refreshUI(); } skipRender = false; });
             rtdb.ref('public_commerce/stocks').on('value', (s) => { if (!skipRender) { publicStocks = s.val() || {}; refreshUI(); } skipRender = false; });
             rtdb.ref('public_commerce/base_prices').on('value', (s) => { if (!skipRender) { publicBasePrices = s.val() || {}; refreshUI(); } skipRender = false; });
             
-            // --- AUTHENTICATION LISTENER: UPDATED TO REMOVE TRANSFORMATION ---
             auth.onAuthStateChanged(user => {
                 const uInfo = document.getElementById('user-info');
                 const uAvatar = document.getElementById('user-avatar');
                 const status = document.getElementById('connection-status');
-                
+                const mobileUser = document.getElementById('user-display'); 
+
                 if (user) {
                     currentUser = user;
                     status.innerText = "Online";
                     status.style.color = "var(--accent)";
                     
-                    // 1. Initial fallback using email prefix (no transform)
-                    uInfo.textContent = user.email.split('@')[0];
+                    const name = user.email.split('@')[0];
+                    uInfo.textContent = name;
+                    if(mobileUser) mobileUser.textContent = name;
 
-                    // 2. Try instant load from local settings cache (no transform)
                     const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
                     if (cached.username) {
                         uInfo.textContent = cached.username;
+                        if(mobileUser) mobileUser.textContent = cached.username;
                     }
                     if(cached.avatar) uAvatar.style.backgroundImage = `url('${cached.avatar}')`;
 
-                    // 3. Real-time sync with database profile (no transform)
                     firebase.database().ref(`users/${user.uid}/profile`).on('value', (snap) => {
                         const profile = snap.val();
                         if (profile) {
-                            if(profile.username) uInfo.textContent = profile.username;
+                            if(profile.username) {
+                                uInfo.textContent = profile.username;
+                                if(mobileUser) mobileUser.textContent = profile.username;
+                            }
                             if(profile.avatar) uAvatar.style.backgroundImage = `url('${profile.avatar}')`;
-                            // Update local cache
                             localStorage.setItem('mabi_user_cache_' + user.uid, JSON.stringify(profile));
                         }
                     });
 
-                    // 2. Load Cloud Settings
                     firebase.database().ref(`users/${user.uid}/settings`).once('value', (snap) => {
                         const cloudPrefs = snap.val();
                         if(cloudPrefs) applySettings(cloudPrefs);
@@ -1097,6 +1342,7 @@
                 } else {
                     currentUser = { uid: 'local_guest', isGuest: true };
                     uInfo.textContent = "Guest";
+                    if(mobileUser) mobileUser.textContent = "GUEST";
                     status.innerText = "Local Mode";
                     status.style.color = "var(--text-dim)";
                 }
