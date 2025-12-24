@@ -268,6 +268,7 @@
             align-items: center; gap: 15px; font-size: 13px;
         }
         .market-row.head { background: var(--card-bg); font-weight: 600; color: var(--text-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; position: sticky; top: 0; z-index: 10; }
+        .market-row.active-dest { background: var(--accent-dim); border-left: 2px solid var(--accent); }
         
         .profit-val { font-family: 'JetBrains Mono', monospace; font-weight: 600; text-align: right; color: var(--accent); }
         .profit-val.negative { color: var(--danger); }
@@ -669,8 +670,9 @@
         let selectedCity = "Tir Chonaill";
         let townRatings = {}; 
 
-        // LOADOUT STATE
+        // Loadout State
         let userLoadout = {}; // { itemName: qty }
+        let selectedDestination = null; // New state for manual destination lock
 
         let currentUser = null;
         let saveTimeout = null;
@@ -713,7 +715,6 @@
                 commerceType: activeCommerceType,
                 transport: activeTransport,
                 city: selectedCity,
-                // UI State reads directly from input for active calculation
                 merchantRating: parseInt(document.getElementById('merchant-rating-input').value, 10) || 1,
                 trader: parseInt(document.getElementById('trader-qty').value, 10) || 0,
                 trust: parseInt(document.getElementById('trustworthy-qty').value, 10) || 0,
@@ -747,8 +748,6 @@
         function getActiveModifiers(uiState) {
             const masteryBonus = masteryRanks[uiState.mastery] || 0;
             const letterInfo = guaranteeLetters[uiState.letter] || guaranteeLetters["None"];
-            // FIXED: Using uiState.fine boolean properly to select correct key
-            // Note: For Barter mode, guarantee letters use reduced multipliers
             let letterMultiplier = (uiState.commerceType === "Barter") ? 
                 (uiState.fine ? letterInfo.fine_barter : letterInfo.barter) : 
                 (uiState.fine ? letterInfo.fine_normal : letterInfo.normal);
@@ -880,7 +879,10 @@
             const origin = selectedCity;
             if(!origin) return;
             const targetPool = (activeCommerceType === "Barter" ? citiesByType["Normal"] : citiesByType[activeCommerceType]);
-            const targets = targetPool.filter(c => c !== origin);
+            
+            // Respect selectedDestination if set
+            const targets = selectedDestination ? [selectedDestination] : targetPool.filter(c => c !== origin);
+            
             const originItems = (marketData[activeCommerceType] && marketData[activeCommerceType][origin]) || [];
             
             const result = calculateBestRouteForVector(origin, targets, originItems, uiState, activeTransport);
@@ -899,7 +901,9 @@
             const uiState = getUIState();
             const stats = getModifiedStats(activeTransport, uiState);
             const targetPool = (activeCommerceType === "Barter" ? citiesByType["Normal"] : citiesByType[activeCommerceType]);
-            const targets = targetPool.filter(c => c !== selectedCity);
+            
+            // If a manual destination is set, only calculate for that one. Otherwise search all.
+            const targets = selectedDestination ? [selectedDestination] : targetPool.filter(c => c !== selectedCity);
             
             let bestTotalProfit = 0;
             let bestDest = "-";
@@ -936,6 +940,9 @@
                 }
             });
 
+            // If we have a forced destination, force display even if negative/zero (optional, but good for feedback)
+            if (selectedDestination) bestDest = selectedDestination;
+
             const trip = {
                 dest: bestDest,
                 profit: bestTotalProfit,
@@ -957,7 +964,10 @@
                     activeCommerceType = type; 
                     const valid = citiesByType[type];
                     if(valid.length > 0) selectedCity = valid[0];
+                    
                     userLoadout = {}; 
+                    selectedDestination = null; // Reset manual destination on mode switch
+                    
                     renderCommerceTabs(); 
                     renderCityTabs(); 
                     renderTransportTabs(); 
@@ -1010,6 +1020,7 @@
                     selectedCity = city; 
                     document.getElementById('merchant-rating-input').value = townRatings[city] || 1;
                     userLoadout = {}; 
+                    selectedDestination = null; // Reset manual destination
                     renderCityTabs(); 
                     refreshUI(); 
                     savePrefs(); 
@@ -1057,13 +1068,16 @@
         function renderManifest(trip, boxId, listId, totalId) {
             const box = document.getElementById(boxId), list = document.getElementById(listId), total = document.getElementById(totalId);
             box.style.display = 'block';
-            if (!trip || trip.profit <= 0) {
-                document.getElementById('manifest-dest').innerText = "Target: -";
+            if (!trip || (trip.profit <= 0 && !selectedDestination)) {
+                document.getElementById('manifest-dest').innerText = selectedDestination ? `Target: ${selectedDestination} (0)` : "Target: -";
                 list.innerHTML = `<div style="color:var(--text-dim); font-size:10px; padding:10px; text-align:center;">Loadout Empty</div>`;
                 total.textContent = `+0`;
                 return;
             }
-            document.getElementById('manifest-dest').innerText = `Target: ${trip.dest}`;
+            
+            const isManual = selectedDestination === trip.dest;
+            document.getElementById('manifest-dest').innerText = `Target: ${trip.dest}${isManual ? ' (Locked)' : ''}`;
+            
             let slotHtml = '';
             let filled = 0;
             trip.items.forEach(item => {
@@ -1173,12 +1187,26 @@
                 const sellVal = getPrice(currentItem.name, city);
                 const res = calculateItemProfit(currentItem, city, uiState, sellVal);
                 const row = document.createElement('div');
-                row.className = 'market-row';
+                row.className = `market-row ${selectedDestination === city ? 'active-dest' : ''}`;
+                
+                // --- ONCLICK HANDLER FOR DESTINATION SELECTION ---
+                row.onclick = () => {
+                    // Toggle selection logic
+                    if (selectedDestination === city) {
+                         selectedDestination = null; // Deselect
+                    } else {
+                         selectedDestination = city; // Select new
+                    }
+                    refreshUI(); 
+                };
+
                 const priceInput = document.createElement('input');
                 priceInput.type = 'number';
                 priceInput.className = 'price-input input-dark';
                 priceInput.value = sellVal || '';
                 priceInput.style.textAlign = 'right';
+                // IMPORTANT: Stop propagation so clicking input doesn't trigger row selection
+                priceInput.onclick = (e) => e.stopPropagation(); 
                 priceInput.onfocus = function() { this.select(); };
                 priceInput.oninput = function() {
                    const val = this.value;
