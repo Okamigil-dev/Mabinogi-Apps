@@ -43,14 +43,41 @@
             flex-direction: column;
         }
 
+        /* Scrollbars */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+        /* --- Global Navigation --- */
+        .global-nav {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 0 20px;
+            height: 40px;
+            background: #050506; /* Slightly darker than sidebar for distinction */
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .global-nav a {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-decoration: none;
+            letter-spacing: 0.5px;
+            transition: color 0.2s;
+        }
+        .global-nav a:hover { color: #fff; }
+        .global-nav a.active { color: var(--accent); }
+
         /* Layout */
         .interface-container { 
             display: flex; 
             flex-direction: column; 
             height: 100%; 
             width: 100%; 
-            max-width: 1500px; 
-            margin: 0 auto; 
+            /* REMOVED max-width and margin to stretch screen */
             border-left: 1px solid var(--border); 
             border-right: 1px solid var(--border); 
         }
@@ -178,8 +205,12 @@
         @media (max-width: 1000px) {
             .content-grid { display: block; height: calc(100dvh - 50px); }
             .header-bar { display: none; }
+            
+            /* Hide Global Nav on Mobile */
+            .global-nav { display: none; }
+
             .mobile-nav { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border); height: 50px; flex-shrink: 0; z-index: 50; }
-            .nav-trigger { background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 14px; cursor: pointer; }
+            .nav-trigger { background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 14px; }
             .panel { position: fixed; top: 0; bottom: 0; width: 300px; z-index: 2000 !important; transition: 0.3s; visibility: hidden; }
             .left-panel.active { transform: translateX(0); visibility: visible; }
             .right-panel.active { transform: translateX(0); visibility: visible; }
@@ -205,25 +236,34 @@
     <div class="mobile-backdrop" id="mobile-backdrop" onclick="closeSidebars()"></div>
 
     <div class="interface-container">
+        <!-- GLOBAL NAVIGATION BAR -->
+        <nav class="global-nav">
+            <a href="index.html">HUB</a>
+            <a href="tracker.html">TRACKER</a>
+            <a href="barter.html" class="active">BARTER</a>
+            <a href="commerce.html">COMMERCE</a>
+        </nav>
+
         <div class="header-bar">
             <div class="title-section">
                 <div style="display:flex; align-items:center;">
-                    <span class="main-title">Barter Material Tracker</span>
+                    <span class="main-title">BARTER TRACKER</span>
                 </div>
                 <div style="display:flex; gap:15px; align-items:center;">
                     <span id="user-display" style="font-size:11px; color:var(--accent);">GUEST</span>
-                    <a href="index.html" class="hub-btn">Back to Hub</a>
                 </div>
             </div>
         </div>
 
         <div class="content-grid">
             <div class="panel left-panel" id="left-panel">
-                <!-- TRADE POST: RESTORED TO NON-DRAWER GRID -->
-                <div style="padding:20px; border-bottom:1px solid var(--border);">
-                    <label style="font-size:11px; font-weight:600; color:var(--text-dim); display:block; text-transform:uppercase; margin-bottom:10px;">Trade Post</label>
-                    <div id="town-tabs" class="tab-picker"></div>
-                </div>
+                <!-- TRADE POST DRAWER -->
+                <details class="drawer-wrap" open>
+                    <summary>Trade Post</summary>
+                    <div class="drawer-content">
+                        <div id="town-tabs" class="tab-picker"></div>
+                    </div>
+                </details>
 
                 <div id="catalog-container" class="item-list"></div>
             </div>
@@ -295,7 +335,7 @@
                 <!-- TRANSPORT B DRAWER -->
                 <details class="drawer-wrap" open>
                     <summary>
-                         <div style="display:flex; flex-direction:column; width:100%; align-items:flex-start;">
+                        <div style="display:flex; flex-direction:column; width:100%; align-items:flex-start;">
                             <div style="display:flex; justify-content:space-between; width:100%;">
                                 <span>Transport B</span>
                                 <span id="transport-stats-2" style="font-size:10px; color:var(--text-dim); font-family:'JetBrains Mono';">0 / 0 KG</span>
@@ -342,12 +382,9 @@
         const guaranteeLetters={"None":{normal:0,barter:0,fine_normal:0,fine_barter:0},"Ogre":{normal:0.30,barter:0.15,fine_normal:0.90,fine_barter:0.45},"Goblin":{normal:0.40,barter:0.20,fine_normal:1.20,fine_barter:0.60},"Imp":{normal:0.50,barter:0.25,fine_normal:1.50,fine_barter:0.75},"Irusan's (Special)":{normal:3.00,barter:0.75,fine_normal:3.00,fine_barter:0.75}};
         
         // --- Shared Settings (Defaults) ---
-        // These will be updated by the Firebase listener
         let userSettings = { mastery: '1', letter: 'None', fine: false, william: false, williamLike: 0, gm: false, trader: 0, trust: 0 };
 
         // Unified State for Barter UI (Synced with Shared Settings)
-        // Note: activeBuffs object is maintained for local UI state/transport calculation
-        // but its values are now driven by userSettings from DB
         let activeBuffs={gm:false,william:false,alpaca:false};
 
         const barterDb = [
@@ -656,25 +693,98 @@
             renderTable('crafted-tbody',need); renderTable('raw-tbody',raw);
         }
 
-        function renderTable(id,data){
-            const b=document.getElementById(id); b.innerHTML=''; const items=Object.keys(data).sort();
-            if(!items.length){ b.innerHTML='<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text-dim);">No materials needed</td></tr>'; return; }
-            items.forEach(item=>{
-                const n=Math.ceil(data[item]), h=ownedInventory[item]||0, def=n-h, tr=document.createElement('tr');
-                let statusDisplay = "";
-                if (def <= 0) {
-                    const weeks = Math.floor(h / n);
-                    statusDisplay = (weeks > 1 && isFinite(weeks)) ? `<span>${weeks} WEEKS</span>` : "<span>READY</span>";
+        function renderTable(tbodyId, data) {
+            const tbody = document.getElementById(tbodyId);
+            const currentKeys = Object.keys(data).sort();
+            const existingRows = new Set();
+            
+            // First pass: update existing rows, mark as seen
+            Array.from(tbody.children).forEach(row => {
+                const item = row.dataset.item;
+                if(data[item] !== undefined) {
+                    existingRows.add(item);
+                    updateRow(row, item, data[item]);
                 } else {
-                    statusDisplay = `<span>${def}</span>`;
+                    row.remove(); // Remove items no longer needed
                 }
-                tr.innerHTML=`<td><div class="cell-flex"></div></td><td><input type="number" class="owned-input" value="${h}"></td><td style="text-align:center;">${n}</td><td class="status-cell ${def<=0?'ready':'deficit'}">${statusDisplay}</td>`;
-                const icon=document.createElement('div'); icon.className='icon-small'; applyIcon(icon,item);
-                const span=document.createElement('span'); span.textContent=item;
-                tr.querySelector('.cell-flex').append(icon,span);
-                tr.querySelector('input').onchange=(e)=>{ ownedInventory[item]=parseInt(e.target.value)||0; calculateMaterials(); saveData(); };
-                b.appendChild(tr);
             });
+
+            // Second pass: create new rows
+            currentKeys.forEach(item => {
+                if(!existingRows.has(item)) {
+                    createRow(tbody, item, data[item]);
+                }
+            });
+
+            if(currentKeys.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text-dim);">No materials needed</td></tr>';
+            }
+        }
+
+        function updateRow(row, item, needed) {
+            const h = ownedInventory[item] || 0;
+            const def = needed - h;
+            
+            // Only update input value if it's NOT focused to prevent cursor jumping
+            const input = row.querySelector('.owned-input');
+            if(document.activeElement !== input) {
+                input.value = h;
+            }
+            
+            // Update Text Cells
+            row.children[2].innerText = Math.ceil(needed);
+            
+            const statusCell = row.children[3];
+            statusCell.className = `status-cell ${def<=0 ? 'ready' : 'deficit'}`;
+            
+            if (def <= 0) {
+                const weeks = Math.floor(h / needed);
+                statusCell.innerHTML = (weeks > 1 && isFinite(weeks)) ? `<span>${weeks} WEEKS</span>` : "<span>READY</span>";
+            } else {
+                statusCell.innerHTML = `<span>${def}</span>`;
+            }
+        }
+
+        function createRow(tbody, item, needed) {
+            const h = ownedInventory[item] || 0;
+            const def = needed - h;
+            const tr = document.createElement('tr');
+            tr.dataset.item = item; // Store item name for identification
+            
+            let statusHtml = "";
+            let statusClass = def <= 0 ? 'ready' : 'deficit';
+            
+            if (def <= 0) {
+                const weeks = Math.floor(h / needed);
+                statusHtml = (weeks > 1 && isFinite(weeks)) ? `<span>${weeks} WEEKS</span>` : "<span>READY</span>";
+            } else {
+                statusHtml = `<span>${def}</span>`;
+            }
+
+            tr.innerHTML = `
+                <td><div class="cell-flex"></div></td>
+                <td><input type="number" class="owned-input" value="${h}"></td>
+                <td style="text-align:center;">${Math.ceil(needed)}</td>
+                <td class="status-cell ${statusClass}">${statusHtml}</td>
+            `;
+
+            const icon = document.createElement('div'); 
+            icon.className = 'icon-small'; 
+            applyIcon(icon, item);
+            
+            const span = document.createElement('span'); 
+            span.textContent = item;
+            
+            tr.querySelector('.cell-flex').append(icon, span);
+            
+            // UPDATED: Use oninput for instant calculation
+            tr.querySelector('input').oninput = (e) => { 
+                ownedInventory[item] = parseInt(e.target.value) || 0; 
+                calculateMaterials(); 
+                saveData(); 
+            };
+            
+            tbody.appendChild(tr);
         }
 
         function completeTrip() {
@@ -689,37 +799,18 @@
             saveData();
         }
 
-        // --- UPDATED TOGGLE LISTENERS ---
-        // Updates BOTH local state AND shared database settings
         document.querySelectorAll('.toggle-input').forEach(chk=>{ 
             chk.onchange=(e)=>{ 
                 const id=e.target.id.replace('buff-',''); 
-                
-                // Logic to uncheck conflicting partners
-                if(id==='william'&&e.target.checked) document.getElementById('buff-alpaca').checked=false; 
-                if(id==='alpaca'&&e.target.checked) document.getElementById('buff-william').checked=false; 
-                
-                // Update Local
+                if(id==='william'&&e.target.checked) document.getElementById('buff-alpaca').checked=activeBuffs.alpaca=false; 
+                if(id==='alpaca'&&e.target.checked) document.getElementById('buff-william').checked=activeBuffs.william=false; 
                 activeBuffs[id]=e.target.checked; 
-                if(id==='william') activeBuffs.alpaca=false;
-                if(id==='alpaca') activeBuffs.william=false;
-
-                // Sync to Database
-                if(currentUser && !currentUser.isGuest) {
-                    const updates = {};
-                    updates[id] = e.target.checked;
-                    if(id === 'william' && e.target.checked) updates['alpaca'] = false;
-                    if(id === 'alpaca' && e.target.checked) updates['william'] = false;
-                    firebase.database().ref(`users/${currentUser.uid}/settings`).update(updates);
-                }
-
                 calculateLoadout(); 
                 renderTransportTabs(1);
                 renderTransportTabs(2);
                 saveData(); 
             }; 
         });
-
         window.toggleSidebar=(s)=>{document.getElementById(s+'-panel').classList.add('active');document.getElementById('mobile-backdrop').classList.add('active');};
         window.closeSidebars=()=>{document.getElementById('left-panel').classList.remove('active');document.getElementById('right-panel').classList.remove('active');document.getElementById('mobile-backdrop').classList.remove('active');};
         window.onload=calculateLoadout;
