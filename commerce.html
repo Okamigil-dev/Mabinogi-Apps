@@ -45,14 +45,14 @@
         ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
-        /* --- Global Navigation (Copy this to other pages) --- */
+        /* --- Global Navigation --- */
         .global-nav {
             display: flex;
             align-items: center;
             gap: 20px;
             padding: 0 20px;
             height: 40px;
-            background: #050506; /* Slightly darker than sidebar for distinction */
+            background: #050506;
             border-bottom: 1px solid var(--border);
             flex-shrink: 0;
         }
@@ -293,7 +293,7 @@
     <div class="interface-container">
         <!-- GLOBAL NAVIGATION BAR -->
         <nav class="global-nav">
-            <a href="index.html">HUB</a>
+            <a href="index.html">HOME</a>
             <a href="tracker.html">TRACKER</a>
             <a href="barter.html">BARTER</a>
             <a href="commerce.html" class="active">COMMERCE</a>
@@ -304,9 +304,13 @@
                 <div style="display:flex; align-items:center;">
                     <span class="main-title">TRADING POST</span>
                 </div>
-                <div style="display:flex; gap:15px; align-items:center;">
-                    <!-- Updated User Display: No Uppercase Transform -->
-                    <span id="user-display" style="font-size:11px; color:var(--accent);">GUEST</span>
+                <!-- User Profile Section -->
+                <div style="display:flex; gap:12px; align-items:center;">
+                    <div style="text-align:right;">
+                        <div id="user-info" style="font-size:12px; font-weight:600; color:var(--text-main);">Guest</div>
+                        <div id="connection-status" style="font-size:10px; color:var(--text-dim);">Local Mode</div>
+                    </div>
+                    <div id="user-avatar" style="width: 36px; height: 36px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; background-image: url('data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23a1a1aa\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E');"></div>
                 </div>
             </div>
         </div>
@@ -331,7 +335,6 @@
                 <details class="drawer-wrap" id="drawer-post" open>
                     <summary>
                         <span>Trading Post</span>
-                        <!-- FIXED: stopPropagation on click AND mousedown to prevent drawer toggle -->
                         <div style="margin-left:auto; display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
                             <span style="font-size:10px; color:var(--text-dim);">RATING</span>
                             <input type="number" id="merchant-rating-input" class="input-dark" style="width:45px; padding:2px; height:24px; text-align:center;" min="1" max="9" value="1" oninput="validateRating(this)" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
@@ -530,7 +533,7 @@
         let activeTransport = "Elephant";
         let activeCommerceType = "Normal";
         let selectedCity = "Tir Chonaill";
-        let townRatings = {}; 
+        let townRatings = {}; // NEW STATE FOR RATINGS
 
         let currentUser = null;
         let saveTimeout = null;
@@ -626,14 +629,7 @@
                 else if (like >= 130) williamBonus = 0.02;
                 else if (like >= 80) williamBonus = 0.01;
             }
-            
-            const total = (1 + masteryBonus + letterMultiplier + williamBonus);
-            
-            // Update visual bonus indicator
-            const disp = document.getElementById('modifier-display');
-            if(disp) disp.innerText = `(Bonus: +${Math.round((total - 1) * 100)}%)`;
-            
-            return { totalMultiplier: total };
+            return { totalMultiplier: (1 + masteryBonus + letterMultiplier + williamBonus) };
         }
 
         function calculateItemProfit(item, targetCity, uiState, sellPriceOverride = null) {
@@ -936,7 +932,10 @@
             if(val < 1) val = 1;
             if(val > 9) val = 9;
             input.value = val;
+            
+            // Save specific rating for current town
             townRatings[selectedCity] = val;
+            
             refreshUI();
             savePrefs();
         }
