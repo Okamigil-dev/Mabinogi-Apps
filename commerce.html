@@ -189,7 +189,6 @@
         }
         input:checked + .toggle-switch { background: var(--accent); }
         input:checked + .toggle-switch::after { transform: translateX(16px); }
-        /* UPDATED: Opacity 0 instead of display:none for better event handling */
         .toggle-input { opacity: 0; position: absolute; }
 
         /* --- Manifest Box --- */
@@ -273,7 +272,6 @@
                     <span class="main-title">TRADING POST</span>
                 </div>
                 <div style="display:flex; gap:15px; align-items:center;">
-                    <!-- Updated User Display: No Uppercase Transform -->
                     <span id="user-display" style="font-size:11px; color:var(--accent);">GUEST</span>
                     <a href="index.html" class="hub-btn">Back to Hub</a>
                 </div>
@@ -300,7 +298,6 @@
                 <details class="drawer-wrap" id="drawer-post" open>
                     <summary>
                         <span>Trading Post</span>
-                        <!-- FIXED: stopPropagation on click AND mousedown to prevent drawer toggle -->
                         <div style="margin-left:auto; display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
                             <span style="font-size:10px; color:var(--text-dim);">RATING</span>
                             <input type="number" id="merchant-rating-input" class="input-dark" style="width:45px; padding:2px; height:24px; text-align:center;" min="1" max="9" value="1" oninput="validateRating(this)" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
@@ -344,7 +341,10 @@
             <div class="panel right-panel" id="right-panel">
                 <!-- RIGHT SIDE DRAWER 1: PROFIT MODIFIERS -->
                 <details class="drawer-wrap" id="drawer-profit" open>
-                    <summary>Profit Modifiers</summary>
+                    <summary>
+                        <span>Profit Modifiers</span>
+                        <span id="modifier-display" style="font-size:10px; color:var(--accent); margin-left:auto;"></span>
+                    </summary>
                     <div style="padding: 0 20px 15px 20px;">
                         <label class="panel-label">Mastery Rank</label>
                         <select id="mastery-rank" class="input-dark" style="margin-bottom:12px;"></select>
@@ -353,7 +353,6 @@
                         <div style="display:flex; gap:8px;">
                             <select id="letter-select" class="input-dark" style="flex:1;"></select>
                             <label style="display:flex; align-items:center; gap:5px; cursor:pointer;">
-                                <!-- FIXED TOGGLE: Uses generic class for easy styling/JS selection -->
                                 <input type="checkbox" id="fine-letter-check" class="toggle-input">
                                 <div class="toggle-switch"></div>
                                 <span style="font-size:11px; color:#aaa; margin-left: 8px;">Fine</span>
@@ -772,7 +771,11 @@
         }
 
         function refreshUI() {
-            if (document.activeElement && (document.activeElement.classList.contains('input-dark'))) return;
+            // FIXED: Only prevent refresh if typing in a PRICE INPUT. 
+            // Allow refresh for sidebar toggles/selects even if they are active.
+            const active = document.activeElement;
+            if (active && active.classList.contains('price-input')) return;
+
             const uiState = getUIState(); 
             updateMarketItems(uiState); 
             showPrices(uiState); 
@@ -833,8 +836,6 @@
                 const res = calculateItemProfit(currentItem, city, uiState, sellVal);
                 const row = document.createElement('div');
                 row.className = 'market-row';
-                
-                // Add input event to update siblings immediately
                 const priceInput = document.createElement('input');
                 priceInput.type = 'number';
                 priceInput.className = 'price-input input-dark';
@@ -844,7 +845,6 @@
                 priceInput.oninput = function() {
                    const val = this.value;
                    updatePrice(city, val);
-                   // Immediate UI update
                    const newVal = parseInt(val) || 0;
                    const updatedRes = calculateItemProfit(currentItem, city, getUIState(), newVal);
                    row.querySelector('.profit-val').textContent = updatedRes.profit.toLocaleString();
@@ -852,7 +852,6 @@
                    if(updatedRes.profit < 0) row.querySelector('.profit-val').classList.add('negative');
                    else row.querySelector('.profit-val').classList.remove('negative');
                 };
-
                 row.innerHTML = `<div><b>${city}</b></div><div></div><div class="profit-val ${res.profit < 0 ? 'negative' : ''}">${res.profit.toLocaleString()}</div><div class="score-val">${res.score.toLocaleString()}</div>`;
                 row.children[1].appendChild(priceInput);
                 fragment.appendChild(row);
@@ -933,47 +932,39 @@
 
             document.getElementById('mastery-rank').innerHTML = Object.keys(masteryRanks).map(r => `<option value="${r}">Rank ${r} (+${Math.round(masteryRanks[r]*100)}%)</option>`).join('');
             document.getElementById('letter-select').innerHTML = ["None", "Ogre", "Goblin", "Imp", "Irusan's (Special)"].map(n => `<option value="${n}">${n}</option>`).join('');
+
+            // --- Robust Event Listeners ---
             document.querySelectorAll('.transport-toggle').forEach(toggle => {
                 toggle.onchange = (e) => { transportOwnership[toggle.dataset.mount] = e.target.checked; savePrefs(); renderTransportTabs(); refreshUI(); };
             });
-            document.getElementById('merchant-rating-input').onchange = (e) => validateRating(e.target);
-            ['trader-qty', 'trustworthy-qty', 'mastery-rank', 'letter-select', 'fine-letter-check', 'gm-check', 'william-likeability'].forEach(id => {
-                document.getElementById(id).onchange = () => { refreshUI(); savePrefs(); };
+            document.querySelectorAll('details').forEach(d => {
+                d.ontoggle = () => { savePrefs(); }
             });
-            document.getElementById('william-check').onchange = function() { if (this.checked) document.getElementById('alpaca-check').checked = false; refreshUI(); savePrefs(); };
-            document.getElementById('alpaca-check').onchange = function() { if (this.checked) document.getElementById('william-check').checked = false; renderTransportTabs(); refreshUI(); savePrefs(); };
+            document.getElementById('merchant-rating-input').onchange = (e) => validateRating(e.target);
             
-            // Fixed: Load fine letter checkbox state and attach listener correctly
+            // Single listener for Fine Letter Check
             const fineCheck = document.getElementById('fine-letter-check');
             if (fineCheck) {
                 fineCheck.onchange = () => { refreshUI(); savePrefs(); };
             }
             
-            if (saved.commerceType) activeCommerceType = saved.commerceType;
-            if (saved.city) selectedCity = saved.city;
-            
-            // Set initial rating from map if available
-            document.getElementById('merchant-rating-input').value = townRatings[selectedCity] || 1;
-            
-            if (saved.activeTransport) activeTransport = saved.activeTransport;
-            if (saved.transports) transportOwnership = saved.transports;
-            Object.keys(transportOwnership).forEach(key => {
-                const toggle = document.querySelector(`.transport-toggle[data-mount="${key}"]`);
-                if(toggle) toggle.checked = transportOwnership[key];
+            ['trader-qty', 'trustworthy-qty', 'mastery-rank', 'letter-select', 'gm-check', 'william-likeability'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.onchange = () => { refreshUI(); savePrefs(); };
             });
 
-            // --- RESTORE MISSING PREFS ---
-            if (saved.mastery) document.getElementById('mastery-rank').value = saved.mastery;
-            if (saved.letter) document.getElementById('letter-select').value = saved.letter;
-            if (saved.fine !== undefined && fineCheck) fineCheck.checked = saved.fine;
-            if (saved.gm !== undefined) document.getElementById('gm-check').checked = saved.gm;
-            if (saved.william !== undefined) document.getElementById('william-check').checked = saved.william;
-            if (saved.williamLike) document.getElementById('william-likeability').value = saved.williamLike;
-            if (saved.alpaca !== undefined) document.getElementById('alpaca-check').checked = saved.alpaca;
-            if (saved.trader) document.getElementById('trader-qty').value = saved.trader;
-            if (saved.trust) document.getElementById('trustworthy-qty').value = saved.trust;
+            document.getElementById('william-check').onchange = function() { 
+                if (this.checked) document.getElementById('alpaca-check').checked = false; 
+                refreshUI(); savePrefs(); 
+            };
+            document.getElementById('alpaca-check').onchange = function() { 
+                if (this.checked) document.getElementById('william-check').checked = false; 
+                renderTransportTabs(); refreshUI(); savePrefs(); 
+            };
             
-            renderCommerceTabs(); renderTransportTabs(); renderCityTabs(); refreshUI();
+            // 1. Load Local
+            const localSaved = JSON.parse(localStorage.getItem('mabi_prefs')) || {};
+            applySettings(localSaved);
 
             const firebaseConfig = {
                 apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM",
@@ -1010,16 +1001,61 @@
                         const profile = snap.val();
                         if (profile && profile.username) {
                             displayElem.textContent = profile.username;
-                            // Update local cache
                             localStorage.setItem('mabi_user_cache_' + user.uid, JSON.stringify(profile));
                         }
                     });
+
+                    // 2. Load Cloud Settings
+                    firebase.database().ref(`users/${user.uid}/settings`).once('value', (snap) => {
+                        const cloudPrefs = snap.val();
+                        if(cloudPrefs) applySettings(cloudPrefs);
+                    });
+
                 } else {
                     currentUser = { uid: 'local_guest', isGuest: true };
                     displayElem.textContent = "GUEST";
                 }
             });
         });
+
+        // Add applySettings function which was missing in your last paste
+        function applySettings(data) {
+            if (!data) return;
+            if (data.townRatings) townRatings = data.townRatings;
+            if (data.commerceType) activeCommerceType = data.commerceType;
+            if (data.city) selectedCity = data.city;
+            if (data.activeTransport) activeTransport = data.activeTransport;
+            if (data.transports) transportOwnership = data.transports;
+            if (data.mastery) document.getElementById('mastery-rank').value = data.mastery;
+            if (data.letter) document.getElementById('letter-select').value = data.letter;
+            const fineCheck = document.getElementById('fine-letter-check');
+            if (fineCheck && data.fine !== undefined) fineCheck.checked = data.fine;
+            if (data.gm !== undefined) document.getElementById('gm-check').checked = data.gm;
+            if (data.william !== undefined) document.getElementById('william-check').checked = data.william;
+            if (data.williamLike) document.getElementById('william-likeability').value = data.williamLike;
+            if (data.alpaca !== undefined) document.getElementById('alpaca-check').checked = data.alpaca;
+            if (data.trader) document.getElementById('trader-qty').value = data.trader;
+            if (data.trust) document.getElementById('trustworthy-qty').value = data.trust;
+            
+            // Restore Drawers
+            if (data.drawers) {
+                for (const [id, isOpen] of Object.entries(data.drawers)) {
+                    const el = document.getElementById(id);
+                    if (el) el.open = isOpen;
+                }
+            }
+
+            document.getElementById('merchant-rating-input').value = townRatings[selectedCity] || 1;
+            Object.keys(transportOwnership).forEach(key => {
+                const toggle = document.querySelector(`.transport-toggle[data-mount="${key}"]`);
+                if(toggle) toggle.checked = transportOwnership[key];
+            });
+
+            renderCommerceTabs(); 
+            renderTransportTabs(); 
+            renderCityTabs(); 
+            refreshUI();
+        }
     </script>
 </body>
 </html>
