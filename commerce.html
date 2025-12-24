@@ -372,7 +372,7 @@
                 </div>
                 
                 <div class="mobile-only" style="padding: 10px 15px; border-bottom: 1px solid var(--border);">
-                    <button class="hub-btn" style="width:100%; text-align:center;" onclick="window.location.href='index.html'">← Back to Hub</button>
+                    <button class="hub-btn" style="width:100%; text-align:center;" onclick="window.location.href='index.html'">Home</button>
                 </div>
 
                 <div class="user-profile-box mobile-only">
@@ -419,9 +419,16 @@
                     <div class="big-icon" id="center-item-icon"></div>
                     <div class="item-title-box">
                         <div class="item-title-large" id="center-item-title">Select Item</div>
-                        <div style="display:grid; grid-template-columns: 1fr 1fr 1.5fr; align-items: center; width: 100%; margin-top: 8px;">
+                        <div style="display:grid; grid-template-columns: 0.8fr 0.8fr 1fr 1.2fr; align-items: center; width: 100%; margin-top: 8px; gap: 8px;">
                             <div class="item-inventory" id="weight-display" style="text-align: left;">Weight: -</div>
                             <div class="item-inventory" id="stack-display" style="text-align: center;">Stack: -</div>
+                            
+                            <!-- MOVED: Stock Input -->
+                            <div id="stock-container" style="display:none; align-items:center; gap:4px; justify-content:center;">
+                                <span style="font-size:10px; color:var(--text-dim); font-weight:700;">STOCK</span>
+                                <input type="number" id="stock-input" class="input-dark" style="padding:4px; text-align:center;" oninput="updateCenterStock(this.value)" onfocus="this.select()">
+                            </div>
+
                             <div id="base-price-container" style="display:none; justify-content: flex-end; align-items: center; gap: 8px;">
                                 <span style="font-size: 10px; color: var(--text-dim); font-weight: 600;">BASE</span>
                                 <input type="number" id="base-price-input" class="input-dark" style="width: 70px; text-align: right; padding: 4px;" onchange="updateBasePrice(this.value)" onfocus="this.select()">
@@ -689,6 +696,8 @@
         function getActiveModifiers(uiState) {
             const masteryBonus = masteryRanks[uiState.mastery] || 0;
             const letterInfo = guaranteeLetters[uiState.letter] || guaranteeLetters["None"];
+            // FIXED: Using uiState.fine boolean properly to select correct key
+            // Note: For Barter mode, guarantee letters use reduced multipliers
             let letterMultiplier = (uiState.commerceType === "Barter") ? 
                 (uiState.fine ? letterInfo.fine_barter : letterInfo.barter) : 
                 (uiState.fine ? letterInfo.fine_normal : letterInfo.normal);
@@ -703,6 +712,7 @@
             }
             const total = (1 + masteryBonus + letterMultiplier + williamBonus);
             
+            // Update visual bonus indicator
             const disp = document.getElementById('modifier-display');
             if(disp) disp.innerText = `(Bonus: +${Math.round((total - 1) * 100)}%)`;
             
@@ -716,9 +726,11 @@
             const stats = getModifiedStats(uiState.transport, uiState);
             const load = Math.min(Math.floor(stats.weight / item.weight), stats.slots * item.max, item.limit);
             
+            // Item Profit Logic: Total Base Profit for stack * Multiplier
             const baseProfit = (sellVal !== "" && sellVal > 0) ? (sellVal - dBuy) * load : 0;
             const mods = getActiveModifiers(uiState);
             
+            // Multiplier applies to PROFIT only
             let finalProfit = baseProfit > 0 ? Math.floor(baseProfit * mods.totalMultiplier) : baseProfit;
             
             const divisor = (uiState.commerceType === "Barter") ? 34 : 17;
@@ -811,6 +823,11 @@
                 updateLoadout(itemName, dir);
             }
         }
+        
+        function updateCenterStock(val) {
+            if(!currentItem) return;
+            updateStock(currentItem.name, val);
+        }
 
         function autoFillLoadout() {
             const uiState = getUIState();
@@ -883,6 +900,7 @@
             renderManifest(trip, 'manifest-box', 'manifest-list', 'manifest-total');
         }
 
+
         function renderCommerceTabs() {
             const container = document.getElementById('commerce-type-tabs');
             if (!container) return;
@@ -894,11 +912,14 @@
                     activeCommerceType = type; 
                     const valid = citiesByType[type];
                     if(valid.length > 0) selectedCity = valid[0];
-                    userLoadout = {}; 
+                    userLoadout = {}; // Clear loadout on mode change
                     renderCommerceTabs(); 
                     renderCityTabs(); 
                     renderTransportTabs(); 
+                    
+                    // Update rating input for new city
                     document.getElementById('merchant-rating-input').value = townRatings[selectedCity] || 1;
+                    
                     refreshUI(); 
                     savePrefs(); 
                 };
@@ -945,8 +966,12 @@
                 btn.className = `picker-btn ${selectedCity === city ? 'active' : ''}`;
                 btn.onclick = () => { 
                     selectedCity = city; 
+                    
+                    // Update rating input for selected city
                     document.getElementById('merchant-rating-input').value = townRatings[city] || 1;
-                    userLoadout = {}; 
+                    
+                    userLoadout = {}; // Clear loadout on city change? Maybe safer.
+                    
                     renderCityTabs(); 
                     refreshUI(); 
                     savePrefs(); 
@@ -976,6 +1001,7 @@
                     const effP = rawUnitP > 0 ? (rawUnitP * mods.totalMultiplier) : rawUnitP;
                     return { ...item, rawUnitP, dBuy, sellVal, eff: effP / Math.max(1, item.weight) };
                 }).filter(i => i.rawUnitP > 0).sort((a, b) => b.eff - a.eff);
+                
                 potential.forEach(item => {
                     const stock = getStock(item.name);
                     let qty = Math.min(Math.floor(remWeight / item.weight), remSlots * item.max, item.limit, stock);
@@ -993,13 +1019,16 @@
 
         function renderManifest(trip, boxId, listId, totalId) {
             const box = document.getElementById(boxId), list = document.getElementById(listId), total = document.getElementById(totalId);
+            // Always show box if we have controls, but show empty msg if no trip
             box.style.display = 'block';
+            
             if (!trip || trip.profit <= 0) {
                 document.getElementById('manifest-dest').innerText = "Target: -";
                 list.innerHTML = `<div style="color:var(--text-dim); font-size:10px; padding:10px; text-align:center;">Loadout Empty</div>`;
                 total.textContent = `+0`;
                 return;
             }
+            
             document.getElementById('manifest-dest').innerText = `Target: ${trip.dest}`;
             let slotHtml = '';
             let filled = 0;
@@ -1019,12 +1048,16 @@
         function refreshUI() {
             const active = document.activeElement;
             if (active && active.classList.contains('price-input')) return;
+
             const uiState = getUIState(); 
             updateMarketItems(uiState); 
             showPrices(uiState); 
             updatePreview(uiState); 
             updateTownIcon(); 
+            
+            // Instead of running manifest algorithm, we recalc based on userLoadout
             recalcLoadout(); 
+
             const wCheck = document.getElementById('william-check');
             const wBox = document.getElementById('william-like-box');
             if(wCheck && wBox) wBox.style.display = wCheck.checked ? 'flex' : 'none';
@@ -1039,6 +1072,14 @@
             document.getElementById('base-price-container').style.display = 'flex';
             document.getElementById('weight-display').textContent = `Weight: ${currentItem.weight}`;
             document.getElementById('stack-display').textContent = `Stack: ${currentItem.max}`;
+            
+            // Update center stock input
+            const currentStock = getStock(currentItem.name);
+            const stockInput = document.getElementById('stock-input');
+            if (stockInput && document.activeElement !== stockInput) {
+                stockInput.value = currentStock;
+            }
+            document.getElementById('stock-container').style.display = 'flex';
         }
 
         function updateTownIcon() {
@@ -1060,9 +1101,11 @@
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'inventory-item' + (isSelected ? ' selected-item' : '');
                 const cStock = getStock(item.name);
+                
+                // --- NEW QTY CONTROLS ---
                 const qtyInLoad = userLoadout[item.name] || 0;
                 
-                // Prevent click bubbling
+                // Prevent click bubbling for buttons
                 itemDiv.onclick = () => { currentItem = item; refreshUI(); if (window.innerWidth <= 1000) closeSidebars(); };
 
                 const controlHtml = `
@@ -1073,16 +1116,11 @@
                     </div>
                 `;
 
-                // Reorganized Item Row with Stock Input
                 itemDiv.innerHTML = `
                     <div class="item-icon-box" style="background-image: url('${getImagePath(item.img)}')"></div>
                     <div class="item-list-content">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <span class="item-name">${item.name}</span>
-                            <div class="stock-widget">
-                                <span class="stock-label">STOCK</span>
-                                <input type="number" class="stock-input" value="${cStock}" onclick="event.stopPropagation()" oninput="updateStock('${item.name.replace(/'/g, "\\'")}', this.value)">
-                            </div>
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
                             <div class="stock-display" style="font-size:9px;">${item.weight}g / ${item.max}</div>
@@ -1102,10 +1140,7 @@
             .qty-btn { width: 18px; height: 100%; background: var(--card-bg); border: none; color: #aaa; border-radius: 2px; cursor: pointer; font-weight: 700; font-size: 10px; display: flex; align-items: center; justify-content: center; transition: 0.1s; }
             .qty-btn:hover { background: var(--border); color: #fff; }
             .qty-val { min-width: 20px; text-align: center; font-size: 10px; font-family: 'JetBrains Mono'; color: var(--accent); font-weight: 600; }
-            .stock-widget { display: flex; align-items: center; gap: 4px; background: #121214; border: 1px solid var(--border); border-radius: 3px; padding: 0 4px; height: 18px; }
-            .stock-label { font-size: 8px; color: #555; font-weight: 700; }
-            .stock-input { width: 30px; background: transparent; border: none; color: var(--text-dim); font-family: 'JetBrains Mono'; font-size: 9px; text-align: right; outline: none; }
-            .stock-input:focus { color: #fff; }
+            .stock-display { font-size: 10px; color: var(--text-dim); }
         `;
         document.head.appendChild(style);
 
@@ -1159,6 +1194,7 @@
             publicStocks[itemName] = qty;
             skipRender = true;
             if(rtdb) rtdb.ref(`public_commerce/stocks/${itemName}`).set(qty);
+            // Don't auto-run manifests
         }
 
         function updateBasePrice(val) {
@@ -1184,13 +1220,8 @@
             const prefs = getUIState();
             prefs.transports = transportOwnership;
             prefs.activeTransport = activeTransport;
-            prefs.townRatings = townRatings; 
-            prefs.city = selectedCity;
-            
-            prefs.drawers = {};
-            document.querySelectorAll('details').forEach(d => {
-                if(d.id) prefs.drawers[d.id] = d.open;
-            });
+            prefs.city = document.getElementById('city-select').value;
+            prefs.townRatings = townRatings; // SAVE MAP
 
             localStorage.setItem('mabi_prefs', JSON.stringify(prefs));
             if (currentUser && rtdb) {
@@ -1217,6 +1248,7 @@
             if (data.trader) document.getElementById('trader-qty').value = data.trader;
             if (data.trust) document.getElementById('trustworthy-qty').value = data.trust;
             
+            // Restore Drawers
             if (data.drawers) {
                 for (const [id, isOpen] of Object.entries(data.drawers)) {
                     const el = document.getElementById(id);
@@ -1250,11 +1282,13 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             const saved = JSON.parse(localStorage.getItem('mabi_prefs')) || {};
-            if (saved.townRatings) townRatings = saved.townRatings; 
+            
+            if (saved.townRatings) townRatings = saved.townRatings; // LOAD MAP
 
             document.getElementById('mastery-rank').innerHTML = Object.keys(masteryRanks).map(r => `<option value="${r}">Rank ${r} (+${Math.round(masteryRanks[r]*100)}%)</option>`).join('');
             document.getElementById('letter-select').innerHTML = ["None", "Ogre", "Goblin", "Imp", "Irusan's (Special)"].map(n => `<option value="${n}">${n}</option>`).join('');
 
+            // --- Robust Event Listeners ---
             document.querySelectorAll('.transport-toggle').forEach(toggle => {
                 toggle.onchange = (e) => { transportOwnership[toggle.dataset.mount] = e.target.checked; savePrefs(); renderTransportTabs(); refreshUI(); };
             });
@@ -1263,8 +1297,11 @@
             });
             document.getElementById('merchant-rating-input').onchange = (e) => validateRating(e.target);
             
+            // Single listener for Fine Letter Check
             const fineCheck = document.getElementById('fine-letter-check');
-            if (fineCheck) { fineCheck.onchange = () => { refreshUI(); savePrefs(); }; }
+            if (fineCheck) {
+                fineCheck.onchange = () => { refreshUI(); savePrefs(); };
+            }
             
             ['trader-qty', 'trustworthy-qty', 'mastery-rank', 'letter-select', 'gm-check', 'william-likeability'].forEach(id => {
                 const el = document.getElementById(id);
@@ -1280,6 +1317,7 @@
                 renderTransportTabs(); refreshUI(); savePrefs(); 
             };
             
+            // 1. Load Local
             const localSaved = JSON.parse(localStorage.getItem('mabi_prefs')) || {};
             applySettings(localSaved);
 
@@ -1294,46 +1332,39 @@
             firebase.initializeApp(firebaseConfig);
             rtdb = firebase.database();
             auth = firebase.auth();
+            // CRITICAL FIX: Set persistence to ensure session carries over from other pages
             auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
             
             rtdb.ref('public_commerce/prices').on('value', (s) => { if (!skipRender) { publicPrices = s.val() || {}; refreshUI(); } skipRender = false; });
             rtdb.ref('public_commerce/stocks').on('value', (s) => { if (!skipRender) { publicStocks = s.val() || {}; refreshUI(); } skipRender = false; });
             rtdb.ref('public_commerce/base_prices').on('value', (s) => { if (!skipRender) { publicBasePrices = s.val() || {}; refreshUI(); } skipRender = false; });
             
+            // --- AUTHENTICATION LISTENER: UPDATED TO REMOVE TRANSFORMATION ---
             auth.onAuthStateChanged(user => {
-                const uInfo = document.getElementById('user-info');
-                const uAvatar = document.getElementById('user-avatar');
-                const status = document.getElementById('connection-status');
-                const mobileUser = document.getElementById('user-display'); 
-
+                const displayElem = document.getElementById('user-display');
                 if (user) {
                     currentUser = user;
-                    status.innerText = "Online";
-                    status.style.color = "var(--accent)";
                     
-                    const name = user.email.split('@')[0];
-                    uInfo.textContent = name;
-                    if(mobileUser) mobileUser.textContent = name;
+                    // 1. Initial fallback using email prefix (no transform)
+                    displayElem.textContent = user.email.split('@')[0];
 
+                    // 2. Try instant load from local settings cache (no transform)
                     const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
                     if (cached.username) {
-                        uInfo.textContent = cached.username;
-                        if(mobileUser) mobileUser.textContent = cached.username;
+                        displayElem.textContent = cached.username;
                     }
-                    if(cached.avatar) uAvatar.style.backgroundImage = `url('${cached.avatar}')`;
 
+                    // 3. Real-time sync with database profile (no transform)
                     firebase.database().ref(`users/${user.uid}/profile`).on('value', (snap) => {
                         const profile = snap.val();
-                        if (profile) {
-                            if(profile.username) {
-                                uInfo.textContent = profile.username;
-                                if(mobileUser) mobileUser.textContent = profile.username;
-                            }
-                            if(profile.avatar) uAvatar.style.backgroundImage = `url('${profile.avatar}')`;
+                        if (profile && profile.username) {
+                            displayElem.textContent = profile.username;
+                            // Update local cache
                             localStorage.setItem('mabi_user_cache_' + user.uid, JSON.stringify(profile));
                         }
                     });
 
+                    // 2. Load Cloud Settings
                     firebase.database().ref(`users/${user.uid}/settings`).once('value', (snap) => {
                         const cloudPrefs = snap.val();
                         if(cloudPrefs) applySettings(cloudPrefs);
@@ -1341,10 +1372,7 @@
 
                 } else {
                     currentUser = { uid: 'local_guest', isGuest: true };
-                    uInfo.textContent = "Guest";
-                    if(mobileUser) mobileUser.textContent = "GUEST";
-                    status.innerText = "Local Mode";
-                    status.style.color = "var(--text-dim)";
+                    displayElem.textContent = "GUEST";
                 }
             });
         });
