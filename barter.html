@@ -179,7 +179,7 @@
             .content-grid { display: block; height: calc(100dvh - 50px); }
             .header-bar { display: none; }
             .mobile-nav { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border); height: 50px; flex-shrink: 0; z-index: 50; }
-            .nav-trigger { background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 14px; }
+            .nav-trigger { background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 14px; cursor: pointer; }
             .panel { position: fixed; top: 0; bottom: 0; width: 300px; z-index: 2000 !important; transition: 0.3s; visibility: hidden; }
             .left-panel.active { transform: translateX(0); visibility: visible; }
             .right-panel.active { transform: translateX(0); visibility: visible; }
@@ -219,6 +219,7 @@
 
         <div class="content-grid">
             <div class="panel left-panel" id="left-panel">
+                <!-- TRADE POST: RESTORED TO NON-DRAWER GRID -->
                 <div style="padding:20px; border-bottom:1px solid var(--border);">
                     <label style="font-size:11px; font-weight:600; color:var(--text-dim); display:block; text-transform:uppercase; margin-bottom:10px;">Trade Post</label>
                     <div id="town-tabs" class="tab-picker"></div>
@@ -271,7 +272,7 @@
                     </div>
                 </details>
 
-                <!-- TRANSPORT A DRAWER (UPDATED HEADER) -->
+                <!-- TRANSPORT A DRAWER -->
                 <details class="drawer-wrap" open>
                     <summary>
                         <div style="display:flex; flex-direction:column; width:100%; align-items:flex-start;">
@@ -291,7 +292,7 @@
                     </div>
                 </details>
 
-                <!-- TRANSPORT B DRAWER (UPDATED HEADER) -->
+                <!-- TRANSPORT B DRAWER -->
                 <details class="drawer-wrap" open>
                     <summary>
                          <div style="display:flex; flex-direction:column; width:100%; align-items:flex-start;">
@@ -336,6 +337,19 @@
 
         const commerceTowns = ["Tir Chonaill", "Dunbarton", "Bangor", "Emain Macha", "Taillteann", "Tara", "Cobh", "Belvast", "Qilla", "Cor", "Vales", "Filia"];
 
+        // --- PROFIT MULTIPLIER LOGIC IMPORTED FROM COMMERCE ---
+        const masteryRanks={"1":0.15,"2":0.14,"3":0.13,"4":0.12,"5":0.11,"6":0.10,"7":0.09,"8":0.08,"9":0.07,"A":0.06,"B":0.05,"C":0.04,"D":0.03,"E":0.02,"F":0.01};
+        const guaranteeLetters={"None":{normal:0,barter:0,fine_normal:0,fine_barter:0},"Ogre":{normal:0.30,barter:0.15,fine_normal:0.90,fine_barter:0.45},"Goblin":{normal:0.40,barter:0.20,fine_normal:1.20,fine_barter:0.60},"Imp":{normal:0.50,barter:0.25,fine_normal:1.50,fine_barter:0.75},"Irusan's (Special)":{normal:3.00,barter:0.75,fine_normal:3.00,fine_barter:0.75}};
+        
+        // --- Shared Settings (Defaults) ---
+        // These will be updated by the Firebase listener
+        let userSettings = { mastery: '1', letter: 'None', fine: false, william: false, williamLike: 0, gm: false, trader: 0, trust: 0 };
+
+        // Unified State for Barter UI (Synced with Shared Settings)
+        // Note: activeBuffs object is maintained for local UI state/transport calculation
+        // but its values are now driven by userSettings from DB
+        let activeBuffs={gm:false,william:false,alpaca:false};
+
         const barterDb = [
             { town: "Pera Volcano", item: "Volcanic Mud Pack", weight: 15, stack: 10, limit: 25, img: "tradeposts/barter/pera/Volcanic_Mud_Pack_Icon.png", mats: { "Copper Plate": 2, "Mysterious Herb Powder": 3 } },
             { town: "Pera Volcano", item: "Magma Stone", weight: 15, stack: 7, limit: 15, img: "tradeposts/barter/pera/Magma_Stone_Icon.png", mats: { "Mythril Plate": 2, "Barley Flour": 3 } },
@@ -368,17 +382,16 @@
         ];
         const recipeDb = [{item:"Artificial Turf",mats:{"Fresh Grass":20,"Bundle of Flowers":5}},{item:"Cotton Cushion Stuffing",mats:{"Fine Wool":20,"Thin Thread":5}},{item:"Finest Vanilla Scented Candle",mats:{"Fine Vanilla Scented Candle":1,"Refined Catalyst":1}},{item:"Hay Bale",mats:{"Wheat Chaff":20,"Finest Leather Strap":1}},{item:"Poison Tip Wyvern Ballista Bolt",mats:{"Firewood":1,"Wyvern Claw":1,"Poison Potion":1}},{item:"Average Firewood",mats:{Firewood:3}},{item:"Fine Firewood",mats:{"Average Firewood":3}},{item:"Finest Firewood",mats:{"Fine Firewood":3}},{item:"Special Firewood",mats:{"Finest Firewood":1,"Purified Enhancer":1}},{item:"Braid",mats:{"Thick Thread":1,"Thin Thread":1}},{item:"Fine Fabric",mats:{"Thick Thread":5}},{item:"Fine Leather Strap",mats:{"Fine Leather":1}},{item:"Fine Silk",mats:{"Thin Thread":5}},{item:"Finest Fabric",mats:{"Thick Thread":6}},{item:"Finest Leather Strap",mats:{"Finest Leather":1}},{item:"Finest Silk",mats:{"Thin Thread":6}},{item:"Sturdy Loop",mats:{Braid:1,"Infernal Blade Fragment":1}},{item:"Tough String",mats:{"Thick Thread":5}},{item:"Tough Thread",mats:{"Thin Thread":5}},{item:"Copper Plate",mats:{"Cooper Ingot":1}},{item:"Gold Plate",mats:{"Gold Ingot":1}},{item:"Large Mythril Nail",mats:{"Mythril Ingot":20}},{item:"Mythril Plate",mats:{"Mythril Ingot":1}},{item:"Silver Plate",mats:{"Silver Ingot":1}},{item:"Emerald Fuse",mats:{"Emerald Core":1}},{item:"Energy Amplifier",mats:{"Emerald Core":3,"Energy Converter":3}},{item:"Energy Converter",mats:{Hillwen:1,Shyllien:1}},{item:"Hillwen Alloy",mats:{"Soft Hillwen Ore Fragment":15}},{item:"Enchanted Firewood",mats:{Hillwen:1,Shyllien:1,"Average Firewood":1}},{item:"Mutant",mats:{"Mutant Rabbit Foot":10,"Mutant Plant Mucilage":5,"Sasquatch Heart":3}},{item:"Mysterious Herb Powder",mats:{"Bloody Herb":1,"Mana Herb":1,"Poison Herb":1}},{item:"Purified Rabbit Foot",mats:{"Mutant Rabbit Foot":1,Shyllien:1}},{item:"Shyllien",mats:{"Shyllien Crystal":5}},{item:"Sundew",mats:{"Mutant Plant Mucilage":1,Shyllien:1}},{item:"Glittering Paper",mats:{Paper:10,"Small Silver Gem":1,"Small Red Gem":1,"Small Blue Gem":1,"Small Green Gem":1}},{item:"HP 500 Potion",mats:{"Four-Leaf Clover":1,"HP 300 Potion":1,"Bottled Water":1}},{item:"Marionette 500 Potion",mats:{"Gold Herb":1,"Base Potion":1,"Tin Ore Fragment":1,"Zinc Ore Fragment":1,"Nickel Ore Fragment":1}},{item:"MP 500 Potion",mats:{"Four-Leaf Clover":1,"MP 300 Potion":1,"Bottled Water":1}},{item:"Spirit Liqueur",mats:{"White Herb":1,"Piece of Ancient Spirit Fossil":1,"Elemental Remover":2}},{item:"Stamina 500 Potion",mats:{"Four-Leaf Clover":1,"Stamina 300 Potion":1,"Bottled Water":1}},{item:"Shrimp Taming Bait",mats:{Shrimp:1,Sugar:1,Garlic:1}},{item:"Magic Parchment",mats:{"Soft Parchment":1,"Mana Herb":10,"Sunlight Herb":10}},{item:"Magic Quill Pen",mats:{"Vital Feather":1,"Mana Herb":10,"Gold Herb":10}},{item:"Harmonious Cosmos Perfume",mats:{"Empty Bottle":1,"Magic Powder":10,"Base Herb":10,"Cosmos Extract":1}},{item:"Pet Playset",mats:{"Pet's Favorite Knickknack":1,"Wood Board":1}},{item:"Barley Flour",mats:{Barley:10}},{item:"Wheat Flour",mats:{Wheat:10}}];
 
-        let currentCargo=[], ownedInventory={}, activeBuffs={gm:false,william:false,alpaca:false}, selectedTown="Karu Forest", transportA="Elephant", transportB="Back Pack", currentUser=null, isSaving=false;
-        let publicPrices = {}; // NEW: Store market prices
+        let currentCargo=[], ownedInventory={}, selectedTown="Karu Forest", transportA="Elephant", transportB="Back Pack", currentUser=null, isSaving=false;
+        let publicPrices = {}; 
 
         firebase.initializeApp({apiKey:"AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM",authDomain: "mabinogi-tracker.firebaseapp.com",databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com",projectId: "mabinogi-tracker",storageBucket: "mabinogi-tracker.firebasestorage.app",appId: "1:267690802644:web:fccdd005d5c8990504ea41"});
         const auth=firebase.auth();
-        const rtdb = firebase.database(); // Ref to DB for prices
+        const rtdb = firebase.database(); 
 
-        // NEW: Listen for price updates
         rtdb.ref('public_commerce/prices').on('value', (snap) => { 
             publicPrices = snap.val() || {}; 
-            calculateLoadout(); // Re-calc profits when prices change
+            calculateLoadout(); 
         });
         
         auth.onAuthStateChanged(user => {
@@ -396,6 +409,44 @@
                         localStorage.setItem('mabi_user_cache_' + user.uid, JSON.stringify(profile));
                     }
                 });
+
+                // --- SHARED SETTINGS LISTENER ---
+                firebase.database().ref(`users/${user.uid}/settings`).on('value', (snap) => {
+                    const prefs = snap.val();
+                    if(prefs) {
+                        // 1. Update activeBuffs (for weight/slots)
+                        activeBuffs.gm = prefs.gm || false;
+                        activeBuffs.william = prefs.william || false;
+                        activeBuffs.alpaca = prefs.alpaca || false;
+                        
+                        // 2. Update userSettings (for profit math)
+                        userSettings = {
+                            mastery: prefs.mastery || '1',
+                            letter: prefs.letter || 'None',
+                            fine: prefs.fine || false,
+                            gm: prefs.gm,
+                            william: prefs.william,
+                            williamLike: prefs.williamLike || 0,
+                            trader: prefs.trader || 0,
+                            trust: prefs.trust || 0,
+                            alpaca: prefs.alpaca
+                        };
+                        
+                        // 3. Update DOM checkboxes to match
+                        const gmBox = document.getElementById('buff-gm');
+                        const wBox = document.getElementById('buff-william');
+                        const aBox = document.getElementById('buff-alpaca');
+                        if(gmBox) gmBox.checked = activeBuffs.gm;
+                        if(wBox) wBox.checked = activeBuffs.william;
+                        if(aBox) aBox.checked = activeBuffs.alpaca;
+
+                        // 4. Refresh Everything
+                        calculateLoadout(); 
+                        renderTransportTabs(1);
+                        renderTransportTabs(2);
+                    }
+                });
+                
                 startSync();
             } else {
                 currentUser = { uid: 'local_guest', isGuest: true };
@@ -421,7 +472,14 @@
             if(data.cargo) currentCargo=JSON.parse(data.cargo);
             if(data.inventory) ownedInventory=data.inventory;
             if(data.town) selectedTown=data.town;
-            if(data.buffs){ activeBuffs=data.buffs; document.getElementById('buff-gm').checked=!!activeBuffs.gm; document.getElementById('buff-william').checked=!!activeBuffs.william; document.getElementById('buff-alpaca').checked=!!activeBuffs.alpaca; }
+            // Buffs are now handled by the 'settings' listener for logged in users
+            // But we keep this for initial load or guest mode backup
+            if(data.buffs && currentUser.isGuest){ 
+                activeBuffs=data.buffs; 
+                document.getElementById('buff-gm').checked=!!activeBuffs.gm; 
+                document.getElementById('buff-william').checked=!!activeBuffs.william; 
+                document.getElementById('buff-alpaca').checked=!!activeBuffs.alpaca; 
+            }
             if(data.transport1) transportA=data.transport1;
             if(data.transport2) transportB=data.transport2;
             renderTownTabs(); renderTransportTabs(1); renderTransportTabs(2); calculateLoadout();
@@ -445,23 +503,40 @@
             return {slots1:res1,slots2:res2,overflow:ovf,s1,s2};
         }
 
-        /* NEW: Helper to find best sell price for an item */
+        // --- PROFIT CALCULATION LOGIC ---
+        function getProfitMultiplier() {
+            const masteryBonus = masteryRanks[userSettings.mastery] || 0;
+            const letterInfo = guaranteeLetters[userSettings.letter] || guaranteeLetters["None"];
+            // Barter uses specific letter values
+            let letterMultiplier = userSettings.fine ? letterInfo.fine_barter : letterInfo.barter;
+            
+            let williamBonus = 0;
+            if (userSettings.william) {
+                const like = userSettings.williamLike;
+                if (like >= 240) williamBonus = 0.03;
+                else if (like >= 130) williamBonus = 0.02;
+                else if (like >= 80) williamBonus = 0.01;
+            }
+            return (1 + masteryBonus + letterMultiplier + williamBonus);
+        }
+
         function getBestSellInfo(itemName) {
             let maxP = 0, bestCity = "-";
+            const mult = getProfitMultiplier();
+            
             commerceTowns.forEach(city => {
                 const key = `${itemName}_${city}`.replace(/[.#$[\]]/g, "_");
                 const price = publicPrices[key] || 0;
-                if(price > maxP) { maxP = price; bestCity = city; }
+                const finalP = Math.floor(price * mult);
+                if(finalP > maxP) { maxP = finalP; bestCity = city; }
             });
             return { city: bestCity, price: maxP };
         }
 
-        /* NEW: Calculate Total Profit for a list of slots */
         function calculateTotalProfit(slots, maxSlots) {
-            // Find best destination for the ENTIRE loadout
-            // (Naive approach: sum potential profit at each city and pick best city)
             let bestCity = "-", maxTotal = 0;
-            
+            const mult = getProfitMultiplier();
+
             commerceTowns.forEach(city => {
                 let total = 0;
                 for(let k=0; k<maxSlots; k++) {
@@ -469,7 +544,7 @@
                     if(!item) continue;
                     const key = `${item.item}_${city}`.replace(/[.#$[\]]/g, "_");
                     const price = publicPrices[key] || 0;
-                    total += (price * item.qtyInSlot);
+                    total += Math.floor(price * item.qtyInSlot * mult);
                 }
                 if(total > maxTotal) { maxTotal = total; bestCity = city; }
             });
@@ -481,7 +556,6 @@
             document.getElementById('transport-stats-1').innerText=`${res.s1.slots} SLOTS / ${res.s1.weight} KG`;
             document.getElementById('transport-stats-2').innerText=`${res.s2.slots} SLOTS / ${res.s2.weight} KG`;
             
-            // UPDATED: Calculate and Display Profits
             const p1 = calculateTotalProfit(res.slots1, res.s1.slots);
             const p2 = calculateTotalProfit(res.slots2, res.s2.slots);
             
@@ -561,7 +635,6 @@
         function clearItem(name){ currentCargo=currentCargo.filter(x=>x.item!==name); calculateLoadout(); saveData(); }
         function setupLongPress(b,h){ let t; const start=()=>{ t=setTimeout(()=>{ if("vibrate" in navigator) navigator.vibrate(40); h(); t=null; }, 600); }; const cancel=()=>{ if(t){ clearTimeout(t); t=null; } }; b.addEventListener('mousedown',start); b.addEventListener('touchstart',start,{passive:true}); ['mouseup','mouseleave','touchend'].forEach(e=>b.addEventListener(e,cancel)); }
         
-        // UPDATED: Tooltip now shows best sell info
         function showTooltip(e,d){ 
             const tt=document.getElementById('item-tooltip'); 
             document.getElementById('tt-name').textContent=d.item; 
@@ -616,18 +689,37 @@
             saveData();
         }
 
+        // --- UPDATED TOGGLE LISTENERS ---
+        // Updates BOTH local state AND shared database settings
         document.querySelectorAll('.toggle-input').forEach(chk=>{ 
             chk.onchange=(e)=>{ 
                 const id=e.target.id.replace('buff-',''); 
-                if(id==='william'&&e.target.checked) document.getElementById('buff-alpaca').checked=activeBuffs.alpaca=false; 
-                if(id==='alpaca'&&e.target.checked) document.getElementById('buff-william').checked=activeBuffs.william=false; 
+                
+                // Logic to uncheck conflicting partners
+                if(id==='william'&&e.target.checked) document.getElementById('buff-alpaca').checked=false; 
+                if(id==='alpaca'&&e.target.checked) document.getElementById('buff-william').checked=false; 
+                
+                // Update Local
                 activeBuffs[id]=e.target.checked; 
+                if(id==='william') activeBuffs.alpaca=false;
+                if(id==='alpaca') activeBuffs.william=false;
+
+                // Sync to Database
+                if(currentUser && !currentUser.isGuest) {
+                    const updates = {};
+                    updates[id] = e.target.checked;
+                    if(id === 'william' && e.target.checked) updates['alpaca'] = false;
+                    if(id === 'alpaca' && e.target.checked) updates['william'] = false;
+                    firebase.database().ref(`users/${currentUser.uid}/settings`).update(updates);
+                }
+
                 calculateLoadout(); 
                 renderTransportTabs(1);
                 renderTransportTabs(2);
                 saveData(); 
             }; 
         });
+
         window.toggleSidebar=(s)=>{document.getElementById(s+'-panel').classList.add('active');document.getElementById('mobile-backdrop').classList.add('active');};
         window.closeSidebars=()=>{document.getElementById('left-panel').classList.remove('active');document.getElementById('right-panel').classList.remove('active');document.getElementById('mobile-backdrop').classList.remove('active');};
         window.onload=calculateLoadout;
