@@ -192,6 +192,7 @@
         }
 
         #item-tooltip { position: fixed; z-index: 10000; background: rgba(18, 18, 20, 0.98); border: 1px solid var(--border); padding: 12px; border-radius: 6px; pointer-events: none; display: none; min-width: 180px; }
+        .tt-profit { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--success); margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--border); }
     </style>
 </head>
 <body>
@@ -218,13 +219,10 @@
 
         <div class="content-grid">
             <div class="panel left-panel" id="left-panel">
-                <!-- TRADE POST DRAWER -->
-                <details class="drawer-wrap" open>
-                    <summary>Trade Post</summary>
-                    <div class="drawer-content">
-                        <div id="town-tabs" class="tab-picker"></div>
-                    </div>
-                </details>
+                <div style="padding:20px; border-bottom:1px solid var(--border);">
+                    <label style="font-size:11px; font-weight:600; color:var(--text-dim); display:block; text-transform:uppercase; margin-bottom:10px;">Trade Post</label>
+                    <div id="town-tabs" class="tab-picker"></div>
+                </div>
 
                 <div id="catalog-container" class="item-list"></div>
             </div>
@@ -273,11 +271,19 @@
                     </div>
                 </details>
 
-                <!-- TRANSPORT A DRAWER -->
+                <!-- TRANSPORT A DRAWER (UPDATED HEADER) -->
                 <details class="drawer-wrap" open>
                     <summary>
-                        <span>Transport A</span>
-                        <span id="transport-stats-1" style="margin-left:auto; font-size:10px; color:var(--text-dim); font-family:'JetBrains Mono';">0 / 0 KG</span>
+                        <div style="display:flex; flex-direction:column; width:100%; align-items:flex-start;">
+                            <div style="display:flex; justify-content:space-between; width:100%;">
+                                <span>Transport A</span>
+                                <span id="transport-stats-1" style="font-size:10px; color:var(--text-dim); font-family:'JetBrains Mono';">0 / 0 KG</span>
+                            </div>
+                            <!-- PROFIT DISPLAY A -->
+                            <div id="transport-profit-1" style="display:flex; justify-content:space-between; width:100%; font-size:10px; color:var(--success); font-family:'JetBrains Mono'; margin-top:2px;">
+                                <span>Best: -</span><span>0 D</span>
+                            </div>
+                        </div>
                     </summary>
                     <div class="drawer-content">
                         <div id="transport-tabs-1" class="tab-picker" style="grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px;"></div>
@@ -285,11 +291,19 @@
                     </div>
                 </details>
 
-                <!-- TRANSPORT B DRAWER -->
+                <!-- TRANSPORT B DRAWER (UPDATED HEADER) -->
                 <details class="drawer-wrap" open>
                     <summary>
-                        <span>Transport B</span>
-                        <span id="transport-stats-2" style="margin-left:auto; font-size:10px; color:var(--text-dim); font-family:'JetBrains Mono';">0 / 0 KG</span>
+                         <div style="display:flex; flex-direction:column; width:100%; align-items:flex-start;">
+                            <div style="display:flex; justify-content:space-between; width:100%;">
+                                <span>Transport B</span>
+                                <span id="transport-stats-2" style="font-size:10px; color:var(--text-dim); font-family:'JetBrains Mono';">0 / 0 KG</span>
+                            </div>
+                            <!-- PROFIT DISPLAY B -->
+                            <div id="transport-profit-2" style="display:flex; justify-content:space-between; width:100%; font-size:10px; color:var(--success); font-family:'JetBrains Mono'; margin-top:2px;">
+                                <span>Best: -</span><span>0 D</span>
+                            </div>
+                        </div>
                     </summary>
                     <div class="drawer-content">
                         <div id="transport-tabs-2" class="tab-picker" style="grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px;"></div>
@@ -303,6 +317,7 @@
     <div id="item-tooltip">
         <div id="tt-name" style="color:#fff; font-weight:700; font-size:12px; margin-bottom:5px; border-bottom:1px solid var(--border);"></div>
         <div style="font-family:'JetBrains Mono'; font-size:10px; color:var(--text-dim);">Weight: <b id="tt-weight"></b></div>
+        <div id="tt-profit" class="tt-profit"></div>
     </div>
 
     <script>
@@ -318,6 +333,8 @@
             "Camel":{slots:7,weight:1400},
             "Skiff":{slots:8,weight:1200}
         };
+
+        const commerceTowns = ["Tir Chonaill", "Dunbarton", "Bangor", "Emain Macha", "Taillteann", "Tara", "Cobh", "Belvast", "Qilla", "Cor", "Vales", "Filia"];
 
         const barterDb = [
             { town: "Pera Volcano", item: "Volcanic Mud Pack", weight: 15, stack: 10, limit: 25, img: "tradeposts/barter/pera/Volcanic_Mud_Pack_Icon.png", mats: { "Copper Plate": 2, "Mysterious Herb Powder": 3 } },
@@ -349,12 +366,20 @@
             { town: "Scathach Beach", item: "Fish", weight: 5, stack: 20, limit: 100, img: "tradeposts/barter/scathach/Unidentified_Fish.png", mats: { "Unknown": 0 } },
             { town: "Scathach Beach", item: "Crystal Blade", weight: 15, stack: 10, limit: 100, img: "tradeposts/barter/scathach/Crystal_Blade.png", mats: { "Unknown": 0 } }
         ];
-        const recipeDb = [{item:"Artificial Turf",mats:{"Fresh Grass":20,"Bundle of Flowers":5}},{item:"Cotton Cushion Stuffing",mats:{"Fine Wool":20,"Thin Thread":5}},{item:"Finest Vanilla Scented Candle",mats:{"Fine Vanilla Scented Candle":1,"Refined Catalyst":1}},{item:"Hay Bale",mats:{"Wheat Chaff":20,"Finest Leather Strap":1}},{item:"Poison Tip Wyvern Ballista Bolt",mats:{"Firewood":1,"Wyvern Claw":1,"Poison Potion":1}},{item:"Average Firewood",mats:{Firewood:3}},{item:"Fine Firewood",mats:{"Average Firewood":3}},{item:"Finest Firewood",mats:{"Fine Firewood":3}},{item:"Special Firewood",mats:{"Finest Firewood":1,"Purified Enhancer":1}},{item:"Braid",mats:{"Thick Thread":1,"Thin Thread":1}},{item:"Fine Fabric",mats:{"Thick Thread":5}},{item:"Fine Leather Strap",mats:{"Fine Leather":1}},{item:"Fine Silk",mats:{"Thin Thread":5}},{item:"Finest Fabric",mats:{"Thick Thread":6}},{item:"Finest Leather Strap",mats:{"Finest Leather":1}},{item:"Finest Silk",mats:{"Thin Thread":6}},{item:"Sturdy Loop",mats:{Braid:1,"Infernal Blade Fragment":1}},{item:"Tough String",mats:{"Thick Thread":5}},{item:"Tough Thread",mats:{"Thin Thread":5}},{item:"Copper Plate",mats:{"Cooper Ingot":1}},{item:"Gold Plate",mats:{"Gold Ingot":1}},{item:"Large Mythril Nail",mats:{"Mythril Ingot":20}},{item:"Mythril Plate",mats:{"Mythril Ingot":1}},{item:"Silver Plate",mats:{"Silver Ingot":1}},{item:"Emerald Fuse",mats:{"Emerald Core":1}},{item:"Energy Amplifier",mats:{"Emerald Core":3,"Energy Converter":3}},{item:"Energy Converter",mats:{Hillwen:1,Shyllien:1}},{item:"Hillwen Alloy",mats:{"Soft Hillwen Ore Fragment":15}},{item:"Enchanted Firewood",mats:{Hillwen:1,Shyllien:1,"Average Firewood":1}},{item:"Mutant",mats:{"Mutant Rabbit Foot":10,"Mutant Plant Mucilage":5,"Sasquatch Heart":3}},{item:"Mysterious Herb Powder",mats:{"Bloody Herb":1,"Mana Herb":1,"Poison Herb":1}},{item:"Purified Rabbit Foot",mats:{"Mutant Rabbit Foot":1,Shyllien:1}},{item:"Shyllien",mats:{"Shyllien Crystal":5}},{item:"Sundew",mats:{"Mutant Plant Mucilage":1,Shyllien:1}},{item:"Glittering Paper",mats:{Paper:10,"Small Silver Gem":1,"Small Red Gem":1,"Small Blue Gem":1,"Small Green Gem":1}},{item:"HP 500 Potion",mats:{"Four-Leaf Clover":1,"HP 300 Potion":1,"Bottled Water":1}},{item:"Marionette 500 Potion",mats:{"Gold Herb":1,"Base Potion":1,"Tin Ore Fragment":1,"Zinc Ore Fragment":1,"Nickel Ore Fragment":1}},{item:"MP 500 Potion",mats:{"Four-Leaf Clover":1,"MP 300 Potion":1,"Bottled Water":1}},{item:"Spirit Liqueur",mats:{"White Herb":1,"Piece of Ancient Spirit Fossil":1,"Elemental Remover":2}},{item:"Stamina 500 Potion",mats:{"Four-Leaf Clover":1,"Stamina 300 Potion":1,"Bottled Water":1}},{item:"Shrimp Taming Bait",mats:{Shrimp:1,Sugar:1,Garlic:1}},{item:"Magic Parchment",mats:{"Soft Parchment":1,"Mana Herb":10,"Sunlight Herb":10}},{item:"Magic Quill Pen",mats:{"Vital Feather":1,"Mana Herb":10,"Gold Herb":10}},{item:"Harmonious Cosmos Perfume",mats:{"Empty Bottle":1,"Magic Powder":10,"Base Herb":10,"Cosmos Extract":1}},{item:"Pet Playset",mats:{"Pet's Favorite Knickknack":1,"Wood Board":1}},{item:"Barley Flour",mats:{Barley:10}},{item:"Wheat Flour",mats:{Wheat:10}},{item:"Sage Crystal",mats:{"White Crystal":1}},];
+        const recipeDb = [{item:"Artificial Turf",mats:{"Fresh Grass":20,"Bundle of Flowers":5}},{item:"Cotton Cushion Stuffing",mats:{"Fine Wool":20,"Thin Thread":5}},{item:"Finest Vanilla Scented Candle",mats:{"Fine Vanilla Scented Candle":1,"Refined Catalyst":1}},{item:"Hay Bale",mats:{"Wheat Chaff":20,"Finest Leather Strap":1}},{item:"Poison Tip Wyvern Ballista Bolt",mats:{"Firewood":1,"Wyvern Claw":1,"Poison Potion":1}},{item:"Average Firewood",mats:{Firewood:3}},{item:"Fine Firewood",mats:{"Average Firewood":3}},{item:"Finest Firewood",mats:{"Fine Firewood":3}},{item:"Special Firewood",mats:{"Finest Firewood":1,"Purified Enhancer":1}},{item:"Braid",mats:{"Thick Thread":1,"Thin Thread":1}},{item:"Fine Fabric",mats:{"Thick Thread":5}},{item:"Fine Leather Strap",mats:{"Fine Leather":1}},{item:"Fine Silk",mats:{"Thin Thread":5}},{item:"Finest Fabric",mats:{"Thick Thread":6}},{item:"Finest Leather Strap",mats:{"Finest Leather":1}},{item:"Finest Silk",mats:{"Thin Thread":6}},{item:"Sturdy Loop",mats:{Braid:1,"Infernal Blade Fragment":1}},{item:"Tough String",mats:{"Thick Thread":5}},{item:"Tough Thread",mats:{"Thin Thread":5}},{item:"Copper Plate",mats:{"Cooper Ingot":1}},{item:"Gold Plate",mats:{"Gold Ingot":1}},{item:"Large Mythril Nail",mats:{"Mythril Ingot":20}},{item:"Mythril Plate",mats:{"Mythril Ingot":1}},{item:"Silver Plate",mats:{"Silver Ingot":1}},{item:"Emerald Fuse",mats:{"Emerald Core":1}},{item:"Energy Amplifier",mats:{"Emerald Core":3,"Energy Converter":3}},{item:"Energy Converter",mats:{Hillwen:1,Shyllien:1}},{item:"Hillwen Alloy",mats:{"Soft Hillwen Ore Fragment":15}},{item:"Enchanted Firewood",mats:{Hillwen:1,Shyllien:1,"Average Firewood":1}},{item:"Mutant",mats:{"Mutant Rabbit Foot":10,"Mutant Plant Mucilage":5,"Sasquatch Heart":3}},{item:"Mysterious Herb Powder",mats:{"Bloody Herb":1,"Mana Herb":1,"Poison Herb":1}},{item:"Purified Rabbit Foot",mats:{"Mutant Rabbit Foot":1,Shyllien:1}},{item:"Shyllien",mats:{"Shyllien Crystal":5}},{item:"Sundew",mats:{"Mutant Plant Mucilage":1,Shyllien:1}},{item:"Glittering Paper",mats:{Paper:10,"Small Silver Gem":1,"Small Red Gem":1,"Small Blue Gem":1,"Small Green Gem":1}},{item:"HP 500 Potion",mats:{"Four-Leaf Clover":1,"HP 300 Potion":1,"Bottled Water":1}},{item:"Marionette 500 Potion",mats:{"Gold Herb":1,"Base Potion":1,"Tin Ore Fragment":1,"Zinc Ore Fragment":1,"Nickel Ore Fragment":1}},{item:"MP 500 Potion",mats:{"Four-Leaf Clover":1,"MP 300 Potion":1,"Bottled Water":1}},{item:"Spirit Liqueur",mats:{"White Herb":1,"Piece of Ancient Spirit Fossil":1,"Elemental Remover":2}},{item:"Stamina 500 Potion",mats:{"Four-Leaf Clover":1,"Stamina 300 Potion":1,"Bottled Water":1}},{item:"Shrimp Taming Bait",mats:{Shrimp:1,Sugar:1,Garlic:1}},{item:"Magic Parchment",mats:{"Soft Parchment":1,"Mana Herb":10,"Sunlight Herb":10}},{item:"Magic Quill Pen",mats:{"Vital Feather":1,"Mana Herb":10,"Gold Herb":10}},{item:"Harmonious Cosmos Perfume",mats:{"Empty Bottle":1,"Magic Powder":10,"Base Herb":10,"Cosmos Extract":1}},{item:"Pet Playset",mats:{"Pet's Favorite Knickknack":1,"Wood Board":1}},{item:"Barley Flour",mats:{Barley:10}},{item:"Wheat Flour",mats:{Wheat:10}}];
 
         let currentCargo=[], ownedInventory={}, activeBuffs={gm:false,william:false,alpaca:false}, selectedTown="Karu Forest", transportA="Elephant", transportB="Back Pack", currentUser=null, isSaving=false;
+        let publicPrices = {}; // NEW: Store market prices
 
         firebase.initializeApp({apiKey:"AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM",authDomain: "mabinogi-tracker.firebaseapp.com",databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com",projectId: "mabinogi-tracker",storageBucket: "mabinogi-tracker.firebasestorage.app",appId: "1:267690802644:web:fccdd005d5c8990504ea41"});
         const auth=firebase.auth();
+        const rtdb = firebase.database(); // Ref to DB for prices
+
+        // NEW: Listen for price updates
+        rtdb.ref('public_commerce/prices').on('value', (snap) => { 
+            publicPrices = snap.val() || {}; 
+            calculateLoadout(); // Re-calc profits when prices change
+        });
         
         auth.onAuthStateChanged(user => {
             const displayElem = document.getElementById('user-display');
@@ -420,10 +445,49 @@
             return {slots1:res1,slots2:res2,overflow:ovf,s1,s2};
         }
 
+        /* NEW: Helper to find best sell price for an item */
+        function getBestSellInfo(itemName) {
+            let maxP = 0, bestCity = "-";
+            commerceTowns.forEach(city => {
+                const key = `${itemName}_${city}`.replace(/[.#$[\]]/g, "_");
+                const price = publicPrices[key] || 0;
+                if(price > maxP) { maxP = price; bestCity = city; }
+            });
+            return { city: bestCity, price: maxP };
+        }
+
+        /* NEW: Calculate Total Profit for a list of slots */
+        function calculateTotalProfit(slots, maxSlots) {
+            // Find best destination for the ENTIRE loadout
+            // (Naive approach: sum potential profit at each city and pick best city)
+            let bestCity = "-", maxTotal = 0;
+            
+            commerceTowns.forEach(city => {
+                let total = 0;
+                for(let k=0; k<maxSlots; k++) {
+                    const item = slots[k];
+                    if(!item) continue;
+                    const key = `${item.item}_${city}`.replace(/[.#$[\]]/g, "_");
+                    const price = publicPrices[key] || 0;
+                    total += (price * item.qtyInSlot);
+                }
+                if(total > maxTotal) { maxTotal = total; bestCity = city; }
+            });
+            return { city: bestCity, total: maxTotal };
+        }
+
         function calculateLoadout(){
             const res=packCargo(currentCargo);
             document.getElementById('transport-stats-1').innerText=`${res.s1.slots} SLOTS / ${res.s1.weight} KG`;
             document.getElementById('transport-stats-2').innerText=`${res.s2.slots} SLOTS / ${res.s2.weight} KG`;
+            
+            // UPDATED: Calculate and Display Profits
+            const p1 = calculateTotalProfit(res.slots1, res.s1.slots);
+            const p2 = calculateTotalProfit(res.slots2, res.s2.slots);
+            
+            document.getElementById('transport-profit-1').innerHTML = `<span>Best: ${p1.city}</span><span>${p1.total.toLocaleString()} D</span>`;
+            document.getElementById('transport-profit-2').innerHTML = `<span>Best: ${p2.city}</span><span>${p2.total.toLocaleString()} D</span>`;
+
             ['grid-1','grid-2'].forEach((id,i)=>{
                 const g=document.getElementById(id); g.innerHTML=''; const stats=i===0?res.s1:res.s2, slots=i===0?res.slots1:res.slots2;
                 for(let k=0;k<stats.slots;k++){
@@ -496,7 +560,21 @@
         function fillMax(item){ while(currentCargo.filter(x=>x.item===item.item).length<item.limit && !packCargo([...currentCargo,item]).overflow){ currentCargo.push(item); } calculateLoadout(); saveData(); }
         function clearItem(name){ currentCargo=currentCargo.filter(x=>x.item!==name); calculateLoadout(); saveData(); }
         function setupLongPress(b,h){ let t; const start=()=>{ t=setTimeout(()=>{ if("vibrate" in navigator) navigator.vibrate(40); h(); t=null; }, 600); }; const cancel=()=>{ if(t){ clearTimeout(t); t=null; } }; b.addEventListener('mousedown',start); b.addEventListener('touchstart',start,{passive:true}); ['mouseup','mouseleave','touchend'].forEach(e=>b.addEventListener(e,cancel)); }
-        function showTooltip(e,d){ const tt=document.getElementById('item-tooltip'); document.getElementById('tt-name').textContent=d.item; document.getElementById('tt-weight').textContent=d.weight+'kg'; tt.style.display='block'; const r=e.target.getBoundingClientRect(); tt.style.left=(r.left-170)+'px'; tt.style.top=r.top+'px'; }
+        
+        // UPDATED: Tooltip now shows best sell info
+        function showTooltip(e,d){ 
+            const tt=document.getElementById('item-tooltip'); 
+            document.getElementById('tt-name').textContent=d.item; 
+            document.getElementById('tt-weight').textContent=d.weight+'kg'; 
+            
+            const best = getBestSellInfo(d.item);
+            document.getElementById('tt-profit').textContent = best.price > 0 ? `Best: ${best.city} (${best.price.toLocaleString()})` : "Best: N/A";
+            
+            tt.style.display='block'; 
+            const r=e.target.getBoundingClientRect(); 
+            tt.style.left=(r.left-170)+'px'; 
+            tt.style.top=r.top+'px'; 
+        }
 
         function calculateMaterials(){
             const need={}; currentCargo.forEach(c=>{ if(c.mats) Object.entries(c.mats).forEach(([m,q])=>need[m]=(need[m]||0)+q); });
@@ -510,17 +588,13 @@
             if(!items.length){ b.innerHTML='<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text-dim);">No materials needed</td></tr>'; return; }
             items.forEach(item=>{
                 const n=Math.ceil(data[item]), h=ownedInventory[item]||0, def=n-h, tr=document.createElement('tr');
-                
-                // --- DYNAMIC STATUS LOGIC ---
                 let statusDisplay = "";
                 if (def <= 0) {
                     const weeks = Math.floor(h / n);
-                    // Show weeks worth if it's 2 or more, otherwise just READY
                     statusDisplay = (weeks > 1 && isFinite(weeks)) ? `<span>${weeks} WEEKS</span>` : "<span>READY</span>";
                 } else {
                     statusDisplay = `<span>${def}</span>`;
                 }
-
                 tr.innerHTML=`<td><div class="cell-flex"></div></td><td><input type="number" class="owned-input" value="${h}"></td><td style="text-align:center;">${n}</td><td class="status-cell ${def<=0?'ready':'deficit'}">${statusDisplay}</td>`;
                 const icon=document.createElement('div'); icon.className='icon-small'; applyIcon(icon,item);
                 const span=document.createElement('span'); span.textContent=item;
@@ -531,7 +605,6 @@
         }
 
         function completeTrip() {
-            // Subtract immediate Crafted Components from HAVE stash
             currentCargo.forEach(item => {
                 if (item.mats) {
                     Object.entries(item.mats).forEach(([mat, qty]) => {
@@ -539,8 +612,6 @@
                     });
                 }
             });
-
-            // DO NOT CLEAR LOADOUT
             calculateLoadout(); 
             saveData();
         }
