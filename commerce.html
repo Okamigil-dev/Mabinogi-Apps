@@ -13,7 +13,7 @@
 
     <style>
         :root {
-            /* V2.7 Theme */
+            /* V2.7 Theme from Hub */
             --bg: #09090b;
             --sidebar-bg: #121214;
             --card-bg: #18181b;
@@ -27,6 +27,7 @@
             --slot-size: 50px;
         }
 
+        /* --- Global & Reset --- */
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
         body {
             background-color: var(--bg);
@@ -38,13 +39,16 @@
             line-height: 1.5;
         }
         
+        /* Scrollbars */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
+        /* --- Layout Containers --- */
         .interface-container {
-            width: 100%; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+            width: 100%; height: 100vh; display: flex; flex-direction: column;
+            overflow: hidden;
         }
         
         .header-bar { 
@@ -252,19 +256,19 @@
 
         <div class="content-grid">
             <div class="panel left-panel" id="left-panel">
-                <details class="drawer-wrap" id="drawer-mode" open>
+                <details class="drawer-wrap">
                     <summary>Commerce Mode</summary>
                     <div id="commerce-type-tabs" class="horizontal-drawer"></div>
                 </details>
 
-                <details class="drawer-wrap" id="drawer-transport" open>
+                <details class="drawer-wrap">
                     <summary>Transport Selection</summary>
                     <div style="padding: 0 20px 15px 20px;">
                         <div id="transport-tabs" class="tab-picker" style="margin-bottom: 0;"></div>
                     </div>
                 </details>
 
-                <details class="drawer-wrap" id="drawer-post" open>
+                <details class="drawer-wrap" open>
                     <summary>
                         <span>Trading Post</span>
                         <div style="margin-left:auto; display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
@@ -313,12 +317,14 @@
                     <div style="padding: 0 20px 15px 20px;">
                         <label class="panel-label">Mastery Rank</label>
                         <select id="mastery-rank" class="input-dark" style="margin-bottom:12px;"></select>
+                        
                         <label class="panel-label">Guarantee Letters</label>
-                        <div style="display:flex; gap:8px;">
-                            <select id="letter-select" class="input-dark" style="flex:1;"></select>
-                            <label style="display:flex; align-items:center; gap:5px; cursor:pointer;">
-                                <input type="checkbox" id="fine-letter-check"> <span style="font-size:11px; color:#aaa;">Fine</span>
-                            </label>
+                        <select id="letter-select" class="input-dark" style="margin-bottom:12px;"></select>
+                        
+                        <!-- REPLACED: Fine Letter Toggle -->
+                        <div class="toggle-row">
+                            <span class="toggle-label" style="font-size:11px; color:#aaa;">Fine Letter</span>
+                            <label><input type="checkbox" id="fine-letter-check" style="display:none;"><div class="toggle-switch"></div></label>
                         </div>
                     </div>
                 </details>
@@ -437,6 +443,7 @@
             return null;
         }
 
+        // --- 4. LOGIC ---
         function getStock(itemName) { return publicStocks[itemName] || 0; }
         function getPrice(itemName, city) { return publicPrices[`${itemName}_${city}`.replace(/[.#$[\]]/g, "_")] || 0; }
 
@@ -445,6 +452,7 @@
                 commerceType: activeCommerceType,
                 transport: activeTransport,
                 city: selectedCity,
+                // UI State reads directly from input for active calculation
                 merchantRating: parseInt(document.getElementById('merchant-rating-input').value, 10) || 1,
                 trader: parseInt(document.getElementById('trader-qty').value, 10) || 0,
                 trust: parseInt(document.getElementById('trustworthy-qty').value, 10) || 0,
@@ -478,7 +486,12 @@
         function getActiveModifiers(uiState) {
             const masteryBonus = masteryRanks[uiState.mastery] || 0;
             const letterInfo = guaranteeLetters[uiState.letter] || guaranteeLetters["None"];
-            let letterMultiplier = (uiState.commerceType === "Barter") ? (uiState.fine ? letterInfo.fine_barter : letterInfo.barter) : (uiState.fine ? letterInfo.fine_normal : letterInfo.normal);
+            // FIXED: Using uiState.fine boolean properly to select correct key
+            // Note: For Barter mode, guarantee letters use reduced multipliers
+            let letterMultiplier = (uiState.commerceType === "Barter") ? 
+                (uiState.fine ? letterInfo.fine_barter : letterInfo.barter) : 
+                (uiState.fine ? letterInfo.fine_normal : letterInfo.normal);
+                
             let williamBonus = 0;
             if (uiState.william) {
                 const like = uiState.williamLike;
@@ -496,8 +509,11 @@
             const stats = getModifiedStats(uiState.transport, uiState);
             const load = Math.min(Math.floor(stats.weight / item.weight), stats.slots * item.max, item.limit);
             
+            // FIXED: Calculate total Base Profit first (Revenue - Cost), then apply multiplier
             const baseProfit = (sellVal !== "" && sellVal > 0) ? (sellVal - dBuy) * load : 0;
             const mods = getActiveModifiers(uiState);
+            
+            // Only apply bonus multiplier if there is a base profit
             let finalProfit = baseProfit > 0 ? Math.floor(baseProfit * mods.totalMultiplier) : baseProfit;
             
             const divisor = (uiState.commerceType === "Barter") ? 34 : 17;
@@ -516,7 +532,15 @@
                     activeCommerceType = type; 
                     const valid = citiesByType[type];
                     if(valid.length > 0) selectedCity = valid[0];
-                    renderCommerceTabs(); renderCityTabs(); renderTransportTabs(); refreshUI(); savePrefs(); 
+                    renderCommerceTabs(); 
+                    renderCityTabs(); 
+                    renderTransportTabs(); 
+                    
+                    // Update rating input for new city
+                    document.getElementById('merchant-rating-input').value = townRatings[selectedCity] || 1;
+                    
+                    refreshUI(); 
+                    savePrefs(); 
                 };
                 const label = document.createElement('div');
                 label.className = 'picker-label';
@@ -561,8 +585,13 @@
                 btn.className = `picker-btn ${selectedCity === city ? 'active' : ''}`;
                 btn.onclick = () => { 
                     selectedCity = city; 
+                    
+                    // Update rating input for selected city
                     document.getElementById('merchant-rating-input').value = townRatings[city] || 1;
-                    renderCityTabs(); refreshUI(); savePrefs(); 
+                    
+                    renderCityTabs(); 
+                    refreshUI(); 
+                    savePrefs(); 
                 };
                 const icon = document.createElement('div');
                 icon.className = 'picker-icon';
@@ -581,6 +610,7 @@
             const targetPool = (activeCommerceType === "Barter" ? citiesByType["Normal"] : citiesByType[activeCommerceType]);
             const targets = targetPool.filter(c => c !== origin);
             const originItems = (marketData[activeCommerceType] && marketData[activeCommerceType][origin]) || [];
+            
             const localResult = calculateBestRouteForVector(origin, targets, originItems, uiState, activeTransport);
             renderManifest(localResult.best, 'manifest-box', 'manifest-list', 'manifest-total');
         }
@@ -591,22 +621,33 @@
             const stats = getModifiedStats(mount, uiState);
             targetCities.forEach(targetCity => {
                 let remWeight = stats.weight, remSlots = stats.slots, totalP = 0, itemsToBuy = [];
+                
+                // Calculate potential per unit
                 const potential = originItems.map(item => {
                     const basePrice = publicBasePrices[item.name] || item.buy;
                     const dBuy = getDiscountedBuyPrice(basePrice, uiState);
                     const sellVal = getPrice(item.name, targetCity);
-                    const unitP = (sellVal - dBuy);
-                    const effP = unitP > 0 ? (unitP * mods.totalMultiplier) : unitP;
-                    return { ...item, rawUnitP: unitP, dBuy, sellVal, eff: effP / Math.max(1, item.weight) };
+                    
+                    // Raw unit profit (no multipliers) for sorting efficiency
+                    const rawUnitP = (sellVal - dBuy);
+                    
+                    // Multiplier applied to efficiency sort to favor high-base-value items correctly
+                    const effP = rawUnitP > 0 ? (rawUnitP * mods.totalMultiplier) : rawUnitP;
+                    
+                    return { ...item, rawUnitP, dBuy, sellVal, eff: effP / Math.max(1, item.weight) };
                 }).filter(i => i.rawUnitP > 0).sort((a, b) => b.eff - a.eff);
                 
                 potential.forEach(item => {
                     const stock = getStock(item.name);
                     let qty = Math.min(Math.floor(remWeight / item.weight), remSlots * item.max, item.limit, stock);
                     if (qty <= 0) return;
+                    
                     let slotsNeeded = Math.ceil(qty / item.max);
+                    
+                    // FIXED MATH: Total Base Profit * Multiplier -> Floor
                     const totalBase = item.rawUnitP * qty;
                     const stackProfit = Math.floor(totalBase * mods.totalMultiplier);
+                    
                     itemsToBuy.push({ n: item.name, q: qty, p: stackProfit, img: item.img, s: slotsNeeded, maxPerSlot: item.max });
                     remWeight -= (qty * item.weight); remSlots -= slotsNeeded; totalP += stackProfit;
                 });
@@ -620,7 +661,6 @@
             if (!trip || trip.profit <= 0) {
                 box.style.display = 'block';
                 list.innerHTML = `<div style="color:var(--text-dim); font-size:10px; padding:10px; text-align:center;">NO PROFITABLE ROUTES</div>`;
-                total.textContent = `PROFIT: 0`;
                 return;
             }
             box.style.display = 'block';
@@ -703,6 +743,7 @@
                 const row = document.createElement('div');
                 row.className = 'market-row';
                 
+                // Add input event to update siblings immediately
                 const priceInput = document.createElement('input');
                 priceInput.type = 'number';
                 priceInput.className = 'price-input input-dark';
@@ -712,6 +753,7 @@
                 priceInput.oninput = function() {
                    const val = this.value;
                    updatePrice(city, val);
+                   // Immediate UI update
                    const newVal = parseInt(val) || 0;
                    const updatedRes = calculateItemProfit(currentItem, city, getUIState(), newVal);
                    row.querySelector('.profit-val').textContent = updatedRes.profit.toLocaleString();
@@ -759,7 +801,10 @@
             if(val < 1) val = 1;
             if(val > 9) val = 9;
             input.value = val;
+            
+            // Save specific rating for current town
             townRatings[selectedCity] = val;
+            
             refreshUI();
             savePrefs();
         }
@@ -768,60 +813,14 @@
             const prefs = getUIState();
             prefs.transports = transportOwnership;
             prefs.activeTransport = activeTransport;
-            prefs.townRatings = townRatings; 
-            prefs.city = selectedCity;
-            
-            // Save Drawer States
-            prefs.drawers = {};
-            document.querySelectorAll('details').forEach(d => {
-                if(d.id) prefs.drawers[d.id] = d.open;
-            });
+            prefs.city = document.getElementById('city-select').value;
+            prefs.townRatings = townRatings; // SAVE MAP
 
             localStorage.setItem('mabi_prefs', JSON.stringify(prefs));
             if (currentUser && rtdb) {
                 clearTimeout(saveTimeout);
                 saveTimeout = setTimeout(() => { rtdb.ref(`users/${currentUser.uid}/settings`).update(prefs); }, 1000);
             }
-        }
-
-        function applySettings(data) {
-            if (!data) return;
-            
-            if (data.townRatings) townRatings = data.townRatings;
-            if (data.commerceType) activeCommerceType = data.commerceType;
-            if (data.city) selectedCity = data.city;
-            if (data.activeTransport) activeTransport = data.activeTransport;
-            if (data.transports) transportOwnership = data.transports;
-
-            if (data.mastery) document.getElementById('mastery-rank').value = data.mastery;
-            if (data.letter) document.getElementById('letter-select').value = data.letter;
-            if (data.fine !== undefined) document.getElementById('fine-letter-check').checked = data.fine;
-            if (data.gm !== undefined) document.getElementById('gm-check').checked = data.gm;
-            if (data.william !== undefined) document.getElementById('william-check').checked = data.william;
-            if (data.williamLike) document.getElementById('william-likeability').value = data.williamLike;
-            if (data.alpaca !== undefined) document.getElementById('alpaca-check').checked = data.alpaca;
-            if (data.trader) document.getElementById('trader-qty').value = data.trader;
-            if (data.trust) document.getElementById('trustworthy-qty').value = data.trust;
-
-            // Restore Drawers
-            if (data.drawers) {
-                for (const [id, isOpen] of Object.entries(data.drawers)) {
-                    const el = document.getElementById(id);
-                    if (el) el.open = isOpen;
-                }
-            }
-
-            // Sync UI Elements
-            document.getElementById('merchant-rating-input').value = townRatings[selectedCity] || 1;
-            Object.keys(transportOwnership).forEach(key => {
-                const toggle = document.querySelector(`.transport-toggle[data-mount="${key}"]`);
-                if(toggle) toggle.checked = transportOwnership[key];
-            });
-
-            renderCommerceTabs(); 
-            renderTransportTabs(); 
-            renderCityTabs(); 
-            refreshUI();
         }
 
         function toggleSidebar(side) {
@@ -837,15 +836,14 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            const saved = JSON.parse(localStorage.getItem('mabi_prefs')) || {};
+            
+            if (saved.townRatings) townRatings = saved.townRatings; // LOAD MAP
+
             document.getElementById('mastery-rank').innerHTML = Object.keys(masteryRanks).map(r => `<option value="${r}">Rank ${r} (+${Math.round(masteryRanks[r]*100)}%)</option>`).join('');
             document.getElementById('letter-select').innerHTML = ["None", "Ogre", "Goblin", "Imp", "Irusan's (Special)"].map(n => `<option value="${n}">${n}</option>`).join('');
-
-            // Attach listeners
             document.querySelectorAll('.transport-toggle').forEach(toggle => {
                 toggle.onchange = (e) => { transportOwnership[toggle.dataset.mount] = e.target.checked; savePrefs(); renderTransportTabs(); refreshUI(); };
-            });
-            document.querySelectorAll('details').forEach(d => {
-                d.ontoggle = () => { savePrefs(); }
             });
             document.getElementById('merchant-rating-input').onchange = (e) => validateRating(e.target);
             ['trader-qty', 'trustworthy-qty', 'mastery-rank', 'letter-select', 'fine-letter-check', 'gm-check', 'william-likeability'].forEach(id => {
@@ -854,9 +852,34 @@
             document.getElementById('william-check').onchange = function() { if (this.checked) document.getElementById('alpaca-check').checked = false; refreshUI(); savePrefs(); };
             document.getElementById('alpaca-check').onchange = function() { if (this.checked) document.getElementById('william-check').checked = false; renderTransportTabs(); refreshUI(); savePrefs(); };
             
-            // 1. Load Local
-            const localSaved = JSON.parse(localStorage.getItem('mabi_prefs')) || {};
-            applySettings(localSaved);
+            // Fixed: Load fine letter checkbox state
+            document.getElementById('fine-letter-check').onchange = () => { refreshUI(); savePrefs(); };
+            
+            if (saved.commerceType) activeCommerceType = saved.commerceType;
+            if (saved.city) selectedCity = saved.city;
+            
+            // Set initial rating from map if available
+            document.getElementById('merchant-rating-input').value = townRatings[selectedCity] || 1;
+            
+            if (saved.activeTransport) activeTransport = saved.activeTransport;
+            if (saved.transports) transportOwnership = saved.transports;
+            Object.keys(transportOwnership).forEach(key => {
+                const toggle = document.querySelector(`.transport-toggle[data-mount="${key}"]`);
+                if(toggle) toggle.checked = transportOwnership[key];
+            });
+
+            // --- RESTORE MISSING PREFS ---
+            if (saved.mastery) document.getElementById('mastery-rank').value = saved.mastery;
+            if (saved.letter) document.getElementById('letter-select').value = saved.letter;
+            if (saved.fine !== undefined) document.getElementById('fine-letter-check').checked = saved.fine;
+            if (saved.gm !== undefined) document.getElementById('gm-check').checked = saved.gm;
+            if (saved.william !== undefined) document.getElementById('william-check').checked = saved.william;
+            if (saved.williamLike) document.getElementById('william-likeability').value = saved.williamLike;
+            if (saved.alpaca !== undefined) document.getElementById('alpaca-check').checked = saved.alpaca;
+            if (saved.trader) document.getElementById('trader-qty').value = saved.trader;
+            if (saved.trust) document.getElementById('trustworthy-qty').value = saved.trust;
+            
+            renderCommerceTabs(); renderTransportTabs(); renderCityTabs(); refreshUI();
 
             const firebaseConfig = {
                 apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM",
@@ -873,28 +896,30 @@
             rtdb.ref('public_commerce/stocks').on('value', (s) => { if (!skipRender) { publicStocks = s.val() || {}; refreshUI(); } skipRender = false; });
             rtdb.ref('public_commerce/base_prices').on('value', (s) => { if (!skipRender) { publicBasePrices = s.val() || {}; refreshUI(); } skipRender = false; });
             
+            // --- AUTHENTICATION LISTENER: UPDATED TO REMOVE TRANSFORMATION ---
             auth.onAuthStateChanged(user => {
                 const displayElem = document.getElementById('user-display');
                 if (user) {
                     currentUser = user;
+                    
+                    // 1. Initial fallback using email prefix (no transform)
                     displayElem.textContent = user.email.split('@')[0];
-                    const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
-                    if (cached.username) displayElem.textContent = cached.username;
 
+                    // 2. Try instant load from local settings cache (no transform)
+                    const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
+                    if (cached.username) {
+                        displayElem.textContent = cached.username;
+                    }
+
+                    // 3. Real-time sync with database profile (no transform)
                     firebase.database().ref(`users/${user.uid}/profile`).on('value', (snap) => {
                         const profile = snap.val();
                         if (profile && profile.username) {
                             displayElem.textContent = profile.username;
+                            // Update local cache
                             localStorage.setItem('mabi_user_cache_' + user.uid, JSON.stringify(profile));
                         }
                     });
-
-                    // 2. Load Cloud Settings
-                    firebase.database().ref(`users/${user.uid}/settings`).once('value', (snap) => {
-                        const cloudPrefs = snap.val();
-                        if(cloudPrefs) applySettings(cloudPrefs);
-                    });
-
                 } else {
                     currentUser = { uid: 'local_guest', isGuest: true };
                     displayElem.textContent = "GUEST";
