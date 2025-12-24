@@ -91,7 +91,8 @@
 
         /* --- Header Elements --- */
         .title-section {
-            display: flex; justify-content: space-between; align-items: center; max-width: 1500px; margin: 0 auto; width: 100%;
+            /* Removed max-width 1500px to match full-width layout */
+            display: flex; justify-content: space-between; align-items: center; width: 100%;
         }
         .main-title {
             font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 0.5px;
@@ -449,6 +450,7 @@
                     </div>
                 </details>
 
+                <!-- OPTIMAL ROUTE (Remaining focused) -->
                 <div class="manifest-container" id="manifest-box" style="display:none;">
                     <div class="manifest-header">
                         <span>Optimal Route</span>
@@ -738,6 +740,7 @@
             const targetPool = (activeCommerceType === "Barter" ? citiesByType["Normal"] : citiesByType[activeCommerceType]);
             const targets = targetPool.filter(c => c !== origin);
             const originItems = (marketData[activeCommerceType] && marketData[activeCommerceType][origin]) || [];
+            
             const localResult = calculateBestRouteForVector(origin, targets, originItems, uiState, activeTransport);
             renderManifest(localResult.best, 'manifest-box', 'manifest-list', 'manifest-total');
         }
