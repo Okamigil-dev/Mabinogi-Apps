@@ -80,7 +80,6 @@
             flex-direction: column; 
             height: 100%; 
             width: 100%; 
-            /* Full Width Layout */
             border-left: 1px solid var(--border); 
             border-right: 1px solid var(--border); 
         }
@@ -115,7 +114,7 @@
         /* Pending List in Sidebar */
         .mini-task-row { font-size: 12px; color: var(--text-dim); padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.03); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* Center Panel Navigation (New Stacked Layout) */
+        /* Center Panel Navigation */
         .nav-stack {
             position: sticky; top: 0; z-index: 20; background: var(--card-bg);
             border-bottom: 1px solid var(--border);
@@ -132,7 +131,6 @@
             -webkit-overflow-scrolling: touch;
             background: var(--bg);
         }
-        /* Hide scrollbar for character tabs */
         .char-tabs-bar::-webkit-scrollbar { display: none; } 
         
         .char-pill {
@@ -208,7 +206,6 @@
         @media (max-width: 1000px) {
             .mobile-only { display: block; }
             .desktop-only { display: none; }
-            /* Hide global nav on mobile to preserve layout */
             .global-nav { display: none; }
             
             .content-grid { display: block; height: calc(100dvh - 50px); }
@@ -241,7 +238,6 @@
             .drawer-title { font-weight: 700; color: #fff; }
             .drawer-close { background: none; border: none; color: var(--text-dim); font-size: 20px; padding: 0 5px; cursor: pointer; }
 
-            /* Mobile User Profile */
             .user-profile-box { display: flex; align-items: center; gap: 12px; padding: 15px; border-bottom: 1px solid var(--border); }
             .user-avatar-mobile { width: 40px; height: 40px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; flex-shrink: 0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"); }
             .user-info-text-mobile { font-size: 13px; font-weight: 600; color: var(--text-main); word-break: break-all; line-height: 1.2; }
@@ -799,9 +795,9 @@
                         <div class="prog-bar" style="width:${(t.done/t.max)*100}%"></div>
                     </div>
                     <div class="view-ui" style="display:flex; align-items:center; gap:8px;">
-                        <button class="btn-c" onclick="mod(${t.id},-1)">-</button>
+                        <button class="btn-c" onclick="mod(event, ${t.id},-1)">-</button>
                         <div style="font-family:'JetBrains Mono'; font-size:12px; width:22px; text-align:center; color:#fff; font-weight:700;">${t.done}</div>
-                        <button class="btn-c" onclick="mod(${t.id},1)">+</button>
+                        <button class="btn-c" onclick="mod(event, ${t.id},1)">+</button>
                     </div>`;
                 list.appendChild(card);
             });
@@ -824,7 +820,21 @@
     }
 
     function haptic() { if ("vibrate" in navigator) navigator.vibrate(12); }
-    function mod(id, d) { haptic(); const t = tasks.find(x => x.id == id); t.done = Math.max(0, Math.min(t.max, t.done + d)); skipRender = true; pushData(); render(); }
+    function mod(e, id, d) { 
+        haptic(); 
+        const t = tasks.find(x => x.id == id); 
+        if(t) {
+            if (e.ctrlKey || e.metaKey) {
+                // If adding (d > 0), set to max. If removing (d < 0), set to 0.
+                t.done = d > 0 ? t.max : 0;
+            } else {
+                t.done = Math.max(0, Math.min(t.max, t.done + d)); 
+            }
+            skipRender = true; 
+            pushData(); 
+            render(); 
+        }
+    }
     function upd(id, f, v) { const t = tasks.find(x => x.id == id); t[f] = (f==='max'?parseInt(v):v); skipRender = true; pushData(); render(); }
     function del(id) { tasks = tasks.filter(x => x.id != id); pushData(); render(); }
     function addTask(cat) { 
@@ -855,15 +865,31 @@
     function setF(f) { activeFilter = f; render(); }
     function toggleMgmt() { document.getElementById('app').classList.toggle('show-mgmt'); render(); }
     
+    // --- SAFE SAVE TASK ORDER (Prevents Deletion of Hidden Tasks) ---
     function saveTaskOrder() { 
-        let nt = []; 
-        const hidden = tasks.filter(t => currentView === 'daily' ? t.type !== 'daily' : t.type === 'daily'); 
-        document.querySelectorAll('.task-card').forEach(c => { 
-            const t = tasks.find(x => x.id == c.dataset.id); 
-            t.cat = c.closest('.sort-list').dataset.cat; 
-            nt.push(t); 
+        // 1. Identify all tasks currently visible in the DOM (the new order)
+        const taskCards = document.querySelectorAll('.task-card');
+        const visibleIds = new Set();
+        let newOrderedTasks = [];
+
+        taskCards.forEach(c => { 
+            const id = parseInt(c.dataset.id);
+            visibleIds.add(id);
+            const t = tasks.find(x => x.id === id); 
+            if (t) {
+                // Update category based on the list it is currently in
+                t.cat = c.closest('.sort-list').dataset.cat; 
+                newOrderedTasks.push(t); 
+            }
         }); 
-        tasks = [...nt, ...hidden]; 
+
+        // 2. Identify tasks that are NOT in the current DOM (hidden by view or char filter)
+        // These MUST be preserved
+        const hiddenTasks = tasks.filter(t => !visibleIds.has(t.id));
+        
+        // 3. Recombine: New Order + Preserved Hidden Tasks
+        tasks = [...newOrderedTasks, ...hiddenTasks]; 
+        
         pushData(); 
         renderPendingSidebar();
     }
