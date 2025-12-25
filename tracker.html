@@ -766,9 +766,9 @@
                         <div class="prog-bar" style="width:${(t.done/t.max)*100}%"></div>
                     </div>
                     <div class="view-ui" style="display:flex; align-items:center; gap:8px;">
-                        <button class="btn-c" onclick="mod(${t.id},-1)">-</button>
+                        <button class="btn-c" onclick="mod(event, ${t.id},-1)">-</button>
                         <div style="font-family:'JetBrains Mono'; font-size:12px; width:22px; text-align:center; color:#fff; font-weight:700;">${t.done}</div>
-                        <button class="btn-c" onclick="mod(${t.id},1)">+</button>
+                        <button class="btn-c" onclick="mod(event, ${t.id},1)">+</button>
                     </div>`;
                 list.appendChild(card);
             });
@@ -791,7 +791,21 @@
     }
 
     function haptic() { if ("vibrate" in navigator) navigator.vibrate(12); }
-    function mod(id, d) { haptic(); const t = tasks.find(x => x.id == id); t.done = Math.max(0, Math.min(t.max, t.done + d)); skipRender = true; pushData(); render(); }
+    function mod(e, id, d) { 
+        haptic(); 
+        const t = tasks.find(x => x.id == id); 
+        if(t) {
+            if (e.ctrlKey || e.metaKey) {
+                // If adding (d > 0), set to max. If removing (d < 0), set to 0.
+                t.done = d > 0 ? t.max : 0;
+            } else {
+                t.done = Math.max(0, Math.min(t.max, t.done + d)); 
+            }
+            skipRender = true; 
+            pushData(); 
+            render(); 
+        }
+    }
     function upd(id, f, v) { const t = tasks.find(x => x.id == id); t[f] = (f==='max'?parseInt(v):v); skipRender = true; pushData(); render(); }
     function del(id) { tasks = tasks.filter(x => x.id != id); pushData(); render(); }
     function addTask(cat) { 
