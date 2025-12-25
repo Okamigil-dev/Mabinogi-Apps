@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Task Tracker</title>
     
-    <!-- Firebase SDKs -->
+    <!-- Firebase SDKs (RTDB Compat) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -80,7 +80,6 @@
             flex-direction: column; 
             height: 100%; 
             width: 100%; 
-            /* Full Width Layout */
             border-left: 1px solid var(--border); 
             border-right: 1px solid var(--border); 
         }
@@ -429,6 +428,7 @@
     let hideCompletedGroups = false; // New state variable
     let currentView = 'daily', activeFilter = "ALL", currentUser = null;
     let skipRender = false;
+    let isDataLoaded = false; // SAFETY LOCK
 
     // --- AUTH & SYNC ---
     auth.onAuthStateChanged(user => {
@@ -449,6 +449,7 @@
                 mobileStatus.style.color = "var(--accent)";
             }
             
+            // Unified Profile Logic - Cache First
             try {
                 const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
                 const name = cached.username || user.email;
@@ -463,6 +464,22 @@
                 uInfo.innerText = user.email; 
                 if(mobileUser) mobileUser.innerText = user.email;
             }
+
+            // Unified Profile Logic - Live Listener
+            db.ref(`users/${user.uid}/profile`).on('value', (snap) => {
+                const profile = snap.val();
+                if (profile) {
+                    if(profile.username) {
+                        uInfo.innerText = profile.username;
+                        if(mobileUser) mobileUser.innerText = profile.username;
+                    }
+                    if(profile.avatar) {
+                        uAvatar.style.backgroundImage = `url('${profile.avatar}')`;
+                        if(mobileAvatar) mobileAvatar.style.backgroundImage = `url('${profile.avatar}')`;
+                    }
+                    localStorage.setItem('mabi_user_cache_' + user.uid, JSON.stringify(profile));
+                }
+            });
             
             startSync(); 
         } else { 
@@ -484,27 +501,32 @@
     function startSync() {
         if (currentUser.isGuest) {
             const localData = JSON.parse(localStorage.getItem('mabi_tracker_guest_data') || '{}');
-            tasks = localData.tasks || []; chars = localData.chars || ["Main"]; catOrder = localData.catOrder || []; lastReset = localData.lastReset || { daily: 0, mon: 0, thu: 0, sat: 0 };
+            tasks = localData.tasks || []; 
+            chars = localData.chars || ["Main"]; 
+            catOrder = localData.catOrder || []; 
+            lastReset = localData.lastReset || { daily: 0, mon: 0, thu: 0, sat: 0 };
             collapsed = localData.collapsed || {};
             timerSettings = localData.timerSettings || { daily: true, mon: true, thu: true, sat: true };
             hideCompletedGroups = localData.hideCompletedGroups || false;
             
             document.getElementById('hide-completed-toggle').checked = hideCompletedGroups;
+            isDataLoaded = true; // Mark safe
             checkAndReset(); render(); renderPendingSidebar(); applyTimerSettings();
         } else {
+            // Listen specifically to the main user node (excluding profile/settings if possible, but structure forces root)
+            // Ideally, we'd split listeners, but for now we safeguard with isDataLoaded
             db.ref(`users/${currentUser.uid}`).on('value', (snap) => {
                 if (skipRender) { skipRender = false; return; }
                 const data = snap.val() || {};
                 
-                // --- FIX: FORCE TASKS TO ARRAY ---
+                // Force Arrays
                 if (data.tasks) {
                     tasks = Array.isArray(data.tasks) ? data.tasks : Object.values(data.tasks);
-                    tasks = tasks.filter(t => t); // Remove nulls
+                    tasks = tasks.filter(t => t); 
                 } else {
                     tasks = [];
                 }
                 
-                // --- FIX: FORCE ARRAYS FOR OTHERS ---
                 if (data.chars) chars = Array.isArray(data.chars) ? data.chars : Object.values(data.chars);
                 else chars = ["Main"];
 
@@ -518,22 +540,7 @@
                 
                 document.getElementById('hide-completed-toggle').checked = hideCompletedGroups;
 
-                const mobileUser = document.getElementById('mobile-user-info'); 
-                const mobileAvatar = document.getElementById('mobile-user-avatar');
-                const uInfo = document.getElementById('user-info');
-                const uAvatar = document.getElementById('user-avatar');
-
-                if (data.profile) {
-                    const name = data.profile.username || currentUser.email;
-                    uInfo.innerText = name;
-                    if(mobileUser) mobileUser.innerText = name;
-                    
-                    if(data.profile.avatar) {
-                        uAvatar.style.backgroundImage = `url('${data.profile.avatar}')`;
-                        if(mobileAvatar) mobileAvatar.style.backgroundImage = `url('${data.profile.avatar}')`;
-                    }
-                }
-
+                isDataLoaded = true; // Mark safe!
                 checkAndReset(); render(); renderPendingSidebar(); applyTimerSettings();
             });
         }
@@ -541,6 +548,11 @@
 
     function pushData() { 
         if (!currentUser) return;
+        if (!isDataLoaded && !currentUser.isGuest) {
+            console.warn("Prevented overwrite: Data not yet loaded.");
+            return;
+        }
+
         const dataToSave = { tasks, chars, catOrder, lastReset, collapsed, timerSettings, hideCompletedGroups };
         if (currentUser.isGuest) {
             localStorage.setItem('mabi_tracker_guest_data', JSON.stringify(dataToSave));
@@ -551,6 +563,7 @@
 
     // --- LOGIC ---
     function checkAndReset() {
+        if (!isDataLoaded) return;
         const now = new Date(), pac = new Date(now.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
         const getR = (dayNum) => {
             let r = new Date(pac); r.setHours(7, 0, 0, 0);
@@ -561,7 +574,6 @@
         const rd = getR(null), rm = getR(1), rt = getR(4), rs = getR(6);
         let changed = false;
         
-        // Safety check if tasks is valid before iterating
         if (tasks && Array.isArray(tasks)) {
             if (lastReset.daily < rd) { tasks.forEach(t => { if(t.type === 'daily') t.done = 0; }); lastReset.daily = rd; changed = true; }
             if (lastReset.mon < rm) { tasks.forEach(t => { if(t.type === 'mon') t.done = 0; }); lastReset.mon = rm; changed = true; }
@@ -787,9 +799,9 @@
                         <div class="prog-bar" style="width:${(t.done/t.max)*100}%"></div>
                     </div>
                     <div class="view-ui" style="display:flex; align-items:center; gap:8px;">
-                        <button class="btn-c" onclick="mod(${t.id},-1)">-</button>
+                        <button class="btn-c" onclick="mod(event, ${t.id},-1)">-</button>
                         <div style="font-family:'JetBrains Mono'; font-size:12px; width:22px; text-align:center; color:#fff; font-weight:700;">${t.done}</div>
-                        <button class="btn-c" onclick="mod(${t.id},1)">+</button>
+                        <button class="btn-c" onclick="mod(event, ${t.id},1)">+</button>
                     </div>`;
                 list.appendChild(card);
             });
@@ -812,7 +824,21 @@
     }
 
     function haptic() { if ("vibrate" in navigator) navigator.vibrate(12); }
-    function mod(id, d) { haptic(); const t = tasks.find(x => x.id == id); t.done = Math.max(0, Math.min(t.max, t.done + d)); skipRender = true; pushData(); render(); }
+    function mod(e, id, d) { 
+        haptic(); 
+        const t = tasks.find(x => x.id == id); 
+        if(t) {
+            if (e.ctrlKey || e.metaKey) {
+                // If adding (d > 0), set to max. If removing (d < 0), set to 0.
+                t.done = d > 0 ? t.max : 0;
+            } else {
+                t.done = Math.max(0, Math.min(t.max, t.done + d)); 
+            }
+            skipRender = true; 
+            pushData(); 
+            render(); 
+        }
+    }
     function upd(id, f, v) { const t = tasks.find(x => x.id == id); t[f] = (f==='max'?parseInt(v):v); skipRender = true; pushData(); render(); }
     function del(id) { tasks = tasks.filter(x => x.id != id); pushData(); render(); }
     function addTask(cat) { 
