@@ -241,6 +241,12 @@
             .drawer-title { font-weight: 700; color: #fff; }
             .drawer-close { background: none; border: none; color: var(--text-dim); font-size: 20px; padding: 0 5px; cursor: pointer; }
 
+            /* Mobile User Profile */
+            .user-profile-box { display: flex; align-items: center; gap: 12px; padding: 15px; border-bottom: 1px solid var(--border); }
+            .user-avatar-mobile { width: 40px; height: 40px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; flex-shrink: 0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"); }
+            .user-info-text-mobile { font-size: 13px; font-weight: 600; color: var(--text-main); word-break: break-all; line-height: 1.2; }
+            .user-status-mobile { font-size: 10px; color: var(--text-dim); }
+
             .task-card { padding: 15px; min-height: 55px; }
             .t-name { font-size: 15px; width: 100%; font-weight: 600; color: #fff; white-space: normal; }
             .btn-c { width: 32px; height: 32px; font-size: 16px; }
@@ -295,6 +301,14 @@
                 <!-- Mobile Only: Back to Hub -->
                 <div class="mobile-only" style="padding: 10px 15px; border-bottom: 1px solid var(--border);">
                     <button class="hub-btn" style="width:100%; text-align:center;" onclick="window.location.href='index.html'">← Back to Hub</button>
+                </div>
+
+                <div class="user-profile-box mobile-only">
+                    <div id="mobile-user-avatar" class="user-avatar-mobile"></div>
+                    <div style="flex-grow:1; min-width:0;">
+                        <div id="mobile-user-info" class="user-info-text-mobile">Guest</div>
+                        <div id="mobile-connection-status" class="user-status-mobile">Local Mode</div>
+                    </div>
                 </div>
                 
                 <div class="config-section">
@@ -421,23 +435,47 @@
         const uInfo = document.getElementById('user-info');
         const uAvatar = document.getElementById('user-avatar');
         const status = document.getElementById('connection-status');
+        const mobileUser = document.getElementById('mobile-user-info'); 
+        const mobileAvatar = document.getElementById('mobile-user-avatar');
+        const mobileStatus = document.getElementById('mobile-connection-status');
 
         if (user) { 
             currentUser = user;
             status.innerText = "Online & Syncing";
             status.style.color = "var(--accent)";
             
+            if(mobileStatus) {
+                mobileStatus.innerText = "Online";
+                mobileStatus.style.color = "var(--accent)";
+            }
+            
             try {
                 const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
-                uInfo.innerText = cached.username || user.email;
-                if(cached.avatar) uAvatar.style.backgroundImage = `url('${cached.avatar}')`;
-            } catch(e) { uInfo.innerText = user.email; }
+                const name = cached.username || user.email;
+                uInfo.innerText = name;
+                if(mobileUser) mobileUser.innerText = name;
+                
+                if(cached.avatar) {
+                    uAvatar.style.backgroundImage = `url('${cached.avatar}')`;
+                    if(mobileAvatar) mobileAvatar.style.backgroundImage = `url('${cached.avatar}')`;
+                }
+            } catch(e) { 
+                uInfo.innerText = user.email; 
+                if(mobileUser) mobileUser.innerText = user.email;
+            }
             
             startSync(); 
         } else { 
             currentUser = { uid: 'local_guest', isGuest: true };
             uInfo.innerText = "Guest";
+            if(mobileUser) mobileUser.innerText = "Guest";
+            
             status.innerText = "Local Storage Mode";
+            status.style.color = "var(--text-dim)";
+            if(mobileStatus) {
+                mobileStatus.innerText = "Local Mode";
+                mobileStatus.style.color = "var(--text-dim)";
+            }
             startSync();
         }
         document.body.classList.add('ready');
@@ -464,9 +502,20 @@
                 
                 document.getElementById('hide-completed-toggle').checked = hideCompletedGroups;
 
+                const mobileUser = document.getElementById('mobile-user-info'); 
+                const mobileAvatar = document.getElementById('mobile-user-avatar');
+                const uInfo = document.getElementById('user-info');
+                const uAvatar = document.getElementById('user-avatar');
+
                 if (data.profile) {
-                    document.getElementById('user-info').innerText = data.profile.username || currentUser.email;
-                    if(data.profile.avatar) document.getElementById('user-avatar').style.backgroundImage = `url('${data.profile.avatar}')`;
+                    const name = data.profile.username || currentUser.email;
+                    uInfo.innerText = name;
+                    if(mobileUser) mobileUser.innerText = name;
+                    
+                    if(data.profile.avatar) {
+                        uAvatar.style.backgroundImage = `url('${data.profile.avatar}')`;
+                        if(mobileAvatar) mobileAvatar.style.backgroundImage = `url('${data.profile.avatar}')`;
+                    }
                 }
 
                 checkAndReset(); render(); renderPendingSidebar(); applyTimerSettings();
