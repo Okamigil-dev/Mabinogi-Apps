@@ -243,7 +243,7 @@
 
             /* Mobile User Profile */
             .user-profile-box { display: flex; align-items: center; gap: 12px; padding: 15px; border-bottom: 1px solid var(--border); }
-            .user-avatar-mobile { width: 80px; height: 80px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; flex-shrink: 0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"); }
+            .user-avatar-mobile { width: 40px; height: 40px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; flex-shrink: 0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"); }
             .user-info-text-mobile { font-size: 13px; font-weight: 600; color: var(--text-main); word-break: break-all; line-height: 1.2; }
             .user-status-mobile { font-size: 10px; color: var(--text-dim); }
 
@@ -285,7 +285,7 @@
                         <div id="user-info" style="font-size:12px; font-weight:600; color:var(--text-main);">Guest</div>
                         <div id="connection-status" style="font-size:10px; color:var(--text-dim);">Local Mode</div>
                     </div>
-                    <div id="user-avatar" style="width: 80px; height: 80px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; background-image: url('data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23a1a1aa\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E');"></div>
+                    <div id="user-avatar" style="width: 36px; height: 36px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; background-image: url('data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23a1a1aa\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E');"></div>
                 </div>
             </div>
         </div>
@@ -495,7 +495,23 @@
             db.ref(`users/${currentUser.uid}`).on('value', (snap) => {
                 if (skipRender) { skipRender = false; return; }
                 const data = snap.val() || {};
-                tasks = data.tasks || []; chars = data.chars || ["Main"]; catOrder = data.catOrder || []; lastReset = data.lastReset || { daily: 0, mon: 0, thu: 0, sat: 0 };
+                
+                // --- FIX: FORCE TASKS TO ARRAY ---
+                if (data.tasks) {
+                    tasks = Array.isArray(data.tasks) ? data.tasks : Object.values(data.tasks);
+                    tasks = tasks.filter(t => t); // Remove nulls
+                } else {
+                    tasks = [];
+                }
+                
+                // --- FIX: FORCE ARRAYS FOR OTHERS ---
+                if (data.chars) chars = Array.isArray(data.chars) ? data.chars : Object.values(data.chars);
+                else chars = ["Main"];
+
+                if (data.catOrder) catOrder = Array.isArray(data.catOrder) ? data.catOrder : Object.values(data.catOrder);
+                else catOrder = [];
+
+                lastReset = data.lastReset || { daily: 0, mon: 0, thu: 0, sat: 0 };
                 collapsed = data.collapsed || {};
                 timerSettings = data.timerSettings || { daily: true, mon: true, thu: true, sat: true };
                 hideCompletedGroups = data.hideCompletedGroups || false;
@@ -544,10 +560,15 @@
         };
         const rd = getR(null), rm = getR(1), rt = getR(4), rs = getR(6);
         let changed = false;
-        if (lastReset.daily < rd) { tasks.forEach(t => { if(t.type === 'daily') t.done = 0; }); lastReset.daily = rd; changed = true; }
-        if (lastReset.mon < rm) { tasks.forEach(t => { if(t.type === 'mon') t.done = 0; }); lastReset.mon = rm; changed = true; }
-        if (lastReset.thu < rt) { tasks.forEach(t => { if(t.type === 'thu') t.done = 0; }); lastReset.thu = rt; changed = true; }
-        if (lastReset.sat < rs) { tasks.forEach(t => { if(t.type === 'sat') t.done = 0; }); lastReset.sat = rs; changed = true; }
+        
+        // Safety check if tasks is valid before iterating
+        if (tasks && Array.isArray(tasks)) {
+            if (lastReset.daily < rd) { tasks.forEach(t => { if(t.type === 'daily') t.done = 0; }); lastReset.daily = rd; changed = true; }
+            if (lastReset.mon < rm) { tasks.forEach(t => { if(t.type === 'mon') t.done = 0; }); lastReset.mon = rm; changed = true; }
+            if (lastReset.thu < rt) { tasks.forEach(t => { if(t.type === 'thu') t.done = 0; }); lastReset.thu = rt; changed = true; }
+            if (lastReset.sat < rs) { tasks.forEach(t => { if(t.type === 'sat') t.done = 0; }); lastReset.sat = rs; changed = true; }
+        }
+        
         if (changed) { pushData(); render(); }
     }
 
@@ -766,9 +787,9 @@
                         <div class="prog-bar" style="width:${(t.done/t.max)*100}%"></div>
                     </div>
                     <div class="view-ui" style="display:flex; align-items:center; gap:8px;">
-                        <button class="btn-c" onclick="mod(event, ${t.id},-1)">-</button>
+                        <button class="btn-c" onclick="mod(${t.id},-1)">-</button>
                         <div style="font-family:'JetBrains Mono'; font-size:12px; width:22px; text-align:center; color:#fff; font-weight:700;">${t.done}</div>
-                        <button class="btn-c" onclick="mod(event, ${t.id},1)">+</button>
+                        <button class="btn-c" onclick="mod(${t.id},1)">+</button>
                     </div>`;
                 list.appendChild(card);
             });
@@ -791,21 +812,7 @@
     }
 
     function haptic() { if ("vibrate" in navigator) navigator.vibrate(12); }
-    function mod(e, id, d) { 
-        haptic(); 
-        const t = tasks.find(x => x.id == id); 
-        if(t) {
-            if (e.ctrlKey || e.metaKey) {
-                // If adding (d > 0), set to max. If removing (d < 0), set to 0.
-                t.done = d > 0 ? t.max : 0;
-            } else {
-                t.done = Math.max(0, Math.min(t.max, t.done + d)); 
-            }
-            skipRender = true; 
-            pushData(); 
-            render(); 
-        }
-    }
+    function mod(id, d) { haptic(); const t = tasks.find(x => x.id == id); t.done = Math.max(0, Math.min(t.max, t.done + d)); skipRender = true; pushData(); render(); }
     function upd(id, f, v) { const t = tasks.find(x => x.id == id); t[f] = (f==='max'?parseInt(v):v); skipRender = true; pushData(); render(); }
     function del(id) { tasks = tasks.filter(x => x.id != id); pushData(); render(); }
     function addTask(cat) { 
