@@ -871,7 +871,21 @@
             const finalTasks = visibleTasks.filter(t => t.cat === cat && (activeFilter === "ALL" || t.char === activeFilter));
             const hasGlobalTasks = tasks.some(t => t.cat === cat);
             const isComplete = finalTasks.length > 0 && finalTasks.every(t => t.done >= t.max);
-            const shouldShow = ((finalTasks.length > 0) || isEdit || (!hasGlobalTasks && catOrder.includes(cat))) && (isEdit || !hideCompletedGroups || !isComplete);
+
+            // LOGIC: Show group if:
+            // 1. It has tasks relevant to the CURRENT view (Daily/Weekly)
+            // 2. OR it is completely empty and we are in Edit Mode (so we can add to it)
+            // 3. AND (we are in Edit Mode OR "Hide Completed" is OFF OR the group is NOT complete)
+            
+            // Refined for Edit Mode clutter reduction:
+            // If a group has tasks but NONE match the current view (e.g. Weekly group in Daily view), hide it even in Edit Mode.
+            
+            const hasRelevantTasks = finalTasks.length > 0;
+            const isEmptyGroup = !hasGlobalTasks && catOrder.includes(cat);
+            
+            const shouldShow = (hasRelevantTasks || (isEdit && isEmptyGroup)) 
+                               && (isEdit || !hideCompletedGroups || !isComplete);
+
             if (!shouldShow) return;
             const wrap = document.createElement('div'); wrap.className = 'group-wrap'; wrap.dataset.catname = cat;
             const det = document.createElement('details'); det.open = collapsed[cat] !== false; det.ontoggle = () => { collapsed[cat] = det.open; skipRender = true; pushData(); };
