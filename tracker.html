@@ -804,7 +804,10 @@
     
     function renderPendingSidebar() {
         const list = document.getElementById('left-sidebar-pending'); if(!list) return; list.innerHTML = '';
-        let relevantTasks = tasks.filter(t => currentView === 'daily' ? t.type === 'daily' : t.type !== 'daily');
+        
+        // --- FIX: USE IS_TASK_DAILY HELPER FOR SIDEBAR ---
+        let relevantTasks = tasks.filter(t => currentView === 'daily' ? isTaskDaily(t) : !isTaskDaily(t));
+        
         const allCats = new Set([...catOrder, ...relevantTasks.map(t => t.cat)]);
         const sortedCats = [...allCats].sort((a,b) => { const ia=catOrder.indexOf(a), ib=catOrder.indexOf(b); if(ia===-1)return 1; if(ib===-1)return -1; return ia-ib; });
         let hasPending = false;
@@ -840,6 +843,16 @@
 
     function deleteCat(catName) { catOrder = catOrder.filter(c => c !== catName); tasks = tasks.filter(t => t.cat !== catName); if (collapsed[catName] !== undefined) delete collapsed[catName]; pushData(); render(); }
     
+    // --- HELPER FOR VIEW LOGIC ---
+    function isTaskDaily(t) {
+        if (t.type === 'daily') return true;
+        if (String(t.type).startsWith('custom_')) {
+            const ct = customTimers.find(c => 'custom_' + c.id === t.type);
+            return ct && ct.day === 'daily';
+        }
+        return false;
+    }
+
     function render() {
         if(!currentUser) return; if (!tasks) tasks = []; const isEdit = document.getElementById('app').classList.contains('show-mgmt');
         document.getElementById('nav-daily').classList.toggle('active', currentView === 'daily'); document.getElementById('nav-weekly').classList.toggle('active', currentView === 'weekly');
@@ -848,7 +861,10 @@
         const allBtn = document.createElement('div'); allBtn.className = `char-pill ${activeFilter === 'ALL' ? 'active' : ''}`; allBtn.innerText = "All Characters"; allBtn.onclick = () => setF("ALL"); charTabsCont.appendChild(allBtn);
         chars.forEach(c => { const btn = document.createElement('div'); btn.className = `char-pill ${activeFilter === c ? 'active' : ''}`; btn.innerText = c; btn.onclick = () => setF(c); charTabsCont.appendChild(btn); });
         const cont = document.getElementById('list-container'); cont.innerHTML = ''; if (catSortableInstance) catSortableInstance.destroy();
-        const visibleTasks = tasks.filter(t => currentView === 'daily' ? t.type === 'daily' : t.type !== 'daily');
+        
+        // --- FIX: USE HELPER FOR MAIN RENDER ---
+        const visibleTasks = tasks.filter(t => currentView === 'daily' ? isTaskDaily(t) : !isTaskDaily(t));
+        
         const allCats = new Set([...catOrder, ...visibleTasks.map(t => t.cat)]);
         const cats = [...allCats].sort((a,b) => { const ia=catOrder.indexOf(a), ib=catOrder.indexOf(b); if(ia===-1)return 1; if(ib===-1)return -1; return ia-ib; });
         cats.forEach(cat => {
