@@ -4,156 +4,122 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mabinogi Apps</title>
+    
+    <!-- Firebase SDKs (RTDB Compat) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    
     <style>
         :root {
+            /* V2.7 Theme - Matching Tracker/Commerce */
             --bg: #09090b;
             --sidebar-bg: #121214;
             --card-bg: #18181b;
             --accent: #00ff88;
             --accent-dim: rgba(0, 255, 136, 0.1);
+            --mon: #ff9900;
             --thu: #0088ff;
             --sat: #cc44ff;
             --border: #27272a;
             --text-main: #e4e4e7;
             --text-dim: #a1a1aa;
+            --danger: #ef4444;
             --neon-yellow: #facc15;
             --neon-cyan: #22d3ee;
         }
+
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
 
         body {
             font-family: 'Inter', sans-serif;
             background: var(--bg);
             color: var(--text-main);
             margin: 0;
-            display: flex;
-            height: 100vh;
+            font-size: 13px;
             overflow: hidden;
-            font-size: 14px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
             opacity: 0;
             transition: opacity 0.3s ease;
-            line-height: 1.5;
         }
-
         body.ready { opacity: 1; }
 
-        /* --- AUTH OVERLAY (MODAL STYLE) --- */
-        #auth-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999;
-            display: none; align-items: center; justify-content: center; padding: 20px;
-            backdrop-filter: blur(8px);
-        }
-        .auth-card {
-            background: var(--card-bg); padding: 30px; border-radius: 12px;
-            border: 1px solid var(--border); width: 100%; max-width: 340px;
-            text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-        }
-        .inp-s { 
-            background: var(--bg); border: 1px solid var(--border); color: #fff; 
-            padding: 12px; border-radius: 6px; font-size: 14px; width: 100%; 
-            margin-bottom: 12px; box-sizing: border-box; transition: border-color 0.2s;
-        }
-        .inp-s:focus { border-color: var(--accent); outline: none; }
-
-        .tab-btn { 
-            padding: 8px 16px; border: 1px solid transparent; background: transparent; 
-            color: var(--text-dim); font-size: 12px; font-weight: 600; cursor: pointer; 
-            border-radius: 6px; transition: all 0.2s; 
-        }
-        .tab-btn:hover { color: #fff; background: var(--border); }
-        .tab-btn.active { background: var(--border); color: #fff; border-color: var(--border); }
-        
-        .primary-btn {
-            background: var(--accent); color: #000; font-weight: 700; border: none;
-        }
-        .primary-btn:hover { background: #00cc6a; color: #000; }
-        
-        .tab-btn.login-trigger { 
-            color: var(--accent); border: 1px solid var(--accent); 
-            width: 100%; margin-top: 10px; text-align: center;
-        }
-        .tab-btn.login-trigger:hover { background: var(--accent-dim); }
-
-        /* --- SIDEBARS --- */
-        .sidebar {
-            width: 240px; background: var(--sidebar-bg);
-            display: flex; flex-direction: column; padding: 20px; gap: 16px; flex-shrink: 0; height: 100%;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        #sidebar-left { border-right: 1px solid var(--border); }
-        #sidebar-right { border-left: 1px solid var(--border); }
-
-        #sidebar-list { overflow-y: auto; flex-grow: 1; padding-right: 4px; }
-        
-        .sidebar-header { 
-            font-size: 11px; font-weight: 600; letter-spacing: 0.5px; 
-            color: var(--text-dim); margin-bottom: 8px;
-        }
-        
-        /* User Profile Area */
-        .user-profile-box {
+        /* --- Global Navigation --- */
+        .global-nav {
             display: flex;
             align-items: center;
-            gap: 15px; /* Increased gap for better spacing with larger avatar */
-            padding-bottom: 12px;
+            gap: 20px;
+            padding: 0 20px;
+            height: 40px;
+            background: #050506;
             border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .global-nav a {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-decoration: none;
+            letter-spacing: 0.5px;
+            transition: color 0.2s;
+        }
+        .global-nav a:hover { color: #fff; }
+        .global-nav a.active { color: var(--accent); }
+
+        /* --- Layout Containers (Matching Tracker) --- */
+        .interface-container { 
+            display: flex; 
+            flex-direction: column; 
+            height: 100%; 
+            width: 100%; 
+            border-left: 1px solid var(--border); 
+            border-right: 1px solid var(--border); 
+        }
+
+        .header-bar { 
+            background: var(--sidebar-bg); border-bottom: 1px solid var(--border); 
+            padding: 10px 20px; flex-shrink: 0; 
+        }
+        .title-section { display: flex; justify-content: space-between; align-items: center; }
+        .main-title { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 0.5px; }
+
+        .content-grid { display: grid; grid-template-columns: 280px 1fr 280px; flex-grow: 1; overflow: hidden; }
+        
+        .panel { 
+            background: var(--bg); display: flex; flex-direction: column; 
+            border-right: 1px solid var(--border); overflow-y: auto; 
+        }
+        .panel:last-child { border-right: none; }
+        .center-panel { 
+            background: #0c0c0e; 
+            align-items: center; 
+            justify-content: center;
+            padding: 40px;
+        }
+
+        /* --- Components --- */
+        .panel-label { font-size: 11px; font-weight: 600; color: var(--text-dim); margin-bottom: 6px; display: block; text-transform: uppercase; }
+        .config-section { padding: 20px; border-bottom: 1px solid var(--border); }
+
+        /* User Profile */
+        .user-profile-box { 
+            display: flex; align-items: center; gap: 15px; padding-bottom: 15px; 
+            border-bottom: 1px solid var(--border); margin-bottom: 15px; 
         }
         .user-avatar {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background-color: var(--bg);
-            border: 1px solid var(--border);
-            background-size: cover;
-            background-position: center;
-            flex-shrink: 0;
+            width: 64px; height: 64px; border-radius: 50%;
+            background-color: var(--card-bg); border: 1px solid var(--border);
+            background-size: cover; background-position: center; flex-shrink: 0;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E");
         }
-        #user-info { 
-            font-size: 13px; 
-            font-weight: 600;
-            color: var(--text-main); 
-            word-break: break-word; 
-            line-height: 1.2;
-        }
-        .guest-label { font-size: 11px; color: var(--text-dim); font-weight: 400; }
+        #user-info-display { font-size: 14px; font-weight: 600; color: #fff; line-height: 1.2; }
+        #guest-mode-label { font-size: 11px; color: var(--text-dim); }
 
-        .timer-card { 
-            background: var(--bg); padding: 8px 12px; border-radius: 6px; 
-            border: 1px solid var(--border); border-left: 3px solid var(--accent); 
-            margin-bottom: 6px; text-align: left; opacity: 0.5; transition: opacity 0.2s;
-        }
-        .timer-card.active { opacity: 1; }
-        .timer-card.thu { border-left-color: var(--thu); }
-        .timer-card.sat { border-left-color: var(--sat); }
-        
-        .t-label { font-size: 11px; color: var(--text-dim); font-weight: 500; }
-        .t-val { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #fff; float: right; }
-
-        .side-cat { 
-            margin-top: 16px; margin-bottom: 6px; color: var(--text-main); 
-            font-size: 11px; font-weight: 600; 
-        }
-        .side-task { 
-            font-size: 12px; color: var(--text-dim); padding: 6px 10px; 
-            border-radius: 4px; margin-bottom: 2px; cursor: default; 
-            transition: 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
-        }
-        .side-task:hover { color: #fff; background: var(--border); }
-
-        /* --- HUB CONTENT --- */
-        .hub-container {
-            flex-grow: 1; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; padding: 40px; overflow-y: auto;
-        }
-        .hub-header { 
-            font-size: 24px; font-weight: 700; letter-spacing: -0.5px; 
-            color: #fff; margin-bottom: 40px; 
-        }
+        /* Hub Links */
         .grid { display: grid; grid-template-columns: 1fr; gap: 16px; width: 100%; max-width: 480px; }
         
         .hub-link {
@@ -188,67 +154,95 @@
 
         .link-desc { font-size: 13px; color: var(--text-dim); }
 
-        .footer { margin-top: 60px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #444; }
+        /* Timers */
+        .timer-card { background: var(--card-bg); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); border-left: 3px solid var(--accent); margin-bottom: 8px; }
+        .timer-card.mon { border-left-color: var(--mon); }
+        .timer-card.thu { border-left-color: var(--thu); }
+        .timer-card.sat { border-left-color: var(--sat); }
+        .t-label { font-size: 11px; color: var(--text-dim); font-weight: 500; }
+        .t-val { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #fff; float: right; }
 
-        /* --- MOBILE STYLES --- */
+        /* Pending Task List */
+        .mini-task-row { 
+            font-size: 12px; color: var(--text-dim); padding: 6px 0; 
+            border-bottom: 1px solid rgba(255,255,255,0.03); 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+        }
+
+        /* Auth Modal */
+        #auth-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999;
+            display: none; align-items: center; justify-content: center; padding: 20px;
+            backdrop-filter: blur(8px);
+        }
+        .auth-card {
+            background: var(--card-bg); padding: 30px; border-radius: 12px;
+            border: 1px solid var(--border); width: 100%; max-width: 340px;
+            text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .inp-s { 
+            background: var(--bg); border: 1px solid var(--border); color: #fff; 
+            padding: 12px; border-radius: 6px; font-size: 14px; width: 100%; 
+            margin-bottom: 12px; box-sizing: border-box; transition: border-color 0.2s;
+        }
+        .inp-s:focus { border-color: var(--accent); outline: none; }
+        
+        .btn-auth {
+            padding: 10px; border: 1px solid transparent; background: transparent; 
+            color: var(--text-dim); font-size: 12px; font-weight: 600; cursor: pointer; 
+            border-radius: 6px; transition: all 0.2s; width: 100%;
+        }
+        .btn-auth.primary { background: var(--accent); color: #000; }
+        .btn-auth.primary:hover { background: #00cc6a; }
+        .btn-auth.secondary { border-color: var(--border); }
+        .btn-auth.secondary:hover { background: var(--border); color: #fff; }
+
+        /* Mobile */
         .mobile-nav { display: none; }
         .mobile-backdrop { display: none; }
+        .drawer-header { display: none; } 
+        .mobile-only { display: none; }
 
-        @media (max-width: 900px) { 
-            /* Layout Adjustments */
-            body { flex-direction: column; }
-            
-            /* Mobile Navigation Bar */
-            .mobile-nav {
-                display: flex; justify-content: space-between; align-items: center;
-                padding: 15px 20px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border);
-                flex-shrink: 0; z-index: 50;
+        @media (max-width: 1000px) {
+            .mobile-only { display: block; }
+            .content-grid { display: block; height: calc(100vh - 50px); }
+            .header-bar { display: none; }
+            .global-nav { display: none; }
+
+            .mobile-nav { 
+                display: flex; justify-content: space-between; align-items: center; 
+                padding: 10px 15px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border); 
+                height: 50px; z-index: 50; flex-shrink: 0;
             }
-            .mobile-nav-title { font-weight: 700; color: #fff; letter-spacing: -0.5px; }
-            .nav-trigger {
-                background: none; border: 1px solid var(--border); color: var(--text-dim);
-                padding: 8px 12px; border-radius: 6px; font-size: 18px; cursor: pointer;
-            }
+            .nav-trigger { background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 14px; cursor: pointer; }
             
-            /* Convert Sidebars to Drawers */
-            .sidebar {
-                position: fixed; top: 0; bottom: 0; width: 280px; max-width: 85%;
-                z-index: 1001;
-                box-shadow: 0 0 50px rgba(0,0,0,0.8);
-            }
+            .panel { position: fixed; top: 0; bottom: 0; width: 300px; max-width: 85%; z-index: 1001; transition: transform 0.3s, visibility 0.3s; visibility: hidden; }
+            .left-panel { left: 0; transform: translateX(-100%); border-right: 1px solid var(--border); }
+            .right-panel { right: 0; transform: translateX(100%); border-left: 1px solid var(--border); }
+            .left-panel.active, .right-panel.active { transform: translateX(0); visibility: visible; }
             
-            #sidebar-left { left: 0; transform: translateX(-100%); }
-            #sidebar-left.active { transform: translateX(0); }
-            
-            #sidebar-right { right: 0; transform: translateX(100%); }
-            #sidebar-right.active { transform: translateX(0); }
-            
-            /* Backdrop */
-            .mobile-backdrop {
-                display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
-                z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s;
-                backdrop-filter: blur(4px);
-            }
+            .center-panel { height: 100%; width: 100%; border: none; z-index: 1; }
+            .mobile-backdrop { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(4px); }
             .mobile-backdrop.active { opacity: 1; pointer-events: all; }
 
-            /* Content Adjustments */
-            .hub-container { padding: 20px; width: 100%; box-sizing: border-box; }
-            .hub-header { font-size: 20px; margin-bottom: 20px; display: none; /* Hide duplicate header */ }
+            .drawer-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--border); background: var(--sidebar-bg); }
+            .drawer-title { font-weight: 700; color: #fff; }
+            .drawer-close { background: none; border: none; color: var(--text-dim); font-size: 20px; padding: 0 5px; cursor: pointer; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Mobile Navigation Bar -->
+    <!-- Mobile Navigation -->
     <div class="mobile-nav">
         <button class="nav-trigger" onclick="toggleSidebar('left')">☰ Menu</button>
-        <span class="mobile-nav-title">Mabi-Apps</span>
+        <span style="font-weight:700; color:#fff;">Mabi-Apps</span>
         <button class="nav-trigger" onclick="toggleSidebar('right')">✓ Tasks</button>
     </div>
 
-    <!-- Mobile Backdrop -->
     <div class="mobile-backdrop" id="mobile-backdrop" onclick="closeSidebars()"></div>
 
+    <!-- Auth Modal -->
     <div id="auth-overlay">
         <div class="auth-card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
@@ -259,292 +253,309 @@
                 <input type="email" id="email" class="inp-s" placeholder="Email address" required autocomplete="email">
                 <input type="password" id="password" class="inp-s" placeholder="Password" required autocomplete="current-password">
                 <div style="display:flex; gap:10px; margin-top:10px;">
-                    <button type="submit" class="tab-btn primary-btn" style="flex:1; padding:10px;">Log In</button>
-                    <button type="button" class="tab-btn" style="flex:1; padding:10px; border:1px solid var(--border);" onclick="handleAuth(event, 'register')">Sign Up</button>
+                    <button type="submit" class="btn-auth primary">Log In</button>
+                    <button type="button" class="btn-auth secondary" onclick="handleAuth(event, 'register')">Sign Up</button>
                 </div>
             </form>
             <p id="auth-error" style="color:#ff4444; font-size:12px; margin-top:16px; min-height:16px;"></p>
         </div>
     </div>
 
-    <!-- LEFT SIDEBAR: System Info & User Identity -->
-    <div id="sidebar-left" class="sidebar">
-        <div class="sidebar-header">USER IDENTITY</div>
-        <div class="user-profile-box">
-            <div id="user-avatar" class="user-avatar"></div>
-            <div>
-                <div id="user-info">Guest</div>
-                <div id="guest-mode-label" class="guest-label">Local Mode</div>
+    <div class="interface-container">
+        <!-- GLOBAL NAVIGATION BAR -->
+        <nav class="global-nav">
+            <a href="index.html" class="active">HOME</a>
+            <a href="tracker.html">TRACKER</a>
+            <a href="barter.html">BARTER</a>
+            <a href="commerce.html">COMMERCE</a>
+        </nav>
+
+        <!-- Desktop Header -->
+        <div class="header-bar">
+            <div class="title-section">
+                <div style="display:flex; align-items:center;">
+                    <span class="main-title">HOME</span>
+                </div>
+                <!-- Mini User Info in Header (matches other pages) -->
+                <div style="display:flex; gap:12px; align-items:center;">
+                    
+                    <!-- Settings Gear (Hidden by default, shown when logged in) -->
+                    <a href="settings.html" id="header-settings-btn" style="display:none; color:var(--text-dim); transition:color 0.2s; align-items:center;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-dim)'">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </a>
+
+                    <div style="text-align:right;">
+                        <div id="header-user-info" style="font-size:12px; font-weight:600; color:var(--text-main);">Guest</div>
+                        <div id="header-status" style="font-size:10px; color:var(--text-dim);">Local Mode</div>
+                    </div>
+                    <div id="header-avatar" style="width: 36px; height: 36px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; background-image: url('data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23a1a1aa\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E');"></div>
+                </div>
             </div>
         </div>
-        
-        <div id="auth-ui-stack">
-            <button id="login-btn" onclick="toggleAuthModal(true)" class="tab-btn login-trigger">Log In / Sign Up</button>
-            <div id="logged-in-controls" style="display:none; display:flex; flex-direction:column; gap:5px;">
-                <button onclick="window.location.href='settings.html'" class="tab-btn" style="text-align:left;">Settings</button>
-                <button onclick="firebase.auth().signOut()" class="tab-btn" style="text-align:left; color:#ff5555;">Log Out</button>
+
+        <div class="content-grid">
+            <!-- LEFT PANEL: User & Timers -->
+            <div class="panel left-panel" id="left-panel">
+                <div class="drawer-header">
+                    <span class="drawer-title">Menu</span>
+                    <button class="drawer-close" onclick="closeSidebars()">×</button>
+                </div>
+
+                <div class="config-section">
+                    <div class="user-profile-box">
+                        <div id="sidebar-avatar" class="user-avatar"></div>
+                        <div>
+                            <div id="user-info-display">Guest</div>
+                            <div id="guest-mode-label">Local Mode</div>
+                        </div>
+                    </div>
+                    <div id="auth-ui-stack">
+                        <button id="login-btn" onclick="toggleAuthModal(true)" class="btn-auth primary" style="width:100%; margin-top:5px;">Log In / Sign Up</button>
+                        <div id="logged-in-controls" style="display:none; flex-direction:column; gap:8px;">
+                            <button onclick="window.location.href='settings.html'" class="btn-auth secondary" style="text-align:center;">Settings</button>
+                            <button onclick="firebase.auth().signOut()" class="btn-auth secondary" style="color:var(--danger); border-color:var(--danger);">Log Out</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="config-section">
+                    <label class="panel-label">Server Resets</label>
+                    <div class="timer-card" id="card-daily"><span class="t-label">Daily</span><span id="timer-daily" class="t-val">00:00:00</span></div>
+                    <div class="timer-card mon" id="card-mon"><span class="t-label">Monday</span><span id="timer-mon" class="t-val">00:00:00</span></div>
+                    <div class="timer-card thu" id="card-thu"><span class="t-label">Thursday</span><span id="timer-thu" class="t-val">00:00:00</span></div>
+                    <div class="timer-card sat" id="card-sat"><span class="t-label">Saturday</span><span id="timer-sat" class="t-val">00:00:00</span></div>
+                </div>
             </div>
-        </div>
 
-        <div style="height:1px; background:var(--border); margin:10px 0;"></div>
+            <!-- CENTER PANEL: Hub Links -->
+            <div class="panel center-panel">
+                <div class="grid">
+                    <a href="tracker.html" class="hub-link tracker">
+                        <div class="link-info">
+                            <span class="link-title">Task Tracker</span>
+                            <span class="link-desc">Daily & Weekly Reset Tracker</span>
+                        </div>
+                    </a>
 
-        <div class="sidebar-header">Server Resets</div>
-        <div class="timer-card" id="card-daily"><span class="t-label">Daily</span><span id="timer-daily" class="t-val">00:00:00</span></div>
-        <div class="timer-card thu" id="card-thu"><span class="t-label">Thursday</span><span id="timer-thu" class="t-val">00:00:00</span></div>
-        <div class="timer-card sat" id="card-sat"><span class="t-label">Saturday</span><span id="timer-sat" class="t-val">00:00:00</span></div>
-    </div>
+                    <a href="commerce.html" class="hub-link commerce">
+                        <div class="link-info">
+                            <span class="link-title">Trading Post</span>
+                            <span class="link-desc">Commerce Routes & Profit Sync</span>
+                        </div>
+                    </a>
 
-    <div class="hub-container">
-        <div class="hub-header">Mabinogi Apps Portal</div>
-        
-        <div class="grid">
-            <a href="tracker.html" class="hub-link tracker">
-                <div class="link-info">
-                    <span class="link-title">Task Management</span>
-                    <span class="link-desc">Daily & Weekly Reset Tracker</span>
+                    <a href="barter.html" class="hub-link barter">
+                        <div class="link-info">
+                            <span class="link-title">Barter Tracker</span>
+                            <span class="link-desc">Material & Stock Management</span>
+                        </div>
+                    </a>
                 </div>
-            </a>
-
-            <a href="commerce.html" class="hub-link commerce">
-                <div class="link-info">
-                    <span class="link-title">Trading Post</span>
-                    <span class="link-desc">Commerce Routes & Profit Sync</span>
+                <div style="margin-top: 60px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #444;">
+                    System v2.7 // Ready
                 </div>
-            </a>
-
-            <a href="barter.html" class="hub-link barter">
-                <div class="link-info">
-                    <span class="link-title">Barter Tracker</span>
-                    <span class="link-desc">Material & Stock Management</span>
-                </div>
-            </a>
-        </div>
-
-        <div class="footer">
-            System v2.7 // Ready
-        </div>
-    </div>
-
-    <!-- RIGHT SIDEBAR: Pending Tasks -->
-    <div id="sidebar-right" class="sidebar">
-        <div id="pending-module" style="display:none; flex-direction:column; flex-grow:1; min-height:0;">
-            <div class="sidebar-header">Pending Tasks</div>
-            <div style="display:flex; gap:8px; margin-bottom:8px;">
-                <button id="side-nav-daily" class="tab-btn active" onclick="setSideView('daily')" style="flex:1; padding:4px;">Daily</button>
-                <button id="side-nav-weekly" class="tab-btn" onclick="setSideView('weekly')" style="flex:1; padding:4px;">Weekly</button>
             </div>
-            <div id="sidebar-list"></div>
+
+            <!-- RIGHT PANEL: Pending Tasks -->
+            <div class="panel right-panel" id="right-panel">
+                <div class="drawer-header">
+                    <span class="drawer-title">Tasks</span>
+                    <button class="drawer-close" onclick="closeSidebars()">×</button>
+                </div>
+                <div class="config-section" style="flex-grow:1; display:flex; flex-direction:column; border:none;">
+                    <label class="panel-label">Pending Tasks</label>
+                    <div id="sidebar-list" style="overflow-y:auto; flex-grow:1;"></div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM",
-            authDomain: "mabinogi-tracker.firebaseapp.com",
-            databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com",
-            projectId: "mabinogi-tracker",
-            storageBucket: "mabinogi-tracker.firebasestorage.app",
-            messagingSenderId: "267690802644",
-            appId: "1:267690802644:web:fccdd005d5c8990504ea41",
-            measurementId: "G-VBDBKQ3M1B"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.database();
+    const firebaseConfig = { apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM", authDomain: "mabinogi-tracker.firebaseapp.com", databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com", projectId: "mabinogi-tracker", storageBucket: "mabinogi-tracker.firebasestorage.app", appId: "1:267690802644:web:fccdd005d5c8990504ea41" };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
-        let tasks = [], catOrder = [], currentSideView = 'daily', currentUser = null;
+    let tasks = [], currentUser = null;
+    // Default timer settings
+    let timerSettings = { daily: true, mon: true, thu: true, sat: true };
 
-        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    auth.onAuthStateChanged(user => {
+        const uInfo = document.getElementById('user-info-display');
+        const hInfo = document.getElementById('header-user-info');
+        const sidebarAvatar = document.getElementById('sidebar-avatar');
+        const headerAvatar = document.getElementById('header-avatar');
+        const guestLabel = document.getElementById('guest-mode-label');
+        const headerStatus = document.getElementById('header-status');
+        const loginBtn = document.getElementById('login-btn');
+        const loggedInControls = document.getElementById('logged-in-controls');
+        const headerSettingsBtn = document.getElementById('header-settings-btn'); // New Gear Btn
 
-        auth.onAuthStateChanged(user => {
-            const uInfo = document.getElementById('user-info');
-            const uAvatar = document.getElementById('user-avatar');
-            const guestLabel = document.getElementById('guest-mode-label');
-            const loginBtn = document.getElementById('login-btn');
-            const loggedInControls = document.getElementById('logged-in-controls');
-            const cards = document.querySelectorAll('.timer-card');
-            const pendingMod = document.getElementById('pending-module');
+        if (user) {
+            currentUser = user;
+            guestLabel.innerText = "Online";
+            guestLabel.style.color = "var(--accent)";
+            headerStatus.innerText = "Online";
+            headerStatus.style.color = "var(--accent)";
+            
+            loginBtn.style.display = 'none';
+            loggedInControls.style.display = 'flex';
+            headerSettingsBtn.style.display = 'flex'; // Show Gear
 
-            if (user) {
-                currentUser = user;
-                
-                // --- PRELOAD FROM CACHE TO PREVENT FLASH ---
-                try {
-                    const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
-                    uInfo.innerText = cached.username || user.email;
-                    if (cached.avatar) {
-                        uAvatar.style.backgroundImage = `url('${cached.avatar}')`;
+            try {
+                const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
+                const name = cached.username || user.email.split('@')[0];
+                uInfo.innerText = name;
+                hInfo.innerText = name;
+                if(cached.avatar) {
+                    sidebarAvatar.style.backgroundImage = `url('${cached.avatar}')`;
+                    headerAvatar.style.backgroundImage = `url('${cached.avatar}')`;
+                }
+            } catch(e) { }
+
+            db.ref(`users/${user.uid}/profile`).on('value', snap => {
+                const profile = snap.val();
+                if(profile) {
+                    const name = profile.username || user.email.split('@')[0];
+                    uInfo.innerText = name;
+                    hInfo.innerText = name;
+                    if(profile.avatar) {
+                        sidebarAvatar.style.backgroundImage = `url('${profile.avatar}')`;
+                        headerAvatar.style.backgroundImage = `url('${profile.avatar}')`;
                     }
-                } catch(e) {
-                    uInfo.innerText = user.email;
+                    localStorage.setItem('mabi_user_cache_' + user.uid, JSON.stringify(profile));
                 }
-                // -------------------------------------------
+            });
 
-                guestLabel.style.display = 'none'; 
-                
-                loginBtn.style.display = 'none';
-                loggedInControls.style.display = 'flex';
-                
-                pendingMod.style.display = 'flex';
-                cards.forEach(c => c.classList.add('active'));
-                toggleAuthModal(false);
-                startSync();
-            } else {
-                currentUser = null;
-                uInfo.innerText = "Guest";
-                guestLabel.style.display = 'block';
-                uAvatar.style.backgroundImage = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E\")";
-                
-                loginBtn.style.display = 'block';
-                loggedInControls.style.display = 'none';
-                
-                pendingMod.style.display = 'none';
-                cards.forEach(c => c.classList.remove('active'));
-                tasks = [];
-                renderSidebar();
-            }
-            document.body.classList.add('ready');
-        });
-
-        function startSync() {
-            if (!currentUser) return;
-            db.ref(`users/${currentUser.uid}`).on('value', (snap) => {
+            // Load tasks and timer settings
+            db.ref(`users/${user.uid}`).on('value', snap => {
                 const data = snap.val() || {};
-                tasks = data.tasks || [];
-                catOrder = data.catOrder || [];
-                
-                // Update Profile UI dynamically
-                const profile = data.profile || {};
-                const uInfo = document.getElementById('user-info');
-                const uAvatar = document.getElementById('user-avatar');
-
-                if (profile.username) {
-                    uInfo.innerText = profile.username;
-                }
-                
-                if (profile.avatar) {
-                    uAvatar.style.backgroundImage = `url('${profile.avatar}')`;
+                // Force array like in tracker.html
+                if (data.tasks) {
+                    tasks = Array.isArray(data.tasks) ? data.tasks : Object.values(data.tasks);
+                    tasks = tasks.filter(t => t); 
                 } else {
-                    uAvatar.style.backgroundImage = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E\")";
+                    tasks = [];
                 }
-
-                // Update cache
-                localStorage.setItem('mabi_user_cache_' + currentUser.uid, JSON.stringify({
-                    username: profile.username || currentUser.email,
-                    avatar: profile.avatar || ''
-                }));
-
+                
+                // Load Timer Settings
+                if (data.timerSettings) {
+                    timerSettings = data.timerSettings;
+                }
+                
+                applyTimerSettings();
                 renderSidebar();
             });
-        }
 
-        function renderSidebar() {
-            const list = document.getElementById('sidebar-list');
-            if (!list) return;
-            list.innerHTML = '';
+        } else {
+            currentUser = null;
+            uInfo.innerText = "Guest";
+            hInfo.innerText = "Guest";
+            guestLabel.innerText = "Local Mode";
+            guestLabel.style.color = "var(--text-dim)";
+            headerStatus.innerText = "Local Mode";
+            headerStatus.style.color = "var(--text-dim)";
+            loginBtn.style.display = 'block';
+            loggedInControls.style.display = 'none';
+            headerSettingsBtn.style.display = 'none'; // Hide Gear
             
-            if (!currentUser || tasks.length === 0) return;
-
-            const visible = tasks.filter(t => 
-                (t.done < t.max) && 
-                (currentSideView === 'daily' ? t.type === 'daily' : t.type !== 'daily')
-            );
-
-            let catsInSidebar = [...new Set(visible.map(t => t.cat))].sort((a,b) => catOrder.indexOf(a) - catOrder.indexOf(b));
-            
-            catsInSidebar.forEach(cat => {
-                const divCat = document.createElement('div');
-                divCat.className = 'side-cat';
-                divCat.innerText = cat;
-                list.appendChild(divCat);
-                
-                visible.filter(t => t.cat === cat).forEach(t => {
-                    const divT = document.createElement('div');
-                    divT.className = 'side-task';
-                    divT.innerText = t.name;
-                    list.appendChild(divT);
-                });
-            });
-            
-            if (visible.length === 0) {
-                list.innerHTML = '<div style="font-size:12px; color:#555; padding:20px 0; text-align:center;">All tasks complete</div>';
+            // Load local guest data
+            const localData = JSON.parse(localStorage.getItem('mabi_tracker_guest_data') || '{}');
+            tasks = localData.tasks || [];
+            if (localData.timerSettings) {
+                timerSettings = localData.timerSettings;
             }
-        }
-
-        function setSideView(v) {
-            currentSideView = v;
-            document.getElementById('side-nav-daily').classList.toggle('active', v === 'daily');
-            document.getElementById('side-nav-weekly').classList.toggle('active', v === 'weekly');
+            applyTimerSettings();
             renderSidebar();
         }
+        document.body.classList.add('ready');
+    });
 
-        function toggleAuthModal(show) {
-            document.getElementById('auth-overlay').style.display = show ? 'flex' : 'none';
-            if(!show) document.getElementById('auth-error').innerText = "";
+    function applyTimerSettings() {
+        document.getElementById('card-daily').style.display = (timerSettings.daily !== false) ? 'block' : 'none';
+        document.getElementById('card-mon').style.display = (timerSettings.mon !== false) ? 'block' : 'none';
+        document.getElementById('card-thu').style.display = (timerSettings.thu !== false) ? 'block' : 'none';
+        document.getElementById('card-sat').style.display = (timerSettings.sat !== false) ? 'block' : 'none';
+    }
+
+    function handleAuth(event, mode) {
+        if (event) event.preventDefault();
+        const email = document.getElementById('email').value.trim();
+        const pass = document.getElementById('password').value;
+        const err = document.getElementById('auth-error');
+        if (!email || !pass) { err.innerText = "Please enter credentials"; return; }
+        err.innerText = "Connecting...";
+        const action = mode === 'login' ? auth.signInWithEmailAndPassword(email, pass) : auth.createUserWithEmailAndPassword(email, pass);
+        action.catch(e => err.innerText = e.message);
+    }
+
+    function toggleAuthModal(show) {
+        document.getElementById('auth-overlay').style.display = show ? 'flex' : 'none';
+        if(!show) document.getElementById('auth-error').innerText = "";
+    }
+
+    function renderSidebar() {
+        const list = document.getElementById('sidebar-list');
+        list.innerHTML = '';
+        const pending = tasks.filter(t => t.done < t.max);
+        
+        if (pending.length === 0) {
+            list.innerHTML = '<div style="font-size:12px; color:#555; padding:20px 0; text-align:center;">All tasks complete</div>';
+            return;
         }
 
-        function handleAuth(event, mode) {
-            if (event) event.preventDefault();
-            const email = document.getElementById('email').value.trim();
-            const pass = document.getElementById('password').value;
-            const err = document.getElementById('auth-error');
-            if (!email || !pass) { err.innerText = "Please enter credentials"; return; }
-            err.innerText = "Connecting...";
-            const action = mode === 'login' ? auth.signInWithEmailAndPassword(email, pass) : auth.createUserWithEmailAndPassword(email, pass);
-            action.catch(e => err.innerText = e.message);
-        }
-
-        function toggleSidebar(side) {
-            const left = document.getElementById('sidebar-left');
-            const right = document.getElementById('sidebar-right');
-            const backdrop = document.getElementById('mobile-backdrop');
+        // Simple render of pending tasks
+        pending.forEach(t => {
+            const div = document.createElement('div');
+            div.className = 'mini-task-row';
+            let color = 'var(--accent)';
+            if(t.type === 'mon') color = 'var(--mon)';
+            if(t.type === 'thu') color = 'var(--thu)';
+            if(t.type === 'sat') color = 'var(--sat)';
             
-            if (side === 'left') {
-                const isActive = left.classList.contains('active');
-                closeSidebars();
-                if (!isActive) {
-                    left.classList.add('active');
-                    backdrop.classList.add('active');
-                }
-            } else if (side === 'right') {
-                const isActive = right.classList.contains('active');
-                closeSidebars();
-                if (!isActive) {
-                    right.classList.add('active');
-                    backdrop.classList.add('active');
-                }
-            }
-        }
+            div.innerHTML = `<span style="color:${color}; margin-right:5px;">●</span> ${t.name} <span style="opacity:0.5; font-size:10px;">(${t.char})</span>`; 
+            list.appendChild(div);
+        });
+    }
 
-        function closeSidebars() {
-            document.getElementById('sidebar-left').classList.remove('active');
-            document.getElementById('sidebar-right').classList.remove('active');
-            document.getElementById('mobile-backdrop').classList.remove('active');
-        }
+    // --- TIMERS ---
+    function updateEngine() {
+        const now = new Date();
+        const pac = new Date(now.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
+        const getNextReset = (day) => {
+            let d = new Date(pac); d.setHours(7,0,0,0);
+            if (day !== null) { while(d.getDay() !== day) d.setDate(d.getDate()+1); }
+            if (pac >= d) d.setDate(d.getDate() + (day !== null ? 7 : 1));
+            return d;
+        };
+        const formatDiff = (target) => {
+            const ms = target - pac;
+            const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000), s = Math.floor((ms%60000)/1000);
+            return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        };
+        document.getElementById('timer-daily').innerText = formatDiff(getNextReset(null));
+        document.getElementById('timer-mon').innerText = formatDiff(getNextReset(1)); 
+        document.getElementById('timer-thu').innerText = formatDiff(getNextReset(4));
+        document.getElementById('timer-sat').innerText = formatDiff(getNextReset(6));
+    }
+    setInterval(updateEngine, 1000);
+    updateEngine();
 
-        function updateEngine() {
-            const now = new Date();
-            const pac = new Date(now.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
-            const getNextReset = (day) => {
-                let d = new Date(pac); d.setHours(7,0,0,0);
-                if (day !== null) { while(d.getDay() !== day) d.setDate(d.getDate()+1); }
-                if (pac >= d) d.setDate(d.getDate() + (day !== null ? 7 : 1));
-                return d;
-            };
-            const formatDiff = (target) => {
-                const ms = target - pac;
-                const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000), s = Math.floor((ms%60000)/1000);
-                return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-            };
-            const dElem = document.getElementById('timer-daily');
-            const tElem = document.getElementById('timer-thu');
-            const sElem = document.getElementById('timer-sat');
-            if(dElem) dElem.innerText = formatDiff(getNextReset(null));
-            if(tElem) tElem.innerText = formatDiff(getNextReset(4));
-            if(sElem) sElem.innerText = formatDiff(getNextReset(6));
-        }
-        setInterval(updateEngine, 1000);
-        updateEngine();
+    // --- UI HELPERS ---
+    window.toggleSidebar = (side) => {
+        const left = document.getElementById('left-panel');
+        const right = document.getElementById('right-panel');
+        const backdrop = document.getElementById('mobile-backdrop');
+        closeSidebars();
+        if (side === 'left') { left.classList.add('active'); backdrop.classList.add('active'); }
+        if (side === 'right') { right.classList.add('active'); backdrop.classList.add('active'); }
+    };
+    window.closeSidebars = () => {
+        document.getElementById('left-panel').classList.remove('active');
+        document.getElementById('right-panel').classList.remove('active');
+        document.getElementById('mobile-backdrop').classList.remove('active');
+    };
     </script>
 </body>
 </html>
