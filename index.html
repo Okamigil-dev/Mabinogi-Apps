@@ -23,17 +23,6 @@
             --mon: #ff9900;
             --thu: #0088ff;
             --sat: #cc44ff;
-            
-            /* Custom Timer Colors */
-            --custom-pink: #f472b6;
-            --custom-cyan: #22d3ee;
-            --custom-orange: #fb923c;
-            --custom-purple: #a78bfa;
-            --custom-red: #ef4444;
-            --custom-blue: #3b82f6;
-            --custom-yellow: #eab308;
-            --custom-gray: #71717a;
-
             --border: #27272a;
             --text-main: #e4e4e7;
             --text-dim: #a1a1aa;
@@ -131,7 +120,12 @@
         #guest-mode-label { font-size: 11px; color: var(--text-dim); }
 
         /* Hub Links */
-        .grid { display: grid; grid-template-columns: 1fr; gap: 16px; width: 100%; max-width: 480px; }
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 16px; 
+            width: 100%; 
+        }
         
         .hub-link {
             background: var(--card-bg); border: 1px solid var(--border);
@@ -227,12 +221,42 @@
             }
             .nav-trigger { background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 14px; cursor: pointer; }
             
-            .panel { position: fixed; top: 0; bottom: 0; width: 300px; max-width: 85%; z-index: 1001; transition: transform 0.3s, visibility 0.3s; visibility: hidden; }
-            .left-panel { left: 0; transform: translateX(-100%); border-right: 1px solid var(--border); }
-            .right-panel { right: 0; transform: translateX(100%); border-left: 1px solid var(--border); }
+            /* -- PANEL STYLES FOR MOBILE -- */
+            .panel { 
+                position: fixed; top: 0; bottom: 0; width: 300px; 
+                z-index: 1001; 
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s; 
+                visibility: hidden; 
+            }
+            
+            /* Sidebars: Restricted width for tap-outside area */
+            .left-panel { 
+                left: 0; transform: translateX(-100%); 
+                border-right: 1px solid var(--border); 
+                max-width: 85%; 
+            }
+            .right-panel { 
+                right: 0; transform: translateX(100%); 
+                border-left: 1px solid var(--border); 
+                max-width: 85%; 
+            }
+            
+            /* Show side panels when active */
             .left-panel.active, .right-panel.active { transform: translateX(0); visibility: visible; }
             
-            .center-panel { height: 100%; width: 100%; border: none; z-index: 1; }
+            /* Center Panel: Full Width Override */
+            .center-panel { 
+                position: relative; 
+                visibility: visible; 
+                transform: none; 
+                width: 100%; 
+                max-width: 100%; /* FIXED: Ensures full width */
+                height: 100%; 
+                border: none; 
+                z-index: 1; 
+                padding: 20px;
+            }
+
             .mobile-backdrop { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(4px); }
             .mobile-backdrop.active { opacity: 1; pointer-events: all; }
 
@@ -395,6 +419,7 @@
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
     let tasks = [], customTimers = [], currentUser = null;
+    // Default timer settings
     let timerSettings = { daily: true, mon: true, thu: true, sat: true };
 
     auth.onAuthStateChanged(user => {
@@ -447,7 +472,7 @@
             // Load tasks and timer settings
             db.ref(`users/${user.uid}`).on('value', snap => {
                 const data = snap.val() || {};
-                
+                // Force array like in tracker.html
                 if (data.tasks) {
                     tasks = Array.isArray(data.tasks) ? data.tasks : Object.values(data.tasks);
                     tasks = tasks.filter(t => t); 
@@ -455,6 +480,7 @@
                     tasks = [];
                 }
                 
+                // Load Timer Settings
                 if (data.timerSettings) timerSettings = data.timerSettings;
                 if (data.customTimers) customTimers = Array.isArray(data.customTimers) ? data.customTimers : Object.values(data.customTimers);
                 else customTimers = [];
@@ -476,6 +502,7 @@
             loggedInControls.style.display = 'none';
             headerSettingsBtn.style.display = 'none'; 
             
+            // Load local guest data
             const localData = JSON.parse(localStorage.getItem('mabi_tracker_guest_data') || '{}');
             tasks = localData.tasks || [];
             if (localData.timerSettings) timerSettings = localData.timerSettings;
@@ -504,15 +531,21 @@
             div.className = 'timer-card';
             
             // Replicate Color Logic from Tracker
-            let colorVar = 'var(--custom-pink)';
-            if(t.color === 'cyan') colorVar = 'var(--custom-cyan)';
-            if(t.color === 'orange') colorVar = 'var(--custom-orange)';
-            if(t.color === 'purple') colorVar = 'var(--custom-purple)';
-            if(t.color === 'green') colorVar = 'var(--accent)';
-            if(t.color === 'red') colorVar = 'var(--custom-red)';
-            if(t.color === 'blue') colorVar = 'var(--custom-blue)';
-            if(t.color === 'yellow') colorVar = 'var(--custom-yellow)';
-            if(t.color === 'gray') colorVar = 'var(--custom-gray)';
+            let colorVar = 'var(--accent)'; // Default green if color undefined
+            // Note: Colors are defined in CSS variables above (custom-pink, etc)
+            if(t.color) {
+                if(t.color === 'pink') colorVar = 'var(--custom-pink)';
+                else if(t.color === 'cyan') colorVar = 'var(--neon-cyan)'; 
+                else if(t.color === 'orange') colorVar = 'var(--custom-orange)';
+                else if(t.color === 'purple') colorVar = 'var(--custom-purple)';
+                else if(t.color === 'green') colorVar = 'var(--accent)';
+                else if(t.color === 'red') colorVar = 'var(--danger)';
+                else if(t.color === 'blue') colorVar = 'var(--custom-blue)';
+                else if(t.color === 'yellow') colorVar = 'var(--neon-yellow)';
+                else if(t.color === 'gray') colorVar = 'var(--custom-gray)';
+            } else {
+                 colorVar = 'var(--custom-pink)'; // Default pink for legacy custom timers
+            }
             
             div.style.borderLeftColor = colorVar;
             div.id = `ct-${t.id}`;
@@ -547,6 +580,7 @@
             return;
         }
 
+        // Simple render of pending tasks
         pending.forEach(t => {
             const div = document.createElement('div');
             div.className = 'mini-task-row';
@@ -554,17 +588,17 @@
             if(t.type === 'mon') color = 'var(--mon)';
             if(t.type === 'thu') color = 'var(--thu)';
             if(t.type === 'sat') color = 'var(--sat)';
-            // Custom color logic for pending list dots
+            // Custom timer color logic for dots
             if(String(t.type).startsWith('custom_')) {
                 const cTimer = customTimers.find(ct => 'custom_'+ct.id === t.type);
                 if(cTimer && cTimer.color) {
-                     if(cTimer.color === 'cyan') color = 'var(--custom-cyan)';
+                     if(cTimer.color === 'cyan') color = 'var(--neon-cyan)';
                      else if(cTimer.color === 'orange') color = 'var(--custom-orange)';
                      else if(cTimer.color === 'purple') color = 'var(--custom-purple)';
                      else if(cTimer.color === 'green') color = 'var(--accent)';
-                     else if(cTimer.color === 'red') color = 'var(--custom-red)';
+                     else if(cTimer.color === 'red') color = 'var(--danger)';
                      else if(cTimer.color === 'blue') color = 'var(--custom-blue)';
-                     else if(cTimer.color === 'yellow') color = 'var(--custom-yellow)';
+                     else if(cTimer.color === 'yellow') color = 'var(--neon-yellow)';
                      else if(cTimer.color === 'gray') color = 'var(--custom-gray)';
                      else color = 'var(--custom-pink)';
                 } else {
