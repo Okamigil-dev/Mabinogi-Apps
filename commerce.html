@@ -606,6 +606,10 @@
 
     <script>
         // --- 1. CONFIGURATION & DATA ---
+        // Format: { "OriginTown": { "DestTown": BaseSeconds, ... }, ... }
+        // Keeping structure but emptying values as requested to shelf the feature
+        const travelTimes = {}; 
+
         const townIcons={"Tir Chonaill":"tradeposts/Commerce_Tir_Chonaill_Icon.png","Dunbarton":"tradeposts/Commerce_Dunbarton_Icon.png","Bangor":"tradeposts/Commerce_Bangor_Icon.png","Emain Macha":"tradeposts/Commerce_Emain_Macha_Icon.png","Taillteann":"tradeposts/Commerce_Taillteann_Icon.png","Tara":"tradeposts/Commerce_Tara_Icon.png","Cobh":"tradeposts/Commerce_Port_Cobh_Icon.png","Belvast":"tradeposts/Commerce_Commonwealth_of_Belvast_Icon.png","Qilla":"tradeposts/Commerce_Qilla_Icon.png","Cor":"tradeposts/Commerce_Cor_Icon.png","Vales":"tradeposts/Commerce_Vales_Icon.png","Filia":"tradeposts/Commerce_Filia_Icon.png","Karu Forest":"tradeposts/Commerce_Karu_Forest_Icon.png","Oasis":"tradeposts/Commerce_Oasis_Icon.png","Lake Calida":"tradeposts/Commerce_Calida_Icon.png","Pera Volcano":"tradeposts/Commerce_Pera_Icon.png","Scathach Beach":"tradeposts/Commerce_Beach_of_Scathach_Icon.png"};
         
         const transportIcons={
@@ -635,7 +639,8 @@
             "Husky": 1.86, "Camel": 2.15, "Skiff": 2.4, "Air Ship": 2.4
         };
 
-        const citiesByType={"Normal":["Tir Chonaill","Dunbarton","Bangor","Emain Macha","Taillteann","Tara","Cobh","Belvast","Qilla","Cor","Vales","Filia"],"Barter":["Karu Forest","Oasis","Lake Calida","Pera Volcano","Scathach Beach"],"Group":["Qilla","Filia","Cor","Vales"]};
+        // Updated city order: Filia is now after Qilla
+        const citiesByType={"Normal":["Tir Chonaill","Dunbarton","Bangor","Emain Macha","Taillteann","Tara","Cobh","Belvast","Qilla","Filia","Cor","Vales"],"Barter":["Karu Forest","Oasis","Lake Calida","Pera Volcano","Scathach Beach"],"Group":["Qilla","Filia","Cor","Vales"]};
         const masteryRanks={"1":0.15,"2":0.14,"3":0.13,"4":0.12,"5":0.11,"6":0.10,"7":0.09,"8":0.08,"9":0.07,"A":0.06,"B":0.05,"C":0.04,"D":0.03,"E":0.02,"F":0.01};
         const guaranteeLetters={"None":{normal:0,barter:0,fine_normal:0,fine_barter:0},"Ogre":{normal:0.30,barter:0.15,fine_normal:0.90,fine_barter:0.45},"Goblin":{normal:0.40,barter:0.20,fine_normal:1.20,fine_barter:0.60},"Imp":{normal:0.50,barter:0.25,fine_normal:1.50,fine_barter:0.75},"Irusan's (Special)":{normal:3.00,barter:0.75,fine_normal:3.00,fine_barter:0.75}};
         const marketData={
@@ -753,6 +758,14 @@
             if (mName === "Wagon" && uiState.alpaca) { bW += 200; bS += 2; }
             return { slots: b.slots + bS, weight: b.weight + bW };
         }
+        
+        function getEffectiveSpeed(transport, origin) {
+            let speed = transportSpeeds[transport] || 1.0;
+            if (origin === "Filia" && transport === "Camel") speed = 3.07;
+            else if (origin === "Vales" && transport === "Camel") speed = 1.33;
+            else if (origin === "Vales" && transport === "Husky") speed = 3.09;
+            return speed;
+        }
 
         function getActiveModifiers(uiState) {
             const masteryBonus = masteryRanks[uiState.mastery] || 0;
@@ -790,14 +803,8 @@
 
                 const stats = getModifiedStats(t, uiState);
                 
-                // Calculate max capacity for this item on this mount
-                // Load = Min of (Weight Capacity, Slot Capacity, Purchase Limit, Current Stock)
-                // For "Best Transport" suggestion, we usually ignore stock to show potential.
-                // But let's respect purchase limit.
-                
                 const weightCap = Math.floor(stats.weight / item.weight);
                 const slotCap = stats.slots * item.max;
-                
                 const load = Math.min(weightCap, slotCap, item.limit);
 
                 // Capacity Logic
@@ -806,15 +813,7 @@
                 }
 
                 // Efficiency Logic (Speed & Capacity)
-                let speed = transportSpeeds[t] || 1.0;
-                
-                // Terrain Bonuses
-                if (city === "Filia" && t === "Camel") speed = 3.07; // 307% in Conous
-                else if (city === "Vales" && t === "Camel") speed = 1.33; // 133% in Physis
-                
-                if (city === "Vales" && t === "Husky") speed = 3.09; // 309% in Physis
-                
-                // Effective Score = Load * Speed
+                let speed = getEffectiveSpeed(t, city);
                 const score = load * speed;
 
                 if (score > bestEff.score) {
