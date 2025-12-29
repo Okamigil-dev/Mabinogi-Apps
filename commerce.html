@@ -606,10 +606,6 @@
 
     <script>
         // --- 1. CONFIGURATION & DATA ---
-        // Format: { "OriginTown": { "DestTown": BaseSeconds, ... }, ... }
-        // Keeping structure but emptying values as requested to shelf the feature
-        const travelTimes = {}; 
-
         const townIcons={"Tir Chonaill":"tradeposts/Commerce_Tir_Chonaill_Icon.png","Dunbarton":"tradeposts/Commerce_Dunbarton_Icon.png","Bangor":"tradeposts/Commerce_Bangor_Icon.png","Emain Macha":"tradeposts/Commerce_Emain_Macha_Icon.png","Taillteann":"tradeposts/Commerce_Taillteann_Icon.png","Tara":"tradeposts/Commerce_Tara_Icon.png","Cobh":"tradeposts/Commerce_Port_Cobh_Icon.png","Belvast":"tradeposts/Commerce_Commonwealth_of_Belvast_Icon.png","Qilla":"tradeposts/Commerce_Qilla_Icon.png","Cor":"tradeposts/Commerce_Cor_Icon.png","Vales":"tradeposts/Commerce_Vales_Icon.png","Filia":"tradeposts/Commerce_Filia_Icon.png","Karu Forest":"tradeposts/Commerce_Karu_Forest_Icon.png","Oasis":"tradeposts/Commerce_Oasis_Icon.png","Lake Calida":"tradeposts/Commerce_Calida_Icon.png","Pera Volcano":"tradeposts/Commerce_Pera_Icon.png","Scathach Beach":"tradeposts/Commerce_Beach_of_Scathach_Icon.png"};
         
         const transportIcons={
@@ -639,7 +635,6 @@
             "Husky": 1.86, "Camel": 2.15, "Skiff": 2.4, "Air Ship": 2.4
         };
 
-        // Updated city order: Filia is now after Qilla
         const citiesByType={"Normal":["Tir Chonaill","Dunbarton","Bangor","Emain Macha","Taillteann","Tara","Cobh","Belvast","Qilla","Filia","Cor","Vales"],"Barter":["Karu Forest","Oasis","Lake Calida","Pera Volcano","Scathach Beach"],"Group":["Qilla","Filia","Cor","Vales"]};
         const masteryRanks={"1":0.15,"2":0.14,"3":0.13,"4":0.12,"5":0.11,"6":0.10,"7":0.09,"8":0.08,"9":0.07,"A":0.06,"B":0.05,"C":0.04,"D":0.03,"E":0.02,"F":0.01};
         const guaranteeLetters={"None":{normal:0,barter:0,fine_normal:0,fine_barter:0},"Ogre":{normal:0.30,barter:0.15,fine_normal:0.90,fine_barter:0.45},"Goblin":{normal:0.40,barter:0.20,fine_normal:1.20,fine_barter:0.60},"Imp":{normal:0.50,barter:0.25,fine_normal:1.50,fine_barter:0.75},"Irusan's (Special)":{normal:3.00,barter:0.75,fine_normal:3.00,fine_barter:0.75}};
@@ -803,8 +798,14 @@
 
                 const stats = getModifiedStats(t, uiState);
                 
+                // Calculate max capacity for this item on this mount
+                // Load = Min of (Weight Capacity, Slot Capacity, Purchase Limit, Current Stock)
+                // For "Best Transport" suggestion, we usually ignore stock to show potential.
+                // But let's respect purchase limit.
+                
                 const weightCap = Math.floor(stats.weight / item.weight);
                 const slotCap = stats.slots * item.max;
+                
                 const load = Math.min(weightCap, slotCap, item.limit);
 
                 // Capacity Logic
@@ -834,8 +835,14 @@
             const baseProfit = (sellVal !== "" && sellVal > 0) ? (sellVal - dBuy) * load : 0;
             const mods = getActiveModifiers(uiState);
             let finalProfit = baseProfit > 0 ? Math.floor(baseProfit * mods.totalMultiplier) : baseProfit;
+            
+            // Score Calculation: Profit / Divisor (17 for Normal/Group, 34 for Barter)
+            // Note: Mabinogi Score is usually (Sell - Buy) * Qty / 17. It ignores mastery bonuses.
+            // Barter buy is 0, so it's just Sell * Qty / 34.
+            // Using baseProfit (raw profit before multipliers) is correct.
             const divisor = (uiState.commerceType === "Barter") ? 34 : 17;
-            const score = Math.max(0, Math.floor(((sellVal - (item.buy || 0)) * load) / divisor));
+            const score = Math.max(0, Math.floor(baseProfit / divisor));
+            
             return { profit: finalProfit, score: score, load: load };
         }
 
@@ -1006,6 +1013,7 @@
             const targets = selectedDestination ? [selectedDestination] : targetPool.filter(c => c !== selectedCity);
             
             let bestTotalProfit = 0;
+            let bestTotalScore = 0;
             let bestDest = "-";
 
             if (Object.keys(userLoadout).length === 0) {
@@ -1023,6 +1031,7 @@
             
             targets.forEach(city => {
                 let cityTotal = 0;
+                let cityScore = 0;
                 manifestItems.forEach(item => {
                     const sellVal = getPrice(item.n, city);
                     const found = commerceDbFind(item.n);
@@ -1031,11 +1040,18 @@
                     const unitProfit = (sellVal - dBuy);
                     const mods = getActiveModifiers(uiState);
                     const stackProfit = unitProfit > 0 ? Math.floor(unitProfit * item.q * mods.totalMultiplier) : (unitProfit * item.q);
+                    
+                    const divisor = (uiState.commerceType === "Barter") ? 34 : 17;
+                    const rawProfit = (unitProfit * item.q);
+                    const stackScore = rawProfit > 0 ? Math.floor(rawProfit / divisor) : 0;
+
                     cityTotal += stackProfit;
+                    cityScore += stackScore;
                 });
 
                 if (cityTotal > bestTotalProfit) {
                     bestTotalProfit = cityTotal;
+                    bestTotalScore = cityScore;
                     bestDest = city;
                 }
             });
@@ -1046,6 +1062,7 @@
             const trip = {
                 dest: bestDest,
                 profit: bestTotalProfit,
+                score: bestTotalScore,
                 items: manifestItems.map(i => ({...i, s: Math.ceil(i.q/i.max), maxPerSlot: i.max})),
                 maxSlots: stats.slots
             };
@@ -1190,7 +1207,7 @@
             });
             for (let i = filled; i < trip.maxSlots; i++) slotHtml += `<div class="slot"></div>`;
             list.innerHTML = slotHtml;
-            total.textContent = `+${trip.profit.toLocaleString()}`;
+            total.innerHTML = `<div style="text-align:right;"><div>+${trip.profit.toLocaleString()} D</div><div style="font-size:10px;color:#aaa;">${trip.score.toLocaleString()} Score</div></div>`;
         }
 
         function refreshUI() {
