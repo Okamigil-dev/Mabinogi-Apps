@@ -368,7 +368,7 @@
              <button class="nav-trigger" onclick="window.location.href='index.html'" style="padding: 6px 10px;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
             </button>
-            <button class="nav-trigger" onclick="toggleSidebar('left')">☰</button>
+            <button class="nav-trigger" onclick="toggleSidebar('left')">☰ Menu</button>
         </div>
         <span style="font-weight:700; color:#fff;">Task Tracker</span>
         <button class="nav-trigger" onclick="toggleSidebar('right')">Config ⚙</button>
@@ -546,10 +546,19 @@
     </div>
 
     <script>
-    const firebaseConfig = { apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM", authDomain: "mabinogi-tracker.firebaseapp.com", databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com", projectId: "mabinogi-tracker", storageBucket: "mabinogi-tracker.firebasestorage.app", appId: "1:267690802644:web:fccdd005d5c8990504ea41", measurementId: "G-VBDBKQ3M1B" };
+    const firebaseConfig = {
+        apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM",
+        authDomain: "mabinogi-tracker.firebaseapp.com",
+        databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com",
+        projectId: "mabinogi-tracker",
+        storageBucket: "mabinogi-tracker.firebasestorage.app",
+        messagingSenderId: "267690802644",
+        appId: "1:267690802644:web:fccdd005d5c8990504ea41",
+        measurementId: "G-VBDBKQ3M1B"
+    };
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
     const db = firebase.database();
+    const auth = firebase.auth();
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
     let tasks = [], chars = ["Main"], collapsed = {}, catOrder = [], lastReset = { daily: 0, mon: 0, thu: 0, sat: 0 };
@@ -587,7 +596,7 @@
 
         if (user) { 
             currentUser = user;
-            status.innerText = "Online";
+            status.innerText = "Online & Syncing";
             status.style.color = "var(--accent)";
             
             if(mobileStatus) {
@@ -864,19 +873,15 @@
                     else if(t.type === 'sat') color = 'var(--sat)';
                     else if(String(t.type).startsWith('custom_')) {
                         const cTimer = customTimers.find(ct => 'custom_'+ct.id === t.type);
-                        if(cTimer && cTimer.color) {
-                             if(cTimer.color === 'cyan') color = 'var(--custom-cyan)';
-                             else if(cTimer.color === 'orange') color = 'var(--custom-orange)';
-                             else if(cTimer.color === 'purple') color = 'var(--custom-purple)';
-                             else if(cTimer.color === 'green') color = 'var(--accent)';
-                             else if(cTimer.color === 'red') color = 'var(--custom-red)';
-                             else if(cTimer.color === 'blue') color = 'var(--custom-blue)';
-                             else if(cTimer.color === 'yellow') color = 'var(--custom-yellow)';
-                             else if(cTimer.color === 'gray') color = 'var(--custom-gray)';
-                             else color = 'var(--custom-pink)';
-                        } else {
-                             color = 'var(--custom-pink)';
-                        }
+                        if(cTimer && cTimer.color === 'cyan') color = 'var(--custom-cyan)';
+                        else if(cTimer && cTimer.color === 'orange') color = 'var(--custom-orange)';
+                        else if(cTimer && cTimer.color === 'purple') color = 'var(--custom-purple)';
+                        else if(cTimer && cTimer.color === 'green') color = 'var(--accent)';
+                        else if(cTimer && cTimer.color === 'red') color = 'var(--custom-red)';
+                        else if(cTimer && cTimer.color === 'blue') color = 'var(--custom-blue)';
+                        else if(cTimer && cTimer.color === 'yellow') color = 'var(--custom-yellow)';
+                        else if(cTimer && cTimer.color === 'gray') color = 'var(--custom-gray)';
+                        else color = 'var(--custom-pink)';
                     }
                     
                     div.innerHTML = `<div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span style="color:${color}; margin-right:5px;">●</span> ${t.name} <span style="opacity:0.5; font-size:10px;">(${t.char})</span></div><button onclick="del(${t.id})" class="btn-del" title="Delete Task">×</button>`; 
@@ -921,12 +926,18 @@
             // LOGIC: Show group if:
             // 1. It has relevant tasks OR we are in Edit Mode OR it's an empty group in the user's list
             // 2. AND (we are in Edit Mode OR "Hide Completed" is OFF OR the group is NOT complete)
-            
-            // Refined for Edit Mode clutter reduction:
-            // If a group has tasks but NONE match the current view (e.g. Weekly group in Daily view), hide it even in Edit Mode.
-            
+            // 3. AND (it matches the current view - Daily vs Weekly - unless it is empty)
+
+            // Calculate if group has *any* tasks relevant to this view
             const groupTasksInView = finalTasks.length;
+            
+            // Check if group is empty in the global context (true empty group)
             const isEmptyGroup = !hasGlobalTasks && catOrder.includes(cat);
+
+            // Refined Logic:
+            // - If in Edit Mode: Show Empty Groups OR Groups with Relevant Tasks. Hide irrelevant groups (Weekly groups in Daily view).
+            // - If Normal Mode: Show Groups with Relevant Tasks (filtered by completion).
+            
             const relevantForView = groupTasksInView > 0 || (isEdit && isEmptyGroup);
             
             const shouldShow = relevantForView && (isEdit || !hideCompletedGroups || !isComplete);
@@ -974,9 +985,14 @@
                 list.appendChild(card);
             });
             if(isEdit) { const add = document.createElement('button'); add.className = "hub-btn add-task-btn"; add.innerText = "+ Add Task"; add.onclick = () => addTask(cat); list.appendChild(add); }
-            det.append(sum, list); wrap.appendChild(det); cont.appendChild(wrap); new Sortable(list, { group: 'tasks', handle: '.drag-handle', animation: 150, onEnd: saveTaskOrder });
+            det.append(sum, list); wrap.appendChild(det); cont.appendChild(wrap); 
+            // Changed handle to .drag-handle to fix mobile drag issue in non-edit mode
+            new Sortable(list, { group: 'tasks', handle: '.drag-handle', animation: 150, onEnd: saveTaskOrder });
         });
-        catSortableInstance = new Sortable(cont, { handle: '.group-handle', filter: '.no-drag', preventOnFilter: false, animation: 150, onEnd: saveCatOrder });
+        
+        // Changed handle to .drag-handle to fix mobile drag issue in non-edit mode
+        catSortableInstance = new Sortable(cont, { handle: '.drag-handle', filter: '.no-drag', preventOnFilter: false, animation: 150, onEnd: saveCatOrder });
+        
         renderPendingSidebar();
     }
     
@@ -992,8 +1008,36 @@
     function toggleMgmt() { document.getElementById('app').classList.toggle('show-mgmt'); render(); }
     function saveTaskOrder() { const taskCards = document.querySelectorAll('.task-card'); const visibleIds = new Set(); let newOrderedTasks = []; taskCards.forEach(c => { const id = parseInt(c.dataset.id); visibleIds.add(id); const t = tasks.find(x => x.id === id); if (t) { t.cat = c.closest('.sort-list').dataset.cat; newOrderedTasks.push(t); } }); const hiddenTasks = tasks.filter(t => !visibleIds.has(t.id)); tasks = [...newOrderedTasks, ...hiddenTasks]; pushData(); renderPendingSidebar(); }
     function saveCatOrder() { const visibleOrder = Array.from(document.querySelectorAll('.group-wrap')).map(w => w.dataset.catname); const missing = catOrder.filter(c => !visibleOrder.includes(c)); catOrder = [...visibleOrder, ...missing]; pushData(); renderPendingSidebar(); }
-    function toggleSidebar(side) { const left = document.getElementById('left-panel'); const right = document.getElementById('right-panel'); const backdrop = document.getElementById('mobile-backdrop'); closeSidebars(); if (side === 'left') { left.classList.add('active'); backdrop.classList.add('active'); } if (side === 'right') { right.classList.add('active'); backdrop.classList.add('active'); } }
-    function closeSidebars() { document.getElementById('left-panel').classList.remove('active'); document.getElementById('right-panel').classList.remove('active'); document.getElementById('mobile-backdrop').classList.remove('active'); }
+    
+    // Mobile Navigation logic
+    function toggleSidebar(side) { 
+        const left = document.getElementById('left-panel'); 
+        const right = document.getElementById('right-panel'); 
+        const backdrop = document.getElementById('mobile-backdrop'); 
+        
+        if (side === 'left') { 
+            const isActive = left.classList.contains('active');
+            closeSidebars(); 
+            if (!isActive) {
+                left.classList.add('active'); 
+                backdrop.classList.add('active'); 
+            }
+        } 
+        if (side === 'right') { 
+            const isActive = right.classList.contains('active');
+            closeSidebars(); 
+            if (!isActive) {
+                right.classList.add('active'); 
+                backdrop.classList.add('active'); 
+            }
+        } 
+    }
+    
+    function closeSidebars() { 
+        document.getElementById('left-panel').classList.remove('active'); 
+        document.getElementById('right-panel').classList.remove('active'); 
+        document.getElementById('mobile-backdrop').classList.remove('active'); 
+    }
     
     setInterval(updateEngine, 1000);
     setInterval(checkAndReset, 60000);
@@ -1001,4 +1045,3 @@
     </script>
 </body>
 </html>
-
