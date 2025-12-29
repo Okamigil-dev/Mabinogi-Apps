@@ -386,7 +386,7 @@
                                 <span>Best: -</span>
                                 <div style="text-align:right;">
                                     <div>0 D</div>
-                                    <div style="font-size:9px;color:#aaa;">0 Exp</div>
+                                    <div style="font-size:9px;color:#aaa;">0 Score</div>
                                 </div>
                             </div>
                         </div>
@@ -410,7 +410,7 @@
                                 <span>Best: -</span>
                                 <div style="text-align:right;">
                                     <div>0 D</div>
-                                    <div style="font-size:9px;color:#aaa;">0 Exp</div>
+                                    <div style="font-size:9px;color:#aaa;">0 Score</div>
                                 </div>
                             </div>
                         </div>
@@ -752,8 +752,8 @@
             const p1 = calculateTotalProfit(res.slots1, res.s1.slots);
             const p2 = calculateTotalProfit(res.slots2, res.s2.slots);
             
-            document.getElementById('transport-profit-1').innerHTML = `<span>Best: ${p1.city}</span><div style="text-align:right;"><div>${p1.total.toLocaleString()} D</div><div style="font-size:9px;color:#aaa;">${p1.score.toLocaleString()} Exp</div></div>`;
-            document.getElementById('transport-profit-2').innerHTML = `<span>Best: ${p2.city}</span><div style="text-align:right;"><div>${p2.total.toLocaleString()} D</div><div style="font-size:9px;color:#aaa;">${p2.score.toLocaleString()} Exp</div></div>`;
+            document.getElementById('transport-profit-1').innerHTML = `<span>Best: ${p1.city}</span><div style="text-align:right;"><div>${p1.total.toLocaleString()} D</div><div style="font-size:9px;color:#aaa;">${p1.score.toLocaleString()} Score</div></div>`;
+            document.getElementById('transport-profit-2').innerHTML = `<span>Best: ${p2.city}</span><div style="text-align:right;"><div>${p2.total.toLocaleString()} D</div><div style="font-size:9px;color:#aaa;">${p2.score.toLocaleString()} Score</div></div>`;
 
             ['grid-1','grid-2'].forEach((id,i)=>{
                 const g=document.getElementById(id); g.innerHTML=''; const stats=i===0?res.s1:res.s2, slots=i===0?res.slots1:res.slots2;
