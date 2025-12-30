@@ -83,8 +83,11 @@
         
         /* Stats Card */
         .stat-card { background: var(--card-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; }
-        .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 18px; color: #fff; font-weight: 700; margin-top: 4px; }
+        .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 16px; color: #fff; font-weight: 700; margin-top: 4px; word-break: break-all; }
         .stat-label { font-size: 11px; color: var(--text-dim); font-weight: 600; text-transform: uppercase; }
+
+        /* Legend */
+        .legend-text { font-size: 10px; color: var(--text-dim); text-align: center; margin-top: 5px; opacity: 0.7; font-family: 'JetBrains Mono', monospace; }
 
         /* Wishlist Item Card */
         .wish-list { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
@@ -101,16 +104,11 @@
         .wish-name { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .wish-meta { display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--text-dim); }
         
-        /* Editable Price */
-        .price-input-wrapper { display: flex; align-items: center; }
-        .price-input {
-            background: transparent; border: 1px solid transparent; color: var(--accent);
+        /* Display Price */
+        .price-display {
             font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 12px;
-            width: 80px; padding: 2px 4px; border-radius: 4px; text-align: left;
-            transition: 0.2s;
+            color: var(--accent); cursor: help;
         }
-        .price-input:hover { border-color: #333; background: #000; }
-        .price-input:focus { border-color: var(--accent); background: #000; outline: none; }
         
         .status-badge { 
             font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase; 
@@ -218,7 +216,7 @@
                         <div id="user-info" style="font-size:12px; font-weight:600; color:var(--text-main);">Guest</div>
                         <div id="connection-status" style="font-size:10px; color:var(--text-dim);">Local Mode</div>
                     </div>
-                    <div id="user-avatar" style="width: 36px; height: 36px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; background-image: url('data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E');"></div>
+                    <div id="user-avatar" style="width: 36px; height: 36px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; background-image: url('data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23a1a1aa\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E');"></div>
                 </div>
             </div>
         </div>
@@ -251,6 +249,9 @@
                     <div class="stat-card">
                         <div class="stat-label">Collection Progress</div>
                         <div id="stat-progress" class="stat-val" style="color:var(--success);">0%</div>
+                    </div>
+                    <div class="legend-text">
+                        K=1,000 | M=1,000,000 | B=1,000,000,000
                     </div>
                 </div>
 
@@ -305,7 +306,7 @@
 
                         <div>
                             <label class="panel-label" style="margin-bottom:4px;">Price (Gold)</label>
-                            <input type="number" id="new-item-price" class="input-dark" placeholder="0">
+                            <input type="text" id="new-item-price" class="input-dark" placeholder="0" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')">
                         </div>
 
                         <div style="display:flex; gap:10px;">
@@ -405,7 +406,7 @@
         const statusInp = document.getElementById('new-item-status');
         
         const name = nameInp.value.trim();
-        const price = parseInt(priceInp.value) || 0;
+        const price = parseInt(priceInp.value.replace(/,/g, '')) || 0;
         
         if (!name) return;
         
@@ -455,7 +456,7 @@
 
         // Populate Fields
         document.getElementById('new-item-name').value = item.name;
-        document.getElementById('new-item-price').value = item.price;
+        document.getElementById('new-item-price').value = item.price.toLocaleString(); // Add commas back for display
         document.getElementById('new-item-prio').value = item.priority;
         document.getElementById('new-item-status').value = item.status;
 
@@ -496,16 +497,7 @@
         }
     }
 
-    function updateItemPrice(id, newPriceVal) {
-        const item = items.find(i => i.id === id);
-        if (item) {
-            const parsed = parseInt(newPriceVal);
-            item.price = isNaN(parsed) ? 0 : parsed;
-            pushData();
-            updateStats(); 
-        }
-    }
-
+    // New helper to toggle status from badge click
     function toggleStatus(id) {
         const item = items.find(i => i.id === id);
         if (item) {
@@ -529,6 +521,14 @@
         document.querySelectorAll('[id^="btn-sort-"]').forEach(b => b.classList.remove('active'));
         document.getElementById(`btn-sort-${s}`).classList.add('active');
         renderList();
+    }
+    
+    // --- FORMATTER ---
+    function formatNumber(num) {
+        if (num >= 1000000000) return (num / 1000000000).toFixed(1).replace(/\.0$/, '') + 'B';
+        if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+        if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+        return num.toLocaleString();
     }
 
     function renderList() {
@@ -572,16 +572,16 @@
             if (item.status === 'abundant') { badgeClass = 'status-abundant'; badgeText = 'In Stock'; }
             if (item.status === 'scarce') { badgeClass = 'status-scarce'; badgeText = 'Scarce'; }
             
+            const fmtPrice = formatNumber(item.price);
+            
             el.innerHTML = `
                 <div class="prio-indicator prio-${item.priority}"></div>
                 <div class="wish-info">
                     <div class="wish-name">${item.name}</div>
                     <div class="wish-meta">
-                        <div class="price-input-wrapper">
-                            <input type="number" class="price-input" value="${item.price}" 
-                                onchange="updateItemPrice(${item.id}, this.value)" onclick="event.stopPropagation()">
-                            <span style="font-size:10px; margin-left:4px;">G</span>
-                        </div>
+                        <span class="price-display" title="${item.price.toLocaleString()} G" onclick="editItem(${item.id})">
+                            ${fmtPrice} G
+                        </span>
                         <span class="status-badge ${badgeClass}" onclick="toggleStatus(${item.id})">${badgeText}</span>
                     </div>
                 </div>
@@ -606,13 +606,8 @@
         const remaining = totalItems - ownedItems;
         const progress = totalItems > 0 ? Math.round((ownedItems / totalItems) * 100) : 0;
         
-        const formatCost = (n) => {
-            if (n >= 1000000) return (n/1000000).toFixed(1) + 'm';
-            if (n >= 1000) return (n/1000).toFixed(1) + 'k';
-            return n.toLocaleString();
-        };
-
-        document.getElementById('stat-total-cost').innerText = formatCost(totalCost) + " G";
+        // Use full number with commas for the total to satisfy "abreviating too much"
+        document.getElementById('stat-total-cost').innerText = totalCost.toLocaleString() + " G";
         document.getElementById('stat-items-rem').innerText = remaining;
         document.getElementById('stat-progress').innerText = progress + "%";
     }
