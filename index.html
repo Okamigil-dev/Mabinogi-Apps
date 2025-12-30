@@ -29,6 +29,7 @@
             --danger: #ef4444;
             --neon-yellow: #facc15;
             --neon-cyan: #22d3ee;
+            --neon-purple: #a78bfa; /* For Wishlist */
         }
 
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
@@ -147,6 +148,7 @@
         .hub-link.tracker:hover::before { background: var(--accent); }
         .hub-link.commerce:hover::before { background: var(--neon-yellow); }
         .hub-link.barter:hover::before { background: var(--neon-cyan); }
+        .hub-link.wishlist:hover::before { background: var(--neon-purple); }
         
         .link-title { 
             font-size: 16px; font-weight: 600; display: block; 
@@ -156,6 +158,7 @@
         .hub-link.tracker:hover .link-title { color: var(--accent); }
         .hub-link.commerce:hover .link-title { color: var(--neon-yellow); }
         .hub-link.barter:hover .link-title { color: var(--neon-cyan); }
+        .hub-link.wishlist:hover .link-title { color: var(--neon-purple); }
 
         .link-desc { font-size: 13px; color: var(--text-dim); }
 
@@ -223,38 +226,29 @@
             
             /* -- PANEL STYLES FOR MOBILE -- */
             .panel { 
-                position: fixed; top: 0; bottom: 0; width: 300px; 
-                z-index: 1001; 
+                position: fixed; top: 0; bottom: 0; width: 300px; max-width: 100%; z-index: 1001; 
                 transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s; 
                 visibility: hidden; 
             }
             
-            /* Sidebars: Restricted width for tap-outside area */
-            .left-panel { 
-                left: 0; transform: translateX(-100%); 
-                border-right: 1px solid var(--border); 
-                max-width: 85%; 
-            }
-            .right-panel { 
-                right: 0; transform: translateX(100%); 
-                border-left: 1px solid var(--border); 
-                max-width: 85%; 
-            }
+            /* Restored 85% max-width for sidebars to allow closing via tap-outside */
+            .left-panel { left: 0; transform: translateX(-100%); border-right: 1px solid var(--border); max-width: 85%; }
+            .right-panel { right: 0; transform: translateX(100%); border-left: 1px solid var(--border); max-width: 85%; }
             
             /* Show side panels when active */
             .left-panel.active, .right-panel.active { transform: translateX(0); visibility: visible; }
             
-            /* Center Panel: Full Width Override */
+            /* -- CENTER PANEL FIX -- */
             .center-panel { 
                 position: relative; 
                 visibility: visible; 
                 transform: none; 
                 width: 100%; 
-                max-width: 100%; /* FIXED: Ensures full width */
                 height: 100%; 
                 border: none; 
                 z-index: 1; 
                 padding: 20px;
+                max-width: 100%; 
             }
 
             .mobile-backdrop { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(4px); }
@@ -303,6 +297,7 @@
             <a href="tracker.html">TRACKER</a>
             <a href="barter.html">BARTER</a>
             <a href="commerce.html">COMMERCE</a>
+            <a href="wishlist.html">WISHLIST</a>
         </nav>
 
         <!-- Desktop Header -->
@@ -389,6 +384,13 @@
                         <div class="link-info">
                             <span class="link-title">Barter Tracker</span>
                             <span class="link-desc">Material & Stock Management</span>
+                        </div>
+                    </a>
+
+                    <a href="wishlist.html" class="hub-link wishlist">
+                        <div class="link-info">
+                            <span class="link-title">Market Wishlist</span>
+                            <span class="link-desc">Price & Stock Tracker</span>
                         </div>
                     </a>
                 </div>
