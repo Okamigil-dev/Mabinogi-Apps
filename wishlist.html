@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Market Wishlist</title>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* V2.7 Theme - Consistent with Suite */
+            --bg: #09090b;
+            --sidebar-bg: #121214;
+            --card-bg: #18181b;
+            --accent: #facc15; /* Yellow for Gold/Market focus */
+            --accent-dim: rgba(250, 204, 21, 0.1);
+            --border: #27272a;
+            --text-main: #e4e4e7;
+            --text-dim: #a1a1aa;
+            --danger: #ef4444;
+            --success: #00ff88;
+            --info: #3b82f6;
+            
+            /* Priority Colors */
+            --prio-high: #ef4444;
+            --prio-med: #facc15;
+            --prio-low: #3b82f6;
+        }
+
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            font-size: 13px;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Global Nav (Standard) --- */
+        .global-nav {
+            display: flex; align-items: center; gap: 20px; padding: 0 20px; height: 40px;
+            background: #050506; border-bottom: 1px solid var(--border); flex-shrink: 0;
+        }
+        .global-nav a {
+            font-size: 11px; font-weight: 700; color: var(--text-dim); text-decoration: none;
+            letter-spacing: 0.5px; transition: color 0.2s;
+        }
+        .global-nav a:hover { color: #fff; }
+        .global-nav a.active { color: var(--accent); }
+
+        /* Layout */
+        .interface-container { display: flex; flex-direction: column; height: 100%; width: 100%; border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+        .header-bar { background: var(--sidebar-bg); border-bottom: 1px solid var(--border); padding: 10px 20px; flex-shrink: 0; }
+        .title-section { display: flex; justify-content: space-between; align-items: center; }
+        .main-title { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 0.5px; }
+
+        .content-grid { display: grid; grid-template-columns: 280px 1fr 320px; flex-grow: 1; overflow: hidden; }
+        .panel { background: var(--bg); display: flex; flex-direction: column; border-right: 1px solid var(--border); overflow-y: auto; }
+        .panel:last-child { border-right: none; }
+        .center-panel { background: #0c0c0e; }
+
+        /* --- Components --- */
+        .panel-label { font-size: 11px; font-weight: 600; color: var(--text-dim); margin-bottom: 8px; display: block; text-transform: uppercase; }
+        .config-section { padding: 20px; border-bottom: 1px solid var(--border); }
+        
+        .input-dark { background: var(--card-bg); border: 1px solid var(--border); color: #fff; font-family: 'Inter', sans-serif; font-size: 13px; padding: 8px; border-radius: 6px; width: 100%; transition: border-color 0.2s; }
+        .input-dark:focus { border-color: var(--accent); }
+        
+        .hub-btn { color: var(--text-dim); text-decoration: none; font-weight: 600; font-size: 12px; padding: 6px 12px; border-radius: 6px; transition: 0.2s; border: 1px solid transparent; background: transparent; cursor: pointer; text-align: center; }
+        .hub-btn:hover { color: #fff; background: var(--border); }
+        .hub-btn.active { color: var(--accent); background: var(--accent-dim); border-color: var(--accent); }
+        
+        /* Stats Card */
+        .stat-card { background: var(--card-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; }
+        .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 18px; color: #fff; font-weight: 700; margin-top: 4px; }
+        .stat-label { font-size: 11px; color: var(--text-dim); font-weight: 600; text-transform: uppercase; }
+
+        /* Wishlist Item Card */
+        .wish-list { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        
+        .wish-card { 
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; 
+            padding: 12px 15px; display: flex; align-items: center; gap: 15px;
+            transition: all 0.2s; position: relative; overflow: hidden;
+        }
+        .wish-card:hover { border-color: #3f3f46; transform: translateY(-1px); }
+        .wish-card.owned { opacity: 0.5; filter: grayscale(1); background: var(--bg); border-style: dashed; }
+        
+        .wish-info { flex-grow: 1; min-width: 0; }
+        .wish-name { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .wish-meta { display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--text-dim); }
+        
+        /* Editable Price */
+        .price-input-wrapper { display: flex; align-items: center; }
+        .price-input {
+            background: transparent; border: 1px solid transparent; color: var(--accent);
+            font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 12px;
+            width: 80px; padding: 2px 4px; border-radius: 4px; text-align: left;
+            transition: 0.2s;
+        }
+        .price-input:hover { border-color: #333; background: #000; }
+        .price-input:focus { border-color: var(--accent); background: #000; outline: none; }
+        
+        .status-badge { 
+            font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase; 
+            background: #27272a; color: #aaa; cursor: pointer; user-select: none;
+        }
+        .status-abundant { background: rgba(0, 255, 136, 0.15); color: var(--success); }
+        .status-scarce { background: rgba(250, 204, 21, 0.15); color: var(--warning); }
+        .status-none { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+        
+        .prio-indicator { width: 4px; height: 100%; position: absolute; left: 0; top: 0; background: var(--border); }
+        .prio-high { background: var(--prio-high); }
+        .prio-med { background: var(--prio-med); }
+        .prio-low { background: var(--prio-low); }
+
+        .card-actions { display: flex; gap: 8px; opacity: 1; transition: opacity 0.2s; }
+        
+        .icon-btn { 
+            width: 28px; height: 28px; border-radius: 4px; border: 1px solid var(--border); 
+            background: var(--bg); color: var(--text-dim); cursor: pointer; 
+            display: flex; align-items: center; justify-content: center; transition: 0.2s; 
+        }
+        .icon-btn:hover { color: #fff; border-color: #fff; }
+        .icon-btn.check:hover { color: var(--success); border-color: var(--success); }
+        .icon-btn.edit:hover { color: var(--info); border-color: var(--info); }
+        .icon-btn.del:hover { color: var(--danger); border-color: var(--danger); }
+
+        /* Mobile */
+        .mobile-nav { display: none; }
+        .mobile-backdrop { display: none; }
+        .drawer-header { display: none; } 
+        .mobile-only { display: none; }
+
+        @media (max-width: 1000px) {
+            .mobile-only { display: block; }
+            .content-grid { display: block; height: calc(100dvh - 50px); }
+            .header-bar { display: none; }
+            .global-nav { display: none; }
+
+            .mobile-nav { 
+                display: flex; justify-content: space-between; align-items: center; 
+                padding: 10px 15px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border); 
+                height: 50px; z-index: 50; flex-shrink: 0;
+            }
+            .nav-trigger { background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 14px; cursor: pointer; }
+            
+            .left-panel, .right-panel {
+                position: fixed; top: 0; bottom: 0; width: 300px; max-width: 85%; z-index: 1001; 
+                box-shadow: 0 0 50px rgba(0,0,0,0.8); 
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s;
+                visibility: hidden; 
+            }
+            .left-panel { left: 0; transform: translateX(-100%); border-right: 1px solid var(--border); }
+            .right-panel { right: 0; transform: translateX(100%); border-left: 1px solid var(--border); }
+            .left-panel.active, .right-panel.active { transform: translateX(0); visibility: visible; }
+            
+            .center-panel { height: 100%; width: 100%; border: none; }
+            .mobile-backdrop { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(4px); }
+            .mobile-backdrop.active { opacity: 1; pointer-events: all; }
+            
+            .drawer-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--border); background: var(--sidebar-bg); }
+            .drawer-title { font-weight: 700; color: #fff; }
+            .drawer-close { background: none; border: none; color: var(--text-dim); font-size: 20px; padding: 0 5px; cursor: pointer; }
+
+            .user-profile-box { display: flex; align-items: center; gap: 12px; padding: 15px; border-bottom: 1px solid var(--border); }
+            .user-avatar-mobile { width: 40px; height: 40px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; flex-shrink: 0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"); }
+            .user-info-text-mobile { font-size: 13px; font-weight: 600; color: var(--text-main); word-break: break-all; line-height: 1.2; }
+            .user-status-mobile { font-size: 10px; color: var(--text-dim); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Mobile Navigation -->
+    <div class="mobile-nav">
+        <div style="display:flex; gap:12px; align-items:center;">
+             <button class="nav-trigger" onclick="window.location.href='index.html'" style="padding: 6px 10px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            </button>
+            <button class="nav-trigger" onclick="toggleSidebar('left')">☰ Summary</button>
+        </div>
+        <span style="font-weight:700; color:#fff;">Wishlist</span>
+        <button class="nav-trigger" onclick="toggleSidebar('right')">Add +</button>
+    </div>
+
+    <div class="mobile-backdrop" id="mobile-backdrop" onclick="closeSidebars()"></div>
+
+    <div class="interface-container">
+        <!-- GLOBAL NAVIGATION BAR -->
+        <nav class="global-nav">
+            <a href="index.html">HOME</a>
+            <a href="tracker.html">TRACKER</a>
+            <a href="barter.html">BARTER</a>
+            <a href="commerce.html">COMMERCE</a>
+            <a href="wishlist.html" class="active">WISHLIST</a>
+        </nav>
+
+        <!-- Desktop Header -->
+        <div class="header-bar">
+            <div class="title-section">
+                <div style="display:flex; align-items:center;">
+                    <span class="main-title">MARKET WISHLIST</span>
+                </div>
+                <div style="display:flex; gap:12px; align-items:center;">
+                    <div style="text-align:right;">
+                        <div id="user-info" style="font-size:12px; font-weight:600; color:var(--text-main);">Guest</div>
+                        <div id="connection-status" style="font-size:10px; color:var(--text-dim);">Local Mode</div>
+                    </div>
+                    <div id="user-avatar" style="width: 36px; height: 36px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; background-image: url('data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E');"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-grid">
+            <!-- LEFT PANEL: Summary Stats -->
+            <div class="panel left-panel" id="left-panel">
+                <div class="drawer-header">
+                    <span class="drawer-title">Summary</span>
+                    <button class="drawer-close" onclick="closeSidebars()">×</button>
+                </div>
+                
+                <div class="user-profile-box mobile-only">
+                    <div id="mobile-user-avatar" class="user-avatar-mobile"></div>
+                    <div style="flex-grow:1; min-width:0;">
+                        <div id="mobile-user-info" class="user-info-text-mobile">Guest</div>
+                        <div id="mobile-connection-status" class="user-status-mobile">Local Mode</div>
+                    </div>
+                </div>
+                
+                <div class="config-section">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Gold Needed</div>
+                        <div id="stat-total-cost" class="stat-val" style="color:var(--accent);">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Items Remaining</div>
+                        <div id="stat-items-rem" class="stat-val">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Collection Progress</div>
+                        <div id="stat-progress" class="stat-val" style="color:var(--success);">0%</div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <label class="panel-label">Sort & Filter</label>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <button onclick="setFilter('all')" id="btn-filter-all" class="hub-btn active" style="text-align:left;">Show All</button>
+                        <button onclick="setFilter('needed')" id="btn-filter-needed" class="hub-btn" style="text-align:left; color:var(--accent);">Show Needed Only</button>
+                        <button onclick="setFilter('owned')" id="btn-filter-owned" class="hub-btn" style="text-align:left; color:var(--success);">Show Owned Only</button>
+                    </div>
+                </div>
+
+                <div class="config-section" style="border-bottom:none;">
+                    <label class="panel-label">Sort Order</label>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <button onclick="setSort('default')" id="btn-sort-default" class="hub-btn active" style="text-align:left;">Default (Priority)</button>
+                        <button onclick="setSort('priceAsc')" id="btn-sort-priceAsc" class="hub-btn" style="text-align:left;">Price: Low to High</button>
+                        <button onclick="setSort('priceDesc')" id="btn-sort-priceDesc" class="hub-btn" style="text-align:left;">Price: High to Low</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CENTER PANEL: Items -->
+            <div class="panel center-panel">
+                <div id="wish-container" class="wish-list"></div>
+                
+                <div id="empty-state" style="display:none; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--text-dim); text-align:center;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:15px; opacity:0.5;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                    <div>Your wishlist is empty.</div>
+                    <div style="font-size:11px; margin-top:5px;">Add items using the panel on the right.</div>
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL: Add/Edit Item -->
+            <div class="panel right-panel" id="right-panel">
+                <div class="drawer-header">
+                    <span class="drawer-title" id="right-panel-title">Add Item</span>
+                    <button class="drawer-close" onclick="closeSidebars()">×</button>
+                </div>
+
+                <div class="config-section" style="border-bottom:none;">
+                    <label class="panel-label" style="color:var(--accent);" id="form-header">ADD NEW ITEM</label>
+                    
+                    <div style="display:flex; flex-direction:column; gap:15px;">
+                        <!-- Hidden ID for Editing -->
+                        <input type="hidden" id="edit-item-id">
+                        
+                        <div>
+                            <label class="panel-label" style="margin-bottom:4px;">Item Name</label>
+                            <input type="text" id="new-item-name" class="input-dark" placeholder="e.g. Broken Log">
+                        </div>
+
+                        <div>
+                            <label class="panel-label" style="margin-bottom:4px;">Price (Gold)</label>
+                            <input type="number" id="new-item-price" class="input-dark" placeholder="0">
+                        </div>
+
+                        <div style="display:flex; gap:10px;">
+                            <div style="flex:1;">
+                                <label class="panel-label" style="margin-bottom:4px;">Priority</label>
+                                <select id="new-item-prio" class="input-dark">
+                                    <option value="high">High</option>
+                                    <option value="med">Medium</option>
+                                    <option value="low">Low</option>
+                                </select>
+                            </div>
+                            <div style="flex:1;">
+                                <label class="panel-label" style="margin-bottom:4px;">Status</label>
+                                <select id="new-item-status" class="input-dark">
+                                    <option value="abundant">In Stock</option>
+                                    <option value="scarce">Scarce</option>
+                                    <option value="none">Out of Stock</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; gap:10px; margin-top:10px;">
+                            <button onclick="addItem()" id="btn-submit" class="hub-btn" style="background:var(--accent); color:#000; border:none; flex:1;">Add to Wishlist</button>
+                            <button onclick="cancelEdit()" id="btn-cancel" class="hub-btn" style="display:none; border:1px solid var(--danger); color:var(--danger); width:40px;">×</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const firebaseConfig = { apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM", authDomain: "mabinogi-tracker.firebaseapp.com", databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com", projectId: "mabinogi-tracker", storageBucket: "mabinogi-tracker.firebasestorage.app", appId: "1:267690802644:web:fccdd005d5c8990504ea41", measurementId: "G-VBDBKQ3M1B" };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+    let items = [], currentUser = null, activeFilter = 'all', activeSort = 'default';
+    let editingId = null;
+
+    auth.onAuthStateChanged(user => {
+        const uInfo = document.getElementById('user-info');
+        const uAvatar = document.getElementById('user-avatar');
+        const status = document.getElementById('connection-status');
+        const mobileUser = document.getElementById('mobile-user-info');
+        const mobileAvatar = document.getElementById('mobile-user-avatar');
+        const mobileStatus = document.getElementById('mobile-connection-status');
+
+        if (user) { 
+            currentUser = user;
+            status.innerText = "Online & Syncing";
+            status.style.color = "var(--accent)";
+            if(mobileStatus) { mobileStatus.innerText = "Online"; mobileStatus.style.color = "var(--accent)"; }
+            
+            try {
+                const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
+                const name = cached.username || user.email;
+                uInfo.innerText = name;
+                if(mobileUser) mobileUser.innerText = name;
+                if(cached.avatar) { uAvatar.style.backgroundImage = `url('${cached.avatar}')`; if(mobileAvatar) mobileAvatar.style.backgroundImage = `url('${cached.avatar}')`; }
+            } catch(e) {}
+            
+            db.ref(`users/${user.uid}/wishlist`).on('value', (snap) => {
+                const data = snap.val() || [];
+                items = Array.isArray(data) ? data : Object.values(data);
+                items = items.filter(i => i); // Clean nulls
+                renderList();
+            });
+        } else { 
+            currentUser = { uid: 'local_guest', isGuest: true };
+            uInfo.innerText = "Guest";
+            if(mobileUser) mobileUser.innerText = "Guest";
+            status.innerText = "Local Mode";
+            status.style.color = "var(--text-dim)";
+            if(mobileStatus) { mobileStatus.innerText = "Local Mode"; mobileStatus.style.color = "var(--text-dim)"; }
+            
+            const localData = JSON.parse(localStorage.getItem('mabi_wishlist_data') || '[]');
+            items = localData;
+            renderList();
+        }
+    });
+
+    function pushData() {
+        if (!currentUser) return;
+        if (currentUser.isGuest) {
+            localStorage.setItem('mabi_wishlist_data', JSON.stringify(items));
+        } else {
+            db.ref(`users/${currentUser.uid}/wishlist`).set(items);
+        }
+    }
+
+    function addItem() {
+        const nameInp = document.getElementById('new-item-name');
+        const priceInp = document.getElementById('new-item-price');
+        const prioInp = document.getElementById('new-item-prio');
+        const statusInp = document.getElementById('new-item-status');
+        
+        const name = nameInp.value.trim();
+        const price = parseInt(priceInp.value) || 0;
+        
+        if (!name) return;
+        
+        if (editingId) {
+            // Update Existing
+            const item = items.find(i => i.id === editingId);
+            if (item) {
+                item.name = name;
+                item.price = price;
+                item.priority = prioInp.value;
+                item.status = statusInp.value;
+            }
+            cancelEdit();
+        } else {
+            // Create New
+            items.push({
+                id: Date.now(),
+                name: name,
+                price: price,
+                priority: prioInp.value,
+                status: statusInp.value,
+                owned: false
+            });
+        }
+        
+        // Clear Inputs
+        if (!editingId) {
+             nameInp.value = '';
+             priceInp.value = '';
+        }
+        
+        pushData();
+        renderList();
+    }
+
+    function editItem(id) {
+        const item = items.find(i => i.id === id);
+        if (!item) return;
+
+        editingId = id;
+        
+        // Switch Right Panel to Edit Mode
+        document.getElementById('form-header').innerText = "EDIT ITEM";
+        document.getElementById('right-panel-title').innerText = "Edit Item";
+        document.getElementById('btn-submit').innerText = "Save Changes";
+        document.getElementById('btn-cancel').style.display = 'block';
+
+        // Populate Fields
+        document.getElementById('new-item-name').value = item.name;
+        document.getElementById('new-item-price').value = item.price;
+        document.getElementById('new-item-prio').value = item.priority;
+        document.getElementById('new-item-status').value = item.status;
+
+        // On mobile, open the right drawer
+        if (window.innerWidth <= 1000) {
+            toggleSidebar('right');
+        }
+    }
+
+    function cancelEdit() {
+        editingId = null;
+        document.getElementById('form-header').innerText = "ADD NEW ITEM";
+        document.getElementById('right-panel-title').innerText = "Add Item";
+        document.getElementById('btn-submit').innerText = "Add to Wishlist";
+        document.getElementById('btn-cancel').style.display = 'none';
+        
+        document.getElementById('new-item-name').value = '';
+        document.getElementById('new-item-price').value = '';
+        document.getElementById('new-item-prio').value = 'high'; // Reset to default
+        document.getElementById('new-item-status').value = 'abundant';
+    }
+
+    function deleteItem(id) {
+        if(confirm("Remove this item?")) {
+            items = items.filter(i => i.id !== id);
+            if (editingId === id) cancelEdit();
+            pushData();
+            renderList();
+        }
+    }
+
+    function toggleOwned(id) {
+        const item = items.find(i => i.id === id);
+        if (item) {
+            item.owned = !item.owned;
+            pushData();
+            renderList();
+        }
+    }
+
+    function updateItemPrice(id, newPriceVal) {
+        const item = items.find(i => i.id === id);
+        if (item) {
+            const parsed = parseInt(newPriceVal);
+            item.price = isNaN(parsed) ? 0 : parsed;
+            pushData();
+            updateStats(); 
+        }
+    }
+
+    function toggleStatus(id) {
+        const item = items.find(i => i.id === id);
+        if (item) {
+            if (item.status === 'abundant') item.status = 'scarce';
+            else if (item.status === 'scarce') item.status = 'none';
+            else item.status = 'abundant';
+            pushData();
+            renderList();
+        }
+    }
+
+    function setFilter(f) {
+        activeFilter = f;
+        document.querySelectorAll('[id^="btn-filter-"]').forEach(b => b.classList.remove('active'));
+        document.getElementById(`btn-filter-${f}`).classList.add('active');
+        renderList();
+    }
+
+    function setSort(s) {
+        activeSort = s;
+        document.querySelectorAll('[id^="btn-sort-"]').forEach(b => b.classList.remove('active'));
+        document.getElementById(`btn-sort-${s}`).classList.add('active');
+        renderList();
+    }
+
+    function renderList() {
+        const container = document.getElementById('wish-container');
+        const emptyState = document.getElementById('empty-state');
+        container.innerHTML = '';
+        
+        let filtered = items;
+        if (activeFilter === 'needed') filtered = items.filter(i => !i.owned);
+        if (activeFilter === 'owned') filtered = items.filter(i => i.owned);
+        
+        const prioMap = { 'high': 3, 'med': 2, 'low': 1 };
+        
+        filtered.sort((a,b) => {
+            if (a.owned !== b.owned) return a.owned ? 1 : -1;
+
+            if (activeSort === 'priceAsc') {
+                return a.price - b.price;
+            } else if (activeSort === 'priceDesc') {
+                return b.price - a.price;
+            } else {
+                if (prioMap[a.priority] !== prioMap[b.priority]) return prioMap[b.priority] - prioMap[a.priority];
+                return a.name.localeCompare(b.name);
+            }
+        });
+
+        if (filtered.length === 0) {
+            container.style.display = 'none';
+            emptyState.style.display = 'flex';
+        } else {
+            container.style.display = 'flex';
+            emptyState.style.display = 'none';
+        }
+
+        filtered.forEach(item => {
+            const el = document.createElement('div');
+            el.className = `wish-card ${item.owned ? 'owned' : ''}`;
+            
+            let badgeClass = 'status-none';
+            let badgeText = 'Out of Stock';
+            if (item.status === 'abundant') { badgeClass = 'status-abundant'; badgeText = 'In Stock'; }
+            if (item.status === 'scarce') { badgeClass = 'status-scarce'; badgeText = 'Scarce'; }
+            
+            el.innerHTML = `
+                <div class="prio-indicator prio-${item.priority}"></div>
+                <div class="wish-info">
+                    <div class="wish-name">${item.name}</div>
+                    <div class="wish-meta">
+                        <div class="price-input-wrapper">
+                            <input type="number" class="price-input" value="${item.price}" 
+                                onchange="updateItemPrice(${item.id}, this.value)" onclick="event.stopPropagation()">
+                            <span style="font-size:10px; margin-left:4px;">G</span>
+                        </div>
+                        <span class="status-badge ${badgeClass}" onclick="toggleStatus(${item.id})">${badgeText}</span>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <button class="icon-btn edit" onclick="editItem(${item.id})" title="Edit Item">✎</button>
+                    <button class="icon-btn check" onclick="toggleOwned(${item.id})" title="Toggle Owned">
+                        ${item.owned ? '↩' : '✔'}
+                    </button>
+                    <button class="icon-btn del" onclick="deleteItem(${item.id})" title="Delete">×</button>
+                </div>
+            `;
+            container.appendChild(el);
+        });
+        
+        updateStats();
+    }
+
+    function updateStats() {
+        const totalCost = items.reduce((acc, i) => (!i.owned ? acc + i.price : acc), 0);
+        const totalItems = items.length;
+        const ownedItems = items.filter(i => i.owned).length;
+        const remaining = totalItems - ownedItems;
+        const progress = totalItems > 0 ? Math.round((ownedItems / totalItems) * 100) : 0;
+        
+        const formatCost = (n) => {
+            if (n >= 1000000) return (n/1000000).toFixed(1) + 'm';
+            if (n >= 1000) return (n/1000).toFixed(1) + 'k';
+            return n.toLocaleString();
+        };
+
+        document.getElementById('stat-total-cost').innerText = formatCost(totalCost) + " G";
+        document.getElementById('stat-items-rem').innerText = remaining;
+        document.getElementById('stat-progress').innerText = progress + "%";
+    }
+
+    window.toggleSidebar = (side) => {
+        const left = document.getElementById('left-panel');
+        const right = document.getElementById('right-panel');
+        const backdrop = document.getElementById('mobile-backdrop');
+        closeSidebars();
+        if (side === 'left') { left.classList.add('active'); backdrop.classList.add('active'); }
+        if (side === 'right') { right.classList.add('active'); backdrop.classList.add('active'); }
+    };
+    window.closeSidebars = () => {
+        document.getElementById('left-panel').classList.remove('active');
+        document.getElementById('right-panel').classList.remove('active');
+        document.getElementById('mobile-backdrop').classList.remove('active');
+    };
+    </script>
+</body>
+</html>
