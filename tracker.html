@@ -546,19 +546,10 @@
     </div>
 
     <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM",
-        authDomain: "mabinogi-tracker.firebaseapp.com",
-        databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com",
-        projectId: "mabinogi-tracker",
-        storageBucket: "mabinogi-tracker.firebasestorage.app",
-        messagingSenderId: "267690802644",
-        appId: "1:267690802644:web:fccdd005d5c8990504ea41",
-        measurementId: "G-VBDBKQ3M1B"
-    };
+    const firebaseConfig = { apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM", authDomain: "mabinogi-tracker.firebaseapp.com", databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com", projectId: "mabinogi-tracker", storageBucket: "mabinogi-tracker.firebasestorage.app", appId: "1:267690802644:web:fccdd005d5c8990504ea41", measurementId: "G-VBDBKQ3M1B" };
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
     const auth = firebase.auth();
+    const db = firebase.database();
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
     let tasks = [], chars = ["Main"], collapsed = {}, catOrder = [], lastReset = { daily: 0, mon: 0, thu: 0, sat: 0 };
@@ -665,7 +656,17 @@
     }
 
     function loadFromData(data) {
-        if(data.tasks) { tasks = Array.isArray(data.tasks) ? data.tasks : Object.values(data.tasks); tasks = tasks.filter(t => t); } else { tasks = []; }
+        if(data.tasks) { 
+            tasks = Array.isArray(data.tasks) ? data.tasks : Object.values(data.tasks); 
+            tasks = tasks.filter(t => t); 
+            // MIGRATE: Ensure every task has an order index for stable sorting
+            let maxOrder = 0;
+            tasks.forEach((t, i) => { 
+                if(t.order === undefined) t.order = i * 1000; 
+                if(t.order > maxOrder) maxOrder = t.order;
+            });
+        } else { tasks = []; }
+        
         if(data.chars) chars = Array.isArray(data.chars) ? data.chars : Object.values(data.chars); else chars = ["Main"];
         if(data.catOrder) catOrder = Array.isArray(data.catOrder) ? data.catOrder : Object.values(data.catOrder); else catOrder = [];
         if(data.customTimers) customTimers = Array.isArray(data.customTimers) ? data.customTimers : Object.values(data.customTimers); else customTimers = [];
@@ -864,6 +865,10 @@
         let hasPending = false;
         sortedCats.forEach(cat => {
             const catTasks = relevantTasks.filter(t => t.cat === cat && (activeFilter === "ALL" || t.char === activeFilter) && (t.done < t.max));
+            
+            // SORT BY ORDER INDEX (Stable Sort)
+            catTasks.sort((a,b) => (a.order||0) - (b.order||0));
+
             if (catTasks.length > 0) {
                 catTasks.forEach(t => {
                     hasPending = true; const div = document.createElement('div'); div.className = 'mini-task-row';
@@ -873,15 +878,19 @@
                     else if(t.type === 'sat') color = 'var(--sat)';
                     else if(String(t.type).startsWith('custom_')) {
                         const cTimer = customTimers.find(ct => 'custom_'+ct.id === t.type);
-                        if(cTimer && cTimer.color === 'cyan') color = 'var(--custom-cyan)';
-                        else if(cTimer && cTimer.color === 'orange') color = 'var(--custom-orange)';
-                        else if(cTimer && cTimer.color === 'purple') color = 'var(--custom-purple)';
-                        else if(cTimer && cTimer.color === 'green') color = 'var(--accent)';
-                        else if(cTimer && cTimer.color === 'red') color = 'var(--custom-red)';
-                        else if(cTimer && cTimer.color === 'blue') color = 'var(--custom-blue)';
-                        else if(cTimer && cTimer.color === 'yellow') color = 'var(--custom-yellow)';
-                        else if(cTimer && cTimer.color === 'gray') color = 'var(--custom-gray)';
-                        else color = 'var(--custom-pink)';
+                        if(cTimer && cTimer.color) {
+                             if(cTimer.color === 'cyan') color = 'var(--custom-cyan)';
+                             else if(cTimer.color === 'orange') color = 'var(--custom-orange)';
+                             else if(cTimer.color === 'purple') color = 'var(--custom-purple)';
+                             else if(cTimer.color === 'green') color = 'var(--accent)';
+                             else if(cTimer.color === 'red') color = 'var(--custom-red)';
+                             else if(cTimer.color === 'blue') color = 'var(--custom-blue)';
+                             else if(cTimer.color === 'yellow') color = 'var(--custom-yellow)';
+                             else if(cTimer.color === 'gray') color = 'var(--custom-gray)';
+                             else color = 'var(--custom-pink)';
+                        } else {
+                             color = 'var(--custom-pink)';
+                        }
                     }
                     
                     div.innerHTML = `<div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span style="color:${color}; margin-right:5px;">●</span> ${t.name} <span style="opacity:0.5; font-size:10px;">(${t.char})</span></div><button onclick="del(${t.id})" class="btn-del" title="Delete Task">×</button>`; 
@@ -920,24 +929,15 @@
         const cats = [...allCats].sort((a,b) => { const ia=catOrder.indexOf(a), ib=catOrder.indexOf(b); if(ia===-1)return 1; if(ib===-1)return -1; return ia-ib; });
         cats.forEach(cat => {
             const finalTasks = visibleTasks.filter(t => t.cat === cat && (activeFilter === "ALL" || t.char === activeFilter));
+            
+            // --- STABLE SORT BY ORDER ---
+            finalTasks.sort((a,b) => (a.order||0) - (b.order||0));
+
             const hasGlobalTasks = tasks.some(t => t.cat === cat);
             const isComplete = finalTasks.length > 0 && finalTasks.every(t => t.done >= t.max);
 
-            // LOGIC: Show group if:
-            // 1. It has relevant tasks OR we are in Edit Mode OR it's an empty group in the user's list
-            // 2. AND (we are in Edit Mode OR "Hide Completed" is OFF OR the group is NOT complete)
-            // 3. AND (it matches the current view - Daily vs Weekly - unless it is empty)
-
-            // Calculate if group has *any* tasks relevant to this view
             const groupTasksInView = finalTasks.length;
-            
-            // Check if group is empty in the global context (true empty group)
             const isEmptyGroup = !hasGlobalTasks && catOrder.includes(cat);
-
-            // Refined Logic:
-            // - If in Edit Mode: Show Empty Groups OR Groups with Relevant Tasks. Hide irrelevant groups (Weekly groups in Daily view).
-            // - If Normal Mode: Show Groups with Relevant Tasks (filtered by completion).
-            
             const relevantForView = groupTasksInView > 0 || (isEdit && isEmptyGroup);
             
             const shouldShow = relevantForView && (isEdit || !hideCompletedGroups || !isComplete);
@@ -1000,13 +1000,129 @@
     function mod(e, id, d) { haptic(); const t = tasks.find(x => x.id == id); if(t) { if (e.ctrlKey || e.metaKey) { t.done = d > 0 ? t.max : 0; } else { t.done = Math.max(0, Math.min(t.max, t.done + d)); } skipRender = true; pushData(); render(); } }
     function upd(id, f, v) { const t = tasks.find(x => x.id == id); t[f] = (f==='max'?parseInt(v):v); skipRender = true; pushData(); if (f === 'type' || f === 'char') { render(); } }
     function del(id) { tasks = tasks.filter(x => x.id != id); pushData(); render(); }
-    function addTask(cat) { let targetChar = (activeFilter !== "ALL") ? activeFilter : ((chars && chars.length > 0) ? chars[0] : "Main"); let targetType = (currentView === 'daily') ? "daily" : "thu"; tasks.push({ id: Date.now(), name: "New Task", cat, done: 0, max: 1, type: targetType, char: targetChar }); pushData(); render(); }
+    
+    function addTask(cat) { 
+        let targetChar = (activeFilter !== "ALL") ? activeFilter : ((chars && chars.length > 0) ? chars[0] : "Main"); 
+        let targetType = (currentView === 'daily') ? "daily" : "thu"; 
+        
+        // Find max order in this specific category to add at bottom
+        const catTasks = tasks.filter(t => t.cat === cat);
+        let nextOrder = 0;
+        if(catTasks.length > 0) {
+            nextOrder = Math.max(...catTasks.map(t => t.order || 0)) + 1000;
+        }
+
+        tasks.push({ id: Date.now(), name: "New Task", cat, done: 0, max: 1, type: targetType, char: targetChar, order: nextOrder }); 
+        pushData(); 
+        render(); 
+    }
+
     function addCat() { const i = document.getElementById('new-cat'); const err = document.getElementById('add-cat-error'); const name = i.value.trim(); if(name) { if (!validateName(name)) { err.style.display = 'block'; i.classList.add('input-error'); setTimeout(() => i.classList.remove('input-error'), 1000); return; } addTask(name); if(!catOrder.includes(name)) catOrder.push(name); pushData(); i.value=''; err.style.display = 'none'; } }
     function updateChars(v) { chars = v.split(',').map(s => s.trim()).filter(s => s !== ""); skipRender = true; pushData(); render(); }
     function setView(v) { currentView = v; render(); }
     function setF(f) { activeFilter = f; render(); }
     function toggleMgmt() { document.getElementById('app').classList.toggle('show-mgmt'); render(); }
-    function saveTaskOrder() { const taskCards = document.querySelectorAll('.task-card'); const visibleIds = new Set(); let newOrderedTasks = []; taskCards.forEach(c => { const id = parseInt(c.dataset.id); visibleIds.add(id); const t = tasks.find(x => x.id === id); if (t) { t.cat = c.closest('.sort-list').dataset.cat; newOrderedTasks.push(t); } }); const hiddenTasks = tasks.filter(t => !visibleIds.has(t.id)); tasks = [...newOrderedTasks, ...hiddenTasks]; pushData(); renderPendingSidebar(); }
+    
+    function saveTaskOrder(evt) { 
+        // This function triggered by SortableJS onEnd.
+        // evt.item = the DOM element dragged.
+        // evt.newIndex = index within the list.
+        
+        const listContainer = evt.to; // The .sort-list container
+        const cards = Array.from(listContainer.querySelectorAll('.task-card'));
+        
+        // We need to re-assign order values based on neighbors to slot it in.
+        // But since we can filter, neighbors might have gaps in `order`.
+        
+        // Simpler approach: Re-index the entire visible list in this category with spacing.
+        // This preserves relative order of visible items.
+        // HIDDEN items in this category (e.g. other chars) are not in `cards`.
+        // This is tricky. If we re-index 0, 100, 200, we might overwrite hidden items' orders.
+        
+        // ROBUST STRATEGY: "Floating Average"
+        // 1. Get the card that is now before the dropped item.
+        // 2. Get the card that is now after the dropped item.
+        // 3. Set dropped item order to (prev.order + next.order) / 2.
+        
+        const draggedId = parseInt(evt.item.dataset.id);
+        const draggedTask = tasks.find(t => t.id === draggedId);
+        
+        // Update Category if moved to new list
+        const newCat = listContainer.dataset.cat;
+        if(draggedTask && draggedTask.cat !== newCat) {
+             draggedTask.cat = newCat;
+        }
+
+        const newIndex = evt.newIndex;
+        
+        let prevOrder = 0;
+        let nextOrder = 0;
+        
+        // Find Prev Order
+        if (newIndex > 0) {
+            const prevCard = cards[newIndex - 1];
+            const prevId = parseInt(prevCard.dataset.id);
+            const prevTask = tasks.find(t => t.id === prevId);
+            prevOrder = prevTask ? prevTask.order : 0;
+        } else {
+            // Moved to top. Find min order in this context - 1000?
+            // Or just check if there's anything else in this category hidden above?
+            // Safe bet: find absolute min order in category and subtract.
+            const minInCat = tasks.filter(t => t.cat === newCat).reduce((min, t) => Math.min(min, t.order||0), 0);
+            prevOrder = minInCat - 2000; 
+        }
+
+        // Find Next Order
+        if (newIndex < cards.length - 1) {
+            const nextCard = cards[newIndex + 1];
+            const nextId = parseInt(nextCard.dataset.id);
+            const nextTask = tasks.find(t => t.id === nextId);
+            nextOrder = nextTask ? nextTask.order : prevOrder + 2000;
+        } else {
+            // Moved to bottom
+            const maxInCat = tasks.filter(t => t.cat === newCat).reduce((max, t) => Math.max(max, t.order||0), 0);
+            nextOrder = maxInCat + 2000;
+        }
+
+        // Calculate New Order
+        // If we are at the very top (index 0), nextOrder is the old top. prevOrder is arbitrary small.
+        // If we are at bottom, prevOrder is old bottom. nextOrder is arbitrary large.
+        
+        // Standard average doesn't work well at edges if we define arbitrary bounds.
+        // Let's refine:
+        
+        if (newIndex === 0) {
+             // Top of list.
+             // If list has other items, `nextOrder` is the order of the item below.
+             // We need to be smaller than that.
+             if (cards.length > 1) {
+                 const nextCard = cards[1];
+                 const nextT = tasks.find(t => t.id == parseInt(nextCard.dataset.id));
+                 draggedTask.order = (nextT.order || 0) - 1000;
+             } else {
+                 draggedTask.order = 0;
+             }
+        } else if (newIndex === cards.length - 1) {
+             // Bottom of list
+             const prevCard = cards[newIndex - 1];
+             const prevT = tasks.find(t => t.id == parseInt(prevCard.dataset.id));
+             draggedTask.order = (prevT.order || 0) + 1000;
+        } else {
+             // Middle
+             const prevCard = cards[newIndex - 1];
+             const nextCard = cards[newIndex + 1];
+             const pT = tasks.find(t => t.id == parseInt(prevCard.dataset.id));
+             const nT = tasks.find(t => t.id == parseInt(nextCard.dataset.id));
+             
+             draggedTask.order = (pT.order + nT.order) / 2;
+        }
+
+        pushData(); 
+        // No need to re-render pending sidebar immediately if we trust data binding, 
+        // but let's do it to be safe.
+        renderPendingSidebar();
+    }
+    
     function saveCatOrder() { const visibleOrder = Array.from(document.querySelectorAll('.group-wrap')).map(w => w.dataset.catname); const missing = catOrder.filter(c => !visibleOrder.includes(c)); catOrder = [...visibleOrder, ...missing]; pushData(); renderPendingSidebar(); }
     
     // Mobile Navigation logic
