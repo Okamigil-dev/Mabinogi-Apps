@@ -327,7 +327,7 @@
                         </div>
 
                         <div class="calc-group" style="grid-column: 1 / -1;">
-                            <label class="calc-label" style="color:var(--accent);">Custom Craft Base EXP</label>
+                            <label class="calc-label" style="color:var(--accent);">Fynn Crafting Base Exp</label>
                             <input type="text" id="custom-base-exp" class="input-dark" placeholder="Item Base EXP (e.g. 5000)" oninput="calculateExp()" onchange="formatInput(this)">
                         </div>
                     </div>
@@ -379,14 +379,6 @@
                 <div class="config-section" id="section-kills" style="border-top:1px solid var(--border);">
                     <label class="panel-label">Estimated Kills</label>
                     <div style="background:var(--card-bg); border-radius:8px; padding:10px; font-size:12px;">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                            <span style="color:var(--text-dim);">Shadow Wiz (Elite)</span>
-                            <span id="run-wiz" style="color:#fff;">0</span>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                            <span style="color:var(--text-dim);">Baltane (Nowhere)</span>
-                            <span id="run-baltane" style="color:#fff;">0</span>
-                        </div>
                         <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
                             <span style="color:var(--text-dim);">Baltane (Zombies)</span>
                             <span id="run-zombie" style="color:#fff;">0</span>
@@ -739,13 +731,13 @@
                 }
             });
 
-            const wizExp = 250000 * generalMult;
-            const baltaneExp = 1500000 * baltaneMult; 
+            // const wizExp = 250000 * generalMult; // Removed
+            // const baltaneExp = 1500000 * baltaneMult; // Removed
             const techMobExp = 18457 * generalMult;
             const zombieExp = 9000 * baltaneMult;
 
-            document.getElementById('run-wiz').innerText = Math.ceil(diff / wizExp).toLocaleString();
-            document.getElementById('run-baltane').innerText = Math.ceil(diff / baltaneExp).toLocaleString();
+            // document.getElementById('run-wiz').innerText = Math.ceil(diff / wizExp).toLocaleString(); // Removed
+            // document.getElementById('run-baltane').innerText = Math.ceil(diff / baltaneExp).toLocaleString(); // Removed
             document.getElementById('run-zombie').innerText = Math.ceil(diff / zombieExp).toLocaleString();
             document.getElementById('run-tech').innerText = Math.ceil(diff / techMobExp).toLocaleString();
         } else {
@@ -795,7 +787,7 @@
                  artList.appendChild(div);
              });
 
-             // 2. Custom Fynn Craft
+             // 2. Fynn Crafting (Renamed from Custom Craft)
              if (customBase > 0) {
                  // Formula: (Base * BellFactor) * (1 + Mastery + Robe + GM) * Event
                  let customFinal = 0;
@@ -813,10 +805,10 @@
                  div.style.borderTop = '1px dashed var(--border)';
                  
                  if (impossible) {
-                     div.innerHTML = `<span class="artifact-name" style="color:var(--accent);">Custom Craft</span><span class="artifact-val" style="color:var(--danger)">Bell Required</span>`;
+                     div.innerHTML = `<span class="artifact-name" style="color:var(--accent);">Fynn Crafting Item</span><span class="artifact-val" style="color:var(--danger)">Bell Required</span>`;
                  } else {
                      const req = Math.ceil(diff / customFinal);
-                     div.innerHTML = `<span class="artifact-name" style="color:var(--accent);">Custom Craft</span><span class="artifact-val">${req.toLocaleString()}</span>`;
+                     div.innerHTML = `<span class="artifact-name" style="color:var(--accent);">Fynn Crafting Item</span><span class="artifact-val">${req.toLocaleString()}</span>`;
                  }
                  artList.appendChild(div);
              }
