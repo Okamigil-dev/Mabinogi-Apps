@@ -128,9 +128,21 @@
         .wish-list { padding: 20px; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 8px; }
         
         .wish-item {
-            background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;
-            padding: 12px; display: grid; grid-template-columns: 1fr auto auto; 
-            align-items: center; gap: 15px; transition: border-color 0.2s; position: relative; overflow: hidden;
+            background: var(--card-bg); 
+            border: 1px solid var(--border); 
+            border-radius: 8px;
+            padding: 12px; 
+            display: grid; 
+            grid-template-columns: 1fr auto auto; 
+            align-items: center; 
+            gap: 15px; 
+            transition: border-color 0.2s; 
+            position: relative; 
+            overflow: hidden;
+            
+            /* FIXED: Prevent vertical squishing */
+            flex-shrink: 0; 
+            min-height: 72px; 
         }
         .wish-item:hover { border-color: #444; }
         .wish-item.owned { opacity: 0.5; filter: grayscale(1); border-style: dashed; background: transparent; }
