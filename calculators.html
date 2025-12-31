@@ -28,6 +28,7 @@
             --text-dim: #a1a1aa;
             --danger: #ef4444;
             --success: #00ff88;
+            --warning: #eab308;
         }
 
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
@@ -125,6 +126,14 @@
         .btn-mini { width: 24px; height: 24px; border: none; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
         .btn-mini:hover { background: var(--border); color: #fff; }
         .btn-mini.del:hover { background: rgba(239,68,68,0.2); color: var(--danger); }
+
+        /* Dropdown Group Styling */
+        .mult-group-container {
+            margin-bottom: 12px;
+        }
+        .mult-group-label {
+            font-size: 10px; color: var(--text-dim); font-weight: 700; uppercase; margin-bottom: 4px;
+        }
 
         /* Modal */
         .modal-overlay {
@@ -240,11 +249,11 @@
 
                 <div class="config-section" style="border-bottom:none;">
                     <label class="panel-label">Leveling</label>
-                    <button class="hub-btn active" onclick="setTool('char-exp')">
+                    <button id="btn-char-exp" class="hub-btn active" onclick="setTool('char-exp')">
                         <div class="tool-icon">Lv</div> Character EXP
                     </button>
-                    <button class="hub-btn" onclick="setTool('explore-exp')" style="opacity:0.5;">
-                        <div class="tool-icon">Ex</div> Exploration (WIP)
+                    <button id="btn-explore-exp" class="hub-btn" onclick="setTool('explore-exp')">
+                        <div class="tool-icon">Ex</div> Exploration EXP
                     </button>
                     
                     <label class="panel-label" style="margin-top:20px;">Growth</label>
@@ -262,7 +271,7 @@
                 
                 <!-- Character EXP Calculator -->
                 <div id="tool-char-exp" class="calc-box">
-                    <h2 style="font-size:20px; font-weight:700; color:#fff; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:15px;">Character Level</h2>
+                    <h2 id="calc-title" style="font-size:20px; font-weight:700; color:#fff; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:15px;">Character Level</h2>
                     
                     <div class="calc-group" style="margin-bottom:20px;">
                         <label class="calc-label">Current Total Accumulated EXP</label>
@@ -339,6 +348,10 @@
                             <span style="color:var(--text-dim);">Baltane (Nowhere)</span>
                             <span id="run-baltane" style="color:#fff;">0</span>
                         </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                            <span style="color:var(--text-dim);">Baltane (Zombies)</span>
+                            <span id="run-zombie" style="color:#fff;">0</span>
+                        </div>
                         <div style="display:flex; justify-content:space-between;">
                             <span style="color:var(--text-dim);">Tech Duinn Mobs</span>
                             <span id="run-tech" style="color:#fff;">0</span>
@@ -376,32 +389,63 @@
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
     let currentUser = null;
-    let skipRender = false;
+    let currentMode = 'char-exp'; // 'char-exp' or 'explore-exp'
 
-    // --- EXP DATA PLACEHOLDER ---
-    let EXP_TABLE = [];
-    let cumulative = 0;
-    for(let i=1; i<=200; i++) {
-        let req = Math.floor(100 * Math.pow(i, 2.5)); 
-        EXP_TABLE.push({ level: i, req: req, total: cumulative });
-        cumulative += req;
-    }
-
-    // Default Multipliers
-    let defaultMultipliers = [
+    // --- DEFAULT BUFFS (CHARACTER) ---
+    // Added specific buffs as requested
+    const CHAR_BUFFS = [
         { id: 'def_pot', name: '2x EXP Potion', val: 2.0, active: false, fixed: true, group: 'potion' },
         { id: 'def_pot4', name: '4x EXP Potion', val: 4.0, active: false, fixed: true, group: 'potion' },
         { id: 'def_pot5', name: '5x EXP Potion', val: 5.0, active: false, fixed: true, group: 'potion' },
-        { id: 'def_vip', name: 'VIP Service (10%)', val: 1.1, active: false, fixed: true },
+        
+        { id: 'def_vip', name: 'VIP Service (+20%)', val: 1.2, active: false, fixed: true },
         { id: 'def_prism', name: 'Yellow Prism (2x)', val: 2.0, active: false, fixed: true },
-        { id: 'def_talent', name: 'Cleric/Talent (2x)', val: 2.0, active: false, fixed: true }
+        { id: 'def_talent', name: 'Cleric/Talent (2x)', val: 2.0, active: false, fixed: true },
+        { id: 'def_branch', name: 'Branches of Mabi (+20%)', val: 1.2, active: false, fixed: true },
+        { id: 'def_vision', name: 'Enlightened Vision (+45%)', val: 1.45, active: false, fixed: true },
+        { id: 'def_hebona', name: 'Fest. Hebona Robe (+10%)', val: 1.1, active: false, fixed: true },
+        
+        { id: 'grace', name: "Goddess' Grace", val: 1.01, active: false, fixed: true, mode: 'passive', 
+          modes: { 'passive': {name:'Passive (+1%)', val: 1.01}, 'active': {name:'Active (+10%)', val: 1.1} } 
+        },
+        
+        { id: 'champ', name: "Commerce Champion", val: 1.1, active: false, fixed: true, special: 'baltane_only', specialVal: 2.5 },
+        
+        { id: 'balt_1_5', name: 'Baltane Crystal (1.5x)', val: 1.5, active: false, fixed: true, group: 'baltane', special: 'baltane_only' },
+        { id: 'balt_2', name: 'Baltane Crystal (2x)', val: 2.0, active: false, fixed: true, group: 'baltane', special: 'baltane_only' },
+        { id: 'balt_3', name: 'Baltane Crystal (3x)', val: 3.0, active: false, fixed: true, group: 'baltane', special: 'baltane_only' }
     ];
-    let multipliers = JSON.parse(JSON.stringify(defaultMultipliers));
+
+    // --- DEFAULT BUFFS (EXPLORATION) ---
+    // Placeholder list
+    const EXPL_BUFFS = [];
+
+    // State Variables
+    let charMultipliers = JSON.parse(JSON.stringify(CHAR_BUFFS));
+    let explMultipliers = JSON.parse(JSON.stringify(EXPL_BUFFS));
+    
+    // Placeholder Tables
+    let CHAR_EXP_TABLE = [];
+    let EXPL_EXP_TABLE = [];
+    
+    // Init Placeholders
+    let accum = 0;
+    for(let i=1; i<=200; i++) {
+        let req = Math.floor(100 * Math.pow(i, 2.5)); 
+        CHAR_EXP_TABLE.push({ level: i, req: req, total: accum });
+        accum += req;
+    }
+    // Simple placeholder for Explore (Cap 50)
+    accum = 0;
+    for(let i=1; i<=50; i++) {
+        let req = Math.floor(50 * Math.pow(i, 2.1));
+        EXPL_EXP_TABLE.push({ level: i, req: req, total: accum });
+        accum += req;
+    }
 
     // --- AUTH ---
     auth.onAuthStateChanged(user => {
         const uInfo = document.getElementById('user-info');
-        const uAvatar = document.getElementById('user-avatar');
         const status = document.getElementById('connection-status');
         const mobileUser = document.getElementById('mobile-user-info');
         
@@ -415,7 +459,6 @@
                 const name = cached.username || user.email;
                 uInfo.innerText = name;
                 if(mobileUser) mobileUser.innerText = name;
-                if(cached.avatar) { uAvatar.style.backgroundImage = `url('${cached.avatar}')`; document.getElementById('mobile-user-avatar').style.backgroundImage = `url('${cached.avatar}')`; }
             } catch(e) {}
             
             // Load state
@@ -427,24 +470,85 @@
             loadState(JSON.parse(localStorage.getItem('mabi_calc_state') || '{}'));
         }
     });
-    
+
     // --- PUBLIC DATA SYNC ---
     db.ref('public_data/exp_tables/character').on('value', (snap) => {
         const data = snap.val();
         if(data && Array.isArray(data) && data.length > 10) {
-            EXP_TABLE = data;
-            document.getElementById('data-status').innerText = "Using Public Database";
-            document.getElementById('data-status').style.color = "var(--success)";
+            CHAR_EXP_TABLE = data;
+            if(currentMode === 'char-exp') updateDataStatus(true);
             calculateExp();
         }
     });
+    
+    db.ref('public_data/exp_tables/exploration').on('value', (snap) => {
+        const data = snap.val();
+        if(data && Array.isArray(data) && data.length > 10) {
+            EXPL_EXP_TABLE = data;
+            if(currentMode === 'explore-exp') updateDataStatus(true);
+            calculateExp();
+        }
+    });
+
+    function updateDataStatus(isPublic) {
+        const el = document.getElementById('data-status');
+        if (isPublic) {
+            el.innerText = "Using Public Database";
+            el.style.color = "var(--success)";
+        } else {
+            el.innerText = "Using Default Placeholder";
+            el.style.color = "var(--text-dim)";
+        }
+    }
+
+    function setTool(mode) {
+        if(mode === 'ego-feed' || mode === 'erg-break') {
+            alert('Work in Progress!');
+            return;
+        }
+
+        currentMode = mode;
+        
+        // Update Sidebar UI
+        document.getElementById('btn-char-exp').classList.toggle('active', mode === 'char-exp');
+        document.getElementById('btn-explore-exp').classList.toggle('active', mode === 'explore-exp');
+        
+        // Update Center Panel UI
+        const title = mode === 'char-exp' ? "Character Level" : "Exploration Level";
+        document.getElementById('calc-title').innerText = title;
+        
+        // Update Inputs (Reset or keep?) 
+        // Better to reset or load saved specific state. For simplicity, just reset inputs to valid defaults for now.
+        // Or re-calc existing inputs against new table?
+        const max = mode === 'char-exp' ? 200 : 50;
+        document.getElementById('disp-lvl').max = max;
+        document.getElementById('tgt-lvl').max = max;
+        if (parseInt(document.getElementById('tgt-lvl').value) > max) {
+            document.getElementById('tgt-lvl').value = max;
+        }
+
+        // Show/Hide Kills Section
+        document.getElementById('section-kills').style.display = (mode === 'char-exp') ? 'block' : 'none';
+
+        // Refresh Data Status
+        updateDataStatus(false); // Default untill public load confirms
+        // Trigger re-check of public data for status update
+        if(mode === 'char-exp' && CHAR_EXP_TABLE.length > 200 && CHAR_EXP_TABLE[50].total > 0) updateDataStatus(true);
+        if(mode === 'explore-exp' && EXPL_EXP_TABLE.length > 40 && EXPL_EXP_TABLE[10].total > 0) updateDataStatus(true);
+
+        renderMultipliers();
+        calculateExp();
+        
+        if(window.innerWidth <= 1000) closeSidebars();
+    }
 
     function saveState() {
         const state = {
             totalExp: document.getElementById('cur-total-exp').value,
             tgt: document.getElementById('tgt-lvl').value,
-            multipliers: multipliers
-            // Note: expTable removed from user state, relies on public or default
+            charMults: charMultipliers,
+            explMults: explMultipliers,
+            lastMode: currentMode
         };
         
         if(currentUser && !currentUser.isGuest) db.ref(`users/${currentUser.uid}/calc_state`).set(state);
@@ -453,21 +557,251 @@
 
     function loadState(data) {
         if(!data) { renderMultipliers(); return; }
-        if(data.totalExp) {
-            document.getElementById('cur-total-exp').value = data.totalExp;
-        }
-        if(data.tgt) document.getElementById('tgt-lvl').value = data.tgt;
-        if(data.multipliers && Array.isArray(data.multipliers) && data.multipliers.length > 0) {
-            multipliers = data.multipliers;
-            multipliers.forEach(m => {
-                if(['def_pot', 'def_pot4', 'def_pot5'].includes(m.id)) m.group = 'potion';
-            });
-        } else {
-            multipliers = JSON.parse(JSON.stringify(defaultMultipliers));
-        }
         
-        if (multipliers.length === 0) multipliers = JSON.parse(JSON.stringify(defaultMultipliers));
+        if(data.lastMode) setTool(data.lastMode);
+        
+        if(data.totalExp) document.getElementById('cur-total-exp').value = data.totalExp;
+        if(data.tgt) document.getElementById('tgt-lvl').value = data.tgt;
+        
+        // Restore Multipliers
+        if(data.charMults) charMultipliers = mergeSavedMults(CHAR_BUFFS, data.charMults);
+        if(data.explMults) explMultipliers = mergeSavedMults(EXPL_BUFFS, data.explMults);
+        
+        renderMultipliers();
+        calculateExp();
+    }
+    
+    function mergeSavedMults(defaults, saved) {
+        // Re-construct list: Defaults first (updating state), then custom ones
+        let merged = JSON.parse(JSON.stringify(defaults));
+        const savedMap = {};
+        saved.forEach(m => savedMap[m.id] = m);
+        
+        // Update defaults
+        merged.forEach(def => {
+            const s = savedMap[def.id];
+            if(s) {
+                def.active = s.active;
+                if(s.mode) {
+                     def.mode = s.mode;
+                     if(def.modes && def.modes[s.mode]) def.val = def.modes[s.mode].val;
+                }
+            }
+        });
+        
+        // Add customs
+        saved.forEach(m => {
+            if(!defaults.find(d => d.id === m.id)) merged.push(m);
+        });
+        
+        return merged;
+    }
 
+    function formatInput(input) {
+        let val = input.value.replace(/,/g, '').replace(/\D/g, '');
+        if(val) {
+            val = parseInt(val).toLocaleString();
+            input.value = val;
+        }
+    }
+    
+    function updateTotalFromLevel(newLevel) {
+        const lvl = parseInt(newLevel) || 1;
+        const TABLE = currentMode === 'char-exp' ? CHAR_EXP_TABLE : EXPL_EXP_TABLE;
+        const max = currentMode === 'char-exp' ? 200 : 50;
+        
+        if (lvl < 1 || lvl > max) return;
+        
+        const levelData = TABLE.find(d => d.level === lvl);
+        if (levelData) {
+            document.getElementById('cur-total-exp').value = levelData.total.toLocaleString();
+            calculateExp();
+        }
+    }
+
+    function calculateExp() {
+        const rawVal = document.getElementById('cur-total-exp').value.replace(/,/g, '');
+        const totalExp = parseFloat(rawVal) || 0;
+        const tgtLvl = parseInt(document.getElementById('tgt-lvl').value) || 200;
+        
+        const TABLE = currentMode === 'char-exp' ? CHAR_EXP_TABLE : EXPL_EXP_TABLE;
+        
+        let curLvl = 1, curPct = 0;
+        for (let i = 0; i < TABLE.length; i++) {
+            const lvlData = TABLE[i];
+            const nextLvlData = TABLE[i+1];
+            if (!nextLvlData) { curLvl = lvlData.level; curPct = 100; break; }
+            if (totalExp >= lvlData.total && totalExp < nextLvlData.total) {
+                curLvl = lvlData.level;
+                const expInLevel = totalExp - lvlData.total;
+                curPct = lvlData.req > 0 ? (expInLevel / lvlData.req) * 100 : 0;
+                break;
+            }
+        }
+        if (document.activeElement.id !== 'disp-lvl') document.getElementById('disp-lvl').value = curLvl;
+        document.getElementById('disp-pct').innerText = curPct.toFixed(2) + "%";
+
+        let targetTotalExp = 0;
+        const targetData = TABLE.find(d => d.level === tgtLvl);
+        if (targetData) targetTotalExp = targetData.total;
+        
+        let diff = targetTotalExp - totalExp;
+        if (diff < 0) diff = 0;
+        
+        document.getElementById('res-exp').innerText = diff.toLocaleString();
+        document.getElementById('res-sub').innerText = diff > 0 ? `To reach Level ${tgtLvl}` : "Target Reached";
+
+        if (currentMode === 'char-exp') {
+            // Char Logic
+            let generalMult = 1.0;
+            let baltaneMult = 1.0;
+
+            charMultipliers.forEach(m => {
+                if (m.active) {
+                    if (m.id === 'champ') {
+                         generalMult *= m.val; 
+                         baltaneMult *= m.specialVal;
+                    } else if (m.special === 'baltane_only') {
+                         baltaneMult *= m.val;
+                    } else {
+                         generalMult *= m.val;
+                         baltaneMult *= m.val;
+                    }
+                }
+            });
+
+            const wizExp = 250000 * generalMult;
+            const baltaneExp = 1500000 * baltaneMult; 
+            const techMobExp = 18457 * generalMult;
+            const zombieExp = 9000 * baltaneMult;
+
+            document.getElementById('run-wiz').innerText = Math.ceil(diff / wizExp).toLocaleString();
+            document.getElementById('run-baltane').innerText = Math.ceil(diff / baltaneExp).toLocaleString();
+            document.getElementById('run-zombie').innerText = Math.ceil(diff / zombieExp).toLocaleString();
+            document.getElementById('run-tech').innerText = Math.ceil(diff / techMobExp).toLocaleString();
+        } 
+        
+        saveState();
+    }
+
+    // --- UI/RENDER ---
+    function formatMultiplierDisplay(val) {
+        if (val >= 2.0 && val % 1 === 0) return Math.round(val) + "x"; 
+        if (val >= 2.0) return val + "x"; 
+        const pct = Math.round((val - 1) * 100);
+        return "+" + pct + "%";
+    }
+    
+    function setMultMode(idx, modeKey) {
+        const arr = currentMode === 'char-exp' ? charMultipliers : explMultipliers;
+        const m = arr[idx];
+        if (m && m.modes && m.modes[modeKey]) {
+            m.mode = modeKey;
+            m.val = m.modes[modeKey].val;
+            renderMultipliers();
+            calculateExp();
+        }
+    }
+
+    function renderMultipliers() {
+        const list = document.getElementById('multiplier-list');
+        list.innerHTML = '';
+        
+        const arr = currentMode === 'char-exp' ? charMultipliers : explMultipliers;
+        
+        const groups = { potion: { name: 'EXP Potion', items: [] }, baltane: { name: 'Baltane Crystal', items: [] } };
+        const others = [];
+        
+        arr.forEach((m, idx) => {
+            if (m.group && groups[m.group]) groups[m.group].items.push({...m, idx});
+            else others.push({...m, idx});
+        });
+
+        // Groups
+        Object.keys(groups).forEach(gKey => {
+            const grp = groups[gKey];
+            if(grp.items.length === 0) return;
+            const div = document.createElement('div');
+            div.className = 'mult-group-container';
+            let optionsHtml = `<option value="none">None</option>`;
+            grp.items.forEach(i => {
+                optionsHtml += `<option value="${i.idx}" ${i.active?'selected':''}>${i.name} (${formatMultiplierDisplay(i.val)})</option>`;
+            });
+            div.innerHTML = `<div class="mult-group-label">${grp.name}</div><select class="input-dark" onchange="toggleGroupMult(this.value, '${gKey}')">${optionsHtml}</select>`;
+            list.appendChild(div);
+        });
+
+        // Others
+        others.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'mult-item';
+            let extraControls = '';
+            if (item.modes) {
+                const currentModeKey = item.mode || 'passive';
+                const label = item.modes[currentModeKey].name;
+                extraControls = `<div style="cursor:pointer; color:var(--accent); font-size:10px; margin-right:8px; border:1px solid var(--border); padding:2px 4px; border-radius:4px;" onclick="setMultMode(${item.idx}, '${currentModeKey==='passive'?'active':'passive'}')">${label} ⇄</div>`;
+            } else if (item.id === 'champ') {
+                 extraControls = `<div style="font-size:9px; color:var(--success); margin-right:5px;">(Baltane Boost)</div>`;
+            }
+
+            div.innerHTML = `
+                <div class="mult-info">
+                    <label style="display:flex; align-items:center; cursor:pointer;">
+                        <input type="checkbox" class="toggle-input" ${item.active ? 'checked' : ''} onchange="toggleMult(${item.idx})">
+                        <div class="toggle-switch" style="transform:scale(0.8); margin:0;"></div>
+                    </label>
+                    <span style="font-size:12px; color:${item.active ? '#fff' : 'var(--text-dim)'}; margin-left: 10px;">${item.name}</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:5px;">
+                    ${extraControls}
+                    <span class="mult-val">${formatMultiplierDisplay(item.val)}</span>
+                    ${!item.fixed ? `<button onclick="deleteMult(${item.idx})" class="btn-mini del">×</button>` : ''}
+                </div>
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    function toggleGroupMult(val, groupKey) {
+        const arr = currentMode === 'char-exp' ? charMultipliers : explMultipliers;
+        arr.forEach(m => { if(m.group === groupKey) m.active = false; });
+        if (val !== 'none') {
+            const idx = parseInt(val);
+            if(arr[idx]) arr[idx].active = true;
+        }
+        renderMultipliers();
+        calculateExp();
+    }
+
+    function toggleMult(idx) {
+        const arr = currentMode === 'char-exp' ? charMultipliers : explMultipliers;
+        arr[idx].active = !arr[idx].active;
+        renderMultipliers();
+        calculateExp();
+    }
+
+    function addMultiplier() {
+        const name = document.getElementById('new-mult-name').value.trim();
+        let valInput = parseFloat(document.getElementById('new-mult-val').value);
+        const type = document.getElementById('new-mult-type').value;
+        if(!name || !valInput) return;
+
+        let finalVal = 1.0;
+        if (type === 'bonus') finalVal = 1 + (valInput / 100);
+        else finalVal = valInput;
+        
+        const arr = currentMode === 'char-exp' ? charMultipliers : explMultipliers;
+        arr.push({ id: Date.now(), name, val: finalVal, active: true, fixed: false });
+        
+        document.getElementById('new-mult-name').value = '';
+        document.getElementById('new-mult-val').value = '';
+        renderMultipliers();
+        calculateExp();
+    }
+
+    function deleteMult(idx) {
+        const arr = currentMode === 'char-exp' ? charMultipliers : explMultipliers;
+        arr.splice(idx, 1);
         renderMultipliers();
         calculateExp();
     }
@@ -480,71 +814,59 @@
 
     function parseImportData() {
         const raw = document.getElementById('import-text').value;
-        const lines = raw.split('\n');
-        const newTable = [];
-        
-        // Smarter Stream Parsing Logic
-        // Clean all separators to simple spaces to handle weird formats like 1-400-2400
+        // ... (Same parsing logic) ...
         const cleanRaw = raw.replace(/[^\d,\n]/g, ' ').replace(/\s+/g, ' ').trim();
-        
-        // Extract numbers. Handle the glued comma case: "31,100" -> "3" "1100"
-        // Regex logic:
-        // 1. Matches standard numbers 123
-        // 2. Matches comma numbers 1,234
-        // 3. Matches glued: digit(s) immediately followed by comma number: (\d+)((\d{1,3}(,\d{3})+))
-        
-        // Let's just tokenize by splitting carefully.
-        // We know we are looking for sequential levels: 1, 2, 3...
-        
-        // Simple Tokenizer
         const tokens = [];
-        // Regex to find numbers, potentially with commas
         const regex = /(\d{1,3}(,\d{3})+)|(\d+)/g;
         let m;
-        
         const gluedFix = cleanRaw.replace(/(\d)(\d{1,3}(,\d{3})+)/g, '$1 $2');
-        
         while ((m = regex.exec(gluedFix)) !== null) {
              const cleanNum = parseInt(m[0].replace(/,/g, ''));
              if (!isNaN(cleanNum)) tokens.push(cleanNum);
         }
         
-        // Heuristic Parser
         let nextLvl = 1;
         let buffer = [];
-        
+        const newTable = [];
         for (let i = 0; i < tokens.length; i++) {
             let num = tokens[i];
-            
-            // Check for exact match
             if (num === nextLvl) {
-                // Found a level marker. Process previous buffer if exists.
                 if (buffer.length > 0 && nextLvl > 1) {
-                    const total = Math.max(...buffer);
+                    // Logic Update:
+                    // If Level 1, Total = 0.
+                    // If Level > 1, pick smallest candidate >= prevTotal.
+                    
+                    let total = 0;
+                    if (nextLvl - 1 === 1) {
+                         total = 0; 
+                    } else {
+                         const prevTotal = newTable[newTable.length-1].total;
+                         // Filter candidates >= prevTotal, pick smallest.
+                         const valid = buffer.filter(n => n >= prevTotal);
+                         total = valid.length > 0 ? Math.min(...valid) : Math.max(...buffer); // Fallback to max if none valid (shouldnt happen)
+                    }
                     newTable.push({ level: nextLvl - 1, req: 0, total: total });
                 }
-                
-                // Start new buffer for this level
                 buffer = [];
                 nextLvl++;
-            } 
-            // Check for uncomma'd glue (e.g. "2400" -> "2", "400")
-            // Only if num is significantly larger than nextLvl to avoid false positives
-            else {
+            } else {
                 const sNum = num.toString();
                 const sLvl = nextLvl.toString();
                 if (sNum.length > sLvl.length && sNum.startsWith(sLvl)) {
-                     // Potential glue!
-                     // Split
                      const remainder = parseInt(sNum.substring(sLvl.length));
                      if (!isNaN(remainder)) {
-                         // Process previous level if needed
                          if (buffer.length > 0 && nextLvl > 1) {
-                            const total = Math.max(...buffer);
+                            // Same logic as above
+                            let total = 0;
+                            if (nextLvl - 1 === 1) {
+                                total = 0;
+                            } else {
+                                const prevTotal = newTable[newTable.length-1].total;
+                                const valid = buffer.filter(n => n >= prevTotal);
+                                total = valid.length > 0 ? Math.min(...valid) : Math.max(...buffer);
+                            }
                             newTable.push({ level: nextLvl - 1, req: 0, total: total });
                          }
-                         
-                         // Start current level buffer with remainder
                          buffer = [remainder];
                          nextLvl++;
                          continue;
@@ -553,230 +875,53 @@
                 buffer.push(num);
             }
         }
-        
-        // Handle last level
         if (buffer.length > 0 && nextLvl > 1) {
-             const total = Math.max(...buffer);
+             // Last level logic
+             let total = 0;
+             if (nextLvl - 1 === 1) {
+                total = 0;
+             } else {
+                const prevTotal = newTable[newTable.length-1].total;
+                const valid = buffer.filter(n => n >= prevTotal);
+                total = valid.length > 0 ? Math.min(...valid) : Math.max(...buffer);
+             }
              newTable.push({ level: nextLvl - 1, req: 0, total: total });
         }
         
         if (newTable.length > 10) {
             newTable.sort((a,b) => a.level - b.level);
-            
-            // Fix reqs
             for(let i=0; i<newTable.length-1; i++) {
-                 // Req for Lvl X is (Total at X+1) - (Total at X)
                  if (i < newTable.length - 1) {
-                     const nextTotal = newTable[i+1].total;
-                     const curTotal = newTable[i].total;
-                     newTable[i].req = nextTotal - curTotal;
+                     newTable[i].req = newTable[i+1].total - newTable[i].total;
                  }
             }
             
-            // SAVE TO PUBLIC DB (ROOT LEVEL)
+            // Save to correct path based on mode
+            const path = currentMode === 'char-exp' ? 'public_data/exp_tables/character' : 'public_data/exp_tables/exploration';
+            
             if (currentUser && !currentUser.isGuest) {
-                db.ref('public_data/exp_tables/character').set(newTable).then(() => {
+                db.ref(path).set(newTable).then(() => {
                     alert("Data saved to Public Database!");
                 }).catch(err => {
                     alert("Error saving: " + err.message);
                 });
             } else {
-                // Fallback for guest mode (local only)
-                EXP_TABLE = newTable;
+                if(currentMode === 'char-exp') CHAR_EXP_TABLE = newTable;
+                else EXPL_EXP_TABLE = newTable;
+                
                 document.getElementById('data-status').innerText = "Using Local Import";
                 document.getElementById('data-status').style.color = "var(--warning)";
-                alert("Saved locally (Guest Mode).");
+                alert("Saved locally.");
             }
-            
             toggleImportModal(false);
             calculateExp();
         } else {
-            const err = document.getElementById('import-error');
-            err.innerText = "Could not find enough valid data lines. Please copy the table content properly.";
-            err.style.display = 'block';
+            document.getElementById('import-error').style.display = 'block';
+            document.getElementById('import-error').innerText = "Parse failed.";
         }
     }
 
-    // Format on blur/change
-    function formatInput(input) {
-        // Allow decimals by only stripping invalid characters (keep digits and dot)
-        // First remove all commas
-        let val = input.value.replace(/,/g, '');
-        // Remove anything that isn't a digit or a dot
-        val = val.replace(/[^0-9.]/g, '');
-        
-        // Ensure only one dot exists (standard float parsing)
-        const parts = val.split('.');
-        if (parts.length > 2) {
-            val = parts[0] + '.' + parts.slice(1).join('');
-        }
-
-        if(val) {
-            // Format number with commas, preserving decimals
-            const floatVal = parseFloat(val);
-            if (!isNaN(floatVal)) {
-                // Use en-US to force comma thousands separator and dot decimal
-                input.value = floatVal.toLocaleString('en-US', { maximumFractionDigits: 10 });
-            }
-        }
-    }
-    
-    function updateTotalFromLevel(newLevel) {
-        const lvl = parseInt(newLevel) || 1;
-        if (lvl < 1 || lvl > 200) return;
-        
-        const levelData = EXP_TABLE.find(d => d.level === lvl);
-        if (levelData) {
-            const total = levelData.total;
-            const input = document.getElementById('cur-total-exp');
-            // Format with commas using en-US
-            input.value = total.toLocaleString('en-US');
-            calculateExp();
-        }
-    }
-
-    function calculateExp() {
-        // Clean input for parsing: remove commas
-        const rawVal = document.getElementById('cur-total-exp').value.replace(/,/g, '');
-        const totalExp = parseFloat(rawVal) || 0; // Use parseFloat to allow decimals
-        const tgtLvl = parseInt(document.getElementById('tgt-lvl').value) || 200;
-        
-        // 1. Determine Current Level & %
-        let curLvl = 1;
-        let curPct = 0;
-        
-        for (let i = 0; i < EXP_TABLE.length; i++) {
-            const lvlData = EXP_TABLE[i];
-            const nextLvlData = EXP_TABLE[i+1];
-            
-            if (!nextLvlData) {
-                curLvl = lvlData.level;
-                curPct = 100; 
-                break;
-            }
-            
-            // Simple range check
-            if (totalExp >= lvlData.total && totalExp < nextLvlData.total) {
-                curLvl = lvlData.level;
-                const expInLevel = totalExp - lvlData.total;
-                // Allow float division for precise %
-                curPct = lvlData.req > 0 ? (expInLevel / lvlData.req) * 100 : 0;
-                break;
-            }
-        }
-
-        if (document.activeElement.id !== 'disp-lvl') {
-             document.getElementById('disp-lvl').value = curLvl;
-        }
-        document.getElementById('disp-pct').innerText = curPct.toFixed(2) + "%";
-
-        // 2. Calculate Needed
-        let targetTotalExp = 0;
-        const targetData = EXP_TABLE.find(d => d.level === tgtLvl);
-        if (targetData) targetTotalExp = targetData.total;
-        
-        let diff = targetTotalExp - totalExp;
-        if (diff < 0) diff = 0;
-        
-        // Format output with commas
-        document.getElementById('res-exp').innerText = diff.toLocaleString('en-US', { maximumFractionDigits: 0 });
-        document.getElementById('res-sub').innerText = diff > 0 ? `To reach Level ${tgtLvl}` : "Target Reached";
-
-        // 3. Multipliers
-        let mult = 1.0;
-        multipliers.forEach(m => {
-            if (m.active) mult *= m.val;
-        });
-
-        // 4. Runs / Kills
-        const wizExp = 250000 * mult;
-        const baltaneExp = 1500000 * mult; 
-        const techMobExp = 18457 * mult;
-
-        document.getElementById('run-wiz').innerText = Math.ceil(diff / wizExp).toLocaleString();
-        document.getElementById('run-baltane').innerText = Math.ceil(diff / baltaneExp).toLocaleString();
-        document.getElementById('run-tech').innerText = Math.ceil(diff / techMobExp).toLocaleString();
-
-        saveState();
-    }
-
-    // --- MULTIPLIER MANAGER ---
-    function formatMultiplierDisplay(val) {
-        if (val >= 2.0 && val % 1 === 0) return Math.round(val) + "x"; 
-        if (val >= 2.0) return val + "x"; 
-        const pct = Math.round((val - 1) * 100);
-        return "+" + pct + "%";
-    }
-
-    function renderMultipliers() {
-        const list = document.getElementById('multiplier-list');
-        list.innerHTML = '';
-        multipliers.forEach((m, idx) => {
-            const div = document.createElement('div');
-            div.className = 'mult-item';
-            div.innerHTML = `
-                <div class="mult-info">
-                    <label style="display:flex; align-items:center; cursor:pointer;">
-                        <input type="checkbox" class="toggle-input" ${m.active ? 'checked' : ''} onchange="toggleMult(${idx})">
-                        <div class="toggle-switch" style="transform:scale(0.8); margin:0;"></div>
-                    </label>
-                    <span style="font-size:12px; color:${m.active ? '#fff' : 'var(--text-dim)'}; margin-left: 10px;">${m.name}</span>
-                </div>
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <span class="mult-val">${formatMultiplierDisplay(m.val)}</span>
-                    ${!m.fixed ? `<button onclick="deleteMult(${idx})" class="btn-mini del">×</button>` : ''}
-                </div>
-            `;
-            list.appendChild(div);
-        });
-    }
-
-    function toggleMult(idx) {
-        const target = multipliers[idx];
-        if (target.group === 'potion' && !target.active) {
-            multipliers.forEach(m => {
-                if (m.group === 'potion' && m !== target) m.active = false;
-            });
-        }
-        target.active = !target.active;
-        renderMultipliers();
-        calculateExp();
-    }
-
-    function addMultiplier() {
-        const name = document.getElementById('new-mult-name').value.trim();
-        let valInput = parseFloat(document.getElementById('new-mult-val').value);
-        const type = document.getElementById('new-mult-type').value;
-        
-        if(!name || !valInput) return;
-
-        let finalVal = 1.0;
-        
-        if (type === 'bonus') {
-            finalVal = 1 + (valInput / 100);
-        } else {
-            finalVal = valInput;
-        }
-        
-        multipliers.push({ id: Date.now(), name, val: finalVal, active: true, fixed: false });
-        
-        document.getElementById('new-mult-name').value = '';
-        document.getElementById('new-mult-val').value = '';
-        renderMultipliers();
-        calculateExp();
-    }
-
-    function deleteMult(idx) {
-        multipliers.splice(idx, 1);
-        renderMultipliers();
-        calculateExp();
-    }
-
-    // --- UI HELPERS ---
-    function setTool(id) {
-        if (id !== 'char-exp') alert("This tool is a Work in Progress!");
-    }
-
+    // UI Helpers
     window.toggleSidebar = (side) => {
         const left = document.getElementById('left-panel');
         const right = document.getElementById('right-panel');
