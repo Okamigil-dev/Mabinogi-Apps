@@ -444,6 +444,7 @@
             totalExp: document.getElementById('cur-total-exp').value,
             tgt: document.getElementById('tgt-lvl').value,
             multipliers: multipliers
+            // Note: expTable removed from user state, relies on public or default
         };
         
         if(currentUser && !currentUser.isGuest) db.ref(`users/${currentUser.uid}/calc_state`).set(state);
@@ -483,9 +484,21 @@
         const newTable = [];
         
         // Smarter Stream Parsing Logic
+        // Clean all separators to simple spaces to handle weird formats like 1-400-2400
         const cleanRaw = raw.replace(/[^\d,\n]/g, ' ').replace(/\s+/g, ' ').trim();
         
+        // Extract numbers. Handle the glued comma case: "31,100" -> "3" "1100"
+        // Regex logic:
+        // 1. Matches standard numbers 123
+        // 2. Matches comma numbers 1,234
+        // 3. Matches glued: digit(s) immediately followed by comma number: (\d+)((\d{1,3}(,\d{3})+))
+        
+        // Let's just tokenize by splitting carefully.
+        // We know we are looking for sequential levels: 1, 2, 3...
+        
+        // Simple Tokenizer
         const tokens = [];
+        // Regex to find numbers, potentially with commas
         const regex = /(\d{1,3}(,\d{3})+)|(\d+)/g;
         let m;
         
@@ -496,30 +509,42 @@
              if (!isNaN(cleanNum)) tokens.push(cleanNum);
         }
         
+        // Heuristic Parser
         let nextLvl = 1;
         let buffer = [];
         
         for (let i = 0; i < tokens.length; i++) {
             let num = tokens[i];
             
+            // Check for exact match
             if (num === nextLvl) {
+                // Found a level marker. Process previous buffer if exists.
                 if (buffer.length > 0 && nextLvl > 1) {
                     const total = Math.max(...buffer);
                     newTable.push({ level: nextLvl - 1, req: 0, total: total });
                 }
                 
+                // Start new buffer for this level
                 buffer = [];
                 nextLvl++;
-            } else {
+            } 
+            // Check for uncomma'd glue (e.g. "2400" -> "2", "400")
+            // Only if num is significantly larger than nextLvl to avoid false positives
+            else {
                 const sNum = num.toString();
                 const sLvl = nextLvl.toString();
                 if (sNum.length > sLvl.length && sNum.startsWith(sLvl)) {
+                     // Potential glue!
+                     // Split
                      const remainder = parseInt(sNum.substring(sLvl.length));
                      if (!isNaN(remainder)) {
+                         // Process previous level if needed
                          if (buffer.length > 0 && nextLvl > 1) {
                             const total = Math.max(...buffer);
                             newTable.push({ level: nextLvl - 1, req: 0, total: total });
                          }
+                         
+                         // Start current level buffer with remainder
                          buffer = [remainder];
                          nextLvl++;
                          continue;
@@ -529,6 +554,7 @@
             }
         }
         
+        // Handle last level
         if (buffer.length > 0 && nextLvl > 1) {
              const total = Math.max(...buffer);
              newTable.push({ level: nextLvl - 1, req: 0, total: total });
@@ -537,7 +563,9 @@
         if (newTable.length > 10) {
             newTable.sort((a,b) => a.level - b.level);
             
+            // Fix reqs
             for(let i=0; i<newTable.length-1; i++) {
+                 // Req for Lvl X is (Total at X+1) - (Total at X)
                  if (i < newTable.length - 1) {
                      const nextTotal = newTable[i+1].total;
                      const curTotal = newTable[i].total;
@@ -553,6 +581,7 @@
                     alert("Error saving: " + err.message);
                 });
             } else {
+                // Fallback for guest mode (local only)
                 EXP_TABLE = newTable;
                 document.getElementById('data-status').innerText = "Using Local Import";
                 document.getElementById('data-status').style.color = "var(--warning)";
@@ -570,10 +599,25 @@
 
     // Format on blur/change
     function formatInput(input) {
-        let val = input.value.replace(/,/g, '').replace(/\D/g, '');
+        // Allow decimals by only stripping invalid characters (keep digits and dot)
+        // First remove all commas
+        let val = input.value.replace(/,/g, '');
+        // Remove anything that isn't a digit or a dot
+        val = val.replace(/[^0-9.]/g, '');
+        
+        // Ensure only one dot exists (standard float parsing)
+        const parts = val.split('.');
+        if (parts.length > 2) {
+            val = parts[0] + '.' + parts.slice(1).join('');
+        }
+
         if(val) {
-            val = parseInt(val).toLocaleString();
-            input.value = val;
+            // Format number with commas, preserving decimals
+            const floatVal = parseFloat(val);
+            if (!isNaN(floatVal)) {
+                // Use en-US to force comma thousands separator and dot decimal
+                input.value = floatVal.toLocaleString('en-US', { maximumFractionDigits: 10 });
+            }
         }
     }
     
@@ -585,16 +629,19 @@
         if (levelData) {
             const total = levelData.total;
             const input = document.getElementById('cur-total-exp');
-            input.value = total.toLocaleString();
+            // Format with commas using en-US
+            input.value = total.toLocaleString('en-US');
             calculateExp();
         }
     }
 
     function calculateExp() {
+        // Clean input for parsing: remove commas
         const rawVal = document.getElementById('cur-total-exp').value.replace(/,/g, '');
-        const totalExp = parseInt(rawVal) || 0;
+        const totalExp = parseFloat(rawVal) || 0; // Use parseFloat to allow decimals
         const tgtLvl = parseInt(document.getElementById('tgt-lvl').value) || 200;
         
+        // 1. Determine Current Level & %
         let curLvl = 1;
         let curPct = 0;
         
@@ -608,9 +655,11 @@
                 break;
             }
             
+            // Simple range check
             if (totalExp >= lvlData.total && totalExp < nextLvlData.total) {
                 curLvl = lvlData.level;
                 const expInLevel = totalExp - lvlData.total;
+                // Allow float division for precise %
                 curPct = lvlData.req > 0 ? (expInLevel / lvlData.req) * 100 : 0;
                 break;
             }
@@ -621,6 +670,7 @@
         }
         document.getElementById('disp-pct').innerText = curPct.toFixed(2) + "%";
 
+        // 2. Calculate Needed
         let targetTotalExp = 0;
         const targetData = EXP_TABLE.find(d => d.level === tgtLvl);
         if (targetData) targetTotalExp = targetData.total;
@@ -628,14 +678,17 @@
         let diff = targetTotalExp - totalExp;
         if (diff < 0) diff = 0;
         
-        document.getElementById('res-exp').innerText = diff.toLocaleString();
+        // Format output with commas
+        document.getElementById('res-exp').innerText = diff.toLocaleString('en-US', { maximumFractionDigits: 0 });
         document.getElementById('res-sub').innerText = diff > 0 ? `To reach Level ${tgtLvl}` : "Target Reached";
 
+        // 3. Multipliers
         let mult = 1.0;
         multipliers.forEach(m => {
             if (m.active) mult *= m.val;
         });
 
+        // 4. Runs / Kills
         const wizExp = 250000 * mult;
         const baltaneExp = 1500000 * mult; 
         const techMobExp = 18457 * mult;
