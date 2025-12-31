@@ -417,18 +417,12 @@
     // Init Tables
     // For Character: Use the real array
     for(let i=1; i<=200; i++) {
-        // Adjust index: Level 1 is index 0. 
-        // Logic: TABLE[i] should correspond to level (i+1) if 0-indexed? 
-        // Existing logic uses TABLE.find(d => d.level === i).
-        
         let total = 0;
         if(i <= REAL_CHAR_EXP_TOTALS.length) total = REAL_CHAR_EXP_TOTALS[i-1];
         else {
-            // Fallback for >200 if ever needed (placeholder growth)
              total = REAL_CHAR_EXP_TOTALS[REAL_CHAR_EXP_TOTALS.length-1] + (i - 200) * 10000000;
         }
 
-        // Calculate Req based on difference to next level total
         let req = 0;
         if(i < REAL_CHAR_EXP_TOTALS.length) {
             req = REAL_CHAR_EXP_TOTALS[i] - REAL_CHAR_EXP_TOTALS[i-1];
@@ -502,12 +496,10 @@
     // --- DATA SYNC ---
     db.ref('public_data/exp_tables/character').on('value', snap => {
         const data = snap.val();
-        // Only override if data exists AND it is different from default
         if(data && Array.isArray(data) && data.length > 10) {
             CHAR_EXP_TABLE = data;
             if(currentMode === 'char-exp') { updateDataStatus(true); calculateExp(); }
         } else {
-             // Fallback to default if DB is empty
              if(currentMode === 'char-exp') updateDataStatus(false); 
         }
     });
@@ -525,7 +517,6 @@
             el.innerText = "Using Public Database";
             el.style.color = "var(--success)";
         } else {
-            // Changed from "Default Placeholder" to "Standard Table" since we have real data now
             el.innerText = "Using Built-in Standard Table";
             el.style.color = "var(--text-dim)";
         }
@@ -535,26 +526,20 @@
     function setTool(mode) {
         if(mode === 'ego-feed' || mode === 'erg-break') { alert('Work in Progress!'); return; }
         
-        // Save current input to state memory before switching
         if(currentMode === 'char-exp') saveInputsToState(charState);
         else if(currentMode === 'explore-exp') saveInputsToState(explState);
         
         currentMode = mode;
         
-        // Visuals
         document.getElementById('btn-char-exp').classList.toggle('active', mode === 'char-exp');
         document.getElementById('btn-explore-exp').classList.toggle('active', mode === 'explore-exp');
         document.getElementById('calc-title').innerText = mode === 'char-exp' ? "Character Level" : "Exploration Level";
         document.getElementById('section-kills').style.display = (mode === 'char-exp') ? 'block' : 'none';
         
         const TABLE = mode === 'char-exp' ? CHAR_EXP_TABLE : EXPL_EXP_TABLE;
-        // Check if using DB data or Default
-        // Logic: If TABLE[10].total matches our hardcoded default, it's default.
-        // Simplified: Just use the same logic as sync
-        if(mode === 'char-exp') updateDataStatus(false); // Default state, DB sync will override if needed
+        if(mode === 'char-exp') updateDataStatus(false);
         else updateDataStatus(TABLE.length > 10 && TABLE[10].total > 0);
         
-        // Load new inputs from state memory
         const newState = mode === 'char-exp' ? charState : explState;
         loadInputsFromState(newState);
         
@@ -562,7 +547,7 @@
         calculateExp();
         
         if(window.innerWidth <= 1000) closeSidebars();
-        saveFullState(); // persist change
+        saveFullState();
     }
 
     function saveInputsToState(stateObj) {
@@ -577,7 +562,6 @@
 
     // --- PERSISTENCE ---
     function saveFullState() {
-        // Ensure current inputs are captured in current state obj
         if(currentMode === 'char-exp') saveInputsToState(charState);
         else saveInputsToState(explState);
 
@@ -623,8 +607,6 @@
                 }
             }
         });
-        
-        // Add customs
         saved.forEach(m => {
             if(!defaults.find(d => d.id === m.id)) merged.push(m);
         });
@@ -732,7 +714,6 @@
             else others.push({...m, idx});
         });
 
-        // Render Groups
         Object.keys(groups).forEach(gKey => {
             const grp = groups[gKey];
             if(grp.items.length === 0) return;
@@ -746,7 +727,6 @@
             list.appendChild(div);
         });
 
-        // Render Others
         others.forEach(item => {
             const div = document.createElement('div');
             div.className = 'mult-item';
@@ -845,81 +825,94 @@
 
     function parseImportData() {
         const raw = document.getElementById('import-text').value;
-        const cleanRaw = raw.replace(/[^\d,\n]/g, ' ').replace(/\s+/g, ' ').trim();
-        const tokens = [];
-        const regex = /(\d{1,3}(,\d{3})+)|(\d+)/g;
-        let m;
-        // Fix for "glued" numbers
-        const gluedFix = cleanRaw.replace(/(\d)(\d{1,3}(,\d{3})+)/g, '$1 $2');
-        while ((m = regex.exec(gluedFix)) !== null) {
-             const cleanNum = parseInt(m[0].replace(/,/g, ''));
-             if (!isNaN(cleanNum)) tokens.push(cleanNum);
-        }
+        // 1. Remove Headers and non-data text to avoid NaNs
+        // Replace "Level" "Total" "Experience" etc with spaces
+        let cleanRaw = raw.replace(/(Level|Total|Experience|Exp|Current)/gi, ' ');
+        // 2. Aggressive clean: remove everything except digits, commas, spaces, newlines
+        cleanRaw = cleanRaw.replace(/[^\d,\s]/g, ' ');
+        
+        // 3. Fix Glued "Level + FormattedNumber" (e.g., 501,347,500 -> 50 1,347,500)
+        // Matches digits immediately followed by a number that MUST start with a comma group.
+        // Captures (LevelDigits) (CommaFormattedNumber)
+        cleanRaw = cleanRaw.replace(/(\d+)(\d{1,3}(?:,\d{3})+)/g, '$1 $2');
+
+        // 4. Tokenize
+        // Remove commas from numbers now that we've used them for splitting
+        cleanRaw = cleanRaw.replace(/,/g, ''); 
+        const tokens = cleanRaw.trim().split(/\s+/).map(t => parseInt(t)).filter(n => !isNaN(n));
         
         let nextLvl = 1;
         let buffer = [];
         const newTable = [];
         
-        // FORCING LEVEL 1 TO START AT 0
-        // We know Level 1 Total is always 0.
-        // We look for Level 2 immediately.
+        // Standard start: Level 1 is 0.
         newTable.push({ level: 1, req: 0, total: 0 });
         nextLvl = 2;
 
         for (let i = 0; i < tokens.length; i++) {
             let num = tokens[i];
             
-            // Check if current token matches next level
+            // LOGIC 1: Exact Match (Sequential)
             if (num === nextLvl) {
-                // If we have a previous level buffer, process it
-                if (buffer.length > 0 && nextLvl > 2) {
-                    // Previous level was nextLvl - 1.
-                    // Find largest number as Total
+                if (buffer.length > 0) {
+                    // We found next level marker.
+                    // The largest number in buffer is likely the Total Exp for (nextLvl-1)
                     const total = Math.max(...buffer);
-                    newTable.push({ level: nextLvl - 1, req: 0, total: total });
-                } else if (nextLvl === 2) {
-                    // Special case for transition from 1->2.
-                    // Buffer contains data for Level 1->2 transition?
-                    // Actually, if we found `2`, we are looking for Level 2 data NOW.
-                    // The buffer contained junk between 1 and 2.
-                    // But Level 1 total is 0. So we ignore buffer.
+                    // Sanity check: Total exp shouldn't decrease (unless reset, unlikely here)
+                    const prevTotal = newTable.length > 0 ? newTable[newTable.length-1].total : -1;
+                    if (total >= prevTotal) {
+                         newTable.push({ level: nextLvl - 1, req: 0, total: total });
+                    }
                 }
                 buffer = [];
                 nextLvl++;
             } 
+            // LOGIC 2: Glued Unformatted (e.g., 102676 -> 10 2676 -> found '2' inside '2676'?)
+            // Only strictly needed for start of file usually
             else {
-                // Check if number starts with next level (glued)
                 const sNum = num.toString();
                 const sLvl = nextLvl.toString();
+                
+                // If token starts with nextLvl (and has extra digits)
+                // e.g. nextLvl=2, token=2676. 
                 if (sNum.length > sLvl.length && sNum.startsWith(sLvl)) {
-                     const remainder = parseInt(sNum.substring(sLvl.length));
-                     if (!isNaN(remainder)) {
-                         // Process previous
-                         if (buffer.length > 0 && nextLvl > 2) {
-                            const total = Math.max(...buffer);
-                            newTable.push({ level: nextLvl - 1, req: 0, total: total });
+                    const remainderStr = sNum.substring(sLvl.length);
+                    const remainder = parseInt(remainderStr);
+                    
+                    if (!isNaN(remainder)) {
+                         if (buffer.length > 0) {
+                             const total = Math.max(...buffer);
+                             if (newTable.length > 0 && total >= newTable[newTable.length-1].total) {
+                                newTable.push({ level: nextLvl - 1, req: 0, total: total });
+                             }
                          }
+                         // The remainder is the current level's exp
                          buffer = [remainder];
                          nextLvl++;
-                         continue;
-                     }
+                         continue; // Skip pushing `num` to buffer
+                    }
                 }
-                // Add to buffer if valid
-                if (num > 0) buffer.push(num);
+                
+                // Add to buffer
+                buffer.push(num);
             }
         }
         
-        // Handle final level
+        // Final buffer flush (for the last level found)
         if (buffer.length > 0 && nextLvl > 1) {
              const total = Math.max(...buffer);
-             newTable.push({ level: nextLvl - 1, req: 0, total: total });
+             // Verify it's larger than previous
+             const prevTotal = newTable.length > 0 ? newTable[newTable.length-1].total : -1;
+             if (total >= prevTotal) {
+                 newTable.push({ level: nextLvl - 1, req: 0, total: total });
+             }
         }
         
         if (newTable.length > 10) {
             newTable.sort((a,b) => a.level - b.level);
             
-            // Fix reqs based on totals
-            for(let i=0; i<newTable.length-1; i++) {
+            // Calc Reqs
+            for(let i=0; i<newTable.length; i++) {
                  if (i < newTable.length - 1) {
                      newTable[i].req = newTable[i+1].total - newTable[i].total;
                  }
@@ -945,7 +938,7 @@
             calculateExp();
         } else {
             document.getElementById('import-error').style.display = 'block';
-            document.getElementById('import-error').innerText = "Parse failed.";
+            document.getElementById('import-error').innerText = "Parse failed. Could not find enough levels.";
         }
     }
 
