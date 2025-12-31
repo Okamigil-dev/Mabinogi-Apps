@@ -28,7 +28,6 @@
             --text-dim: #a1a1aa;
             --danger: #ef4444;
             --success: #00ff88;
-            --warning: #eab308;
         }
 
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
@@ -72,7 +71,7 @@
         .panel-label { font-size: 11px; font-weight: 600; color: var(--text-dim); margin-bottom: 8px; display: block; text-transform: uppercase; }
         .config-section { padding: 20px; border-bottom: 1px solid var(--border); }
         
-        .input-dark { background: var(--card-bg); border: 1px solid var(--border); color: #fff; font-family: 'Inter', sans-serif; font-size: 13px; padding: 8px; border-radius: 6px; width: 100%; transition: border-color 0.2s; }
+        .input-dark { background: var(--card-bg); border: 1px solid var(--border); color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 13px; padding: 8px; border-radius: 6px; width: 100%; transition: border-color 0.2s; }
         .input-dark:focus { border-color: var(--accent); }
         select.input-dark { -webkit-appearance: none; font-family: 'Inter', sans-serif; cursor: pointer; }
         textarea.input-dark { resize: vertical; min-height: 100px; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
@@ -430,7 +429,6 @@
     });
     
     // --- PUBLIC DATA SYNC ---
-    // Changed path to public_data/...
     db.ref('public_data/exp_tables/character').on('value', (snap) => {
         const data = snap.val();
         if(data && Array.isArray(data) && data.length > 10) {
@@ -446,7 +444,6 @@
             totalExp: document.getElementById('cur-total-exp').value,
             tgt: document.getElementById('tgt-lvl').value,
             multipliers: multipliers
-            // Note: expTable removed from user state, relies on public or default
         };
         
         if(currentUser && !currentUser.isGuest) db.ref(`users/${currentUser.uid}/calc_state`).set(state);
@@ -486,27 +483,11 @@
         const newTable = [];
         
         // Smarter Stream Parsing Logic
-        // Clean all separators to simple spaces to handle weird formats like 1-400-2400
         const cleanRaw = raw.replace(/[^\d,\n]/g, ' ').replace(/\s+/g, ' ').trim();
         
-        // Extract numbers. Handle the glued comma case: "31,100" -> "3" "1100"
-        // Regex logic:
-        // 1. Matches standard numbers 123
-        // 2. Matches comma numbers 1,234
-        // 3. Matches glued: digit(s) immediately followed by comma number: (\d+)((\d{1,3}(,\d{3})+))
-        
-        // Let's just tokenize by splitting carefully.
-        // We know we are looking for sequential levels: 1, 2, 3...
-        
-        // Simple Tokenizer
         const tokens = [];
-        // Regex to find numbers, potentially with commas
         const regex = /(\d{1,3}(,\d{3})+)|(\d+)/g;
         let m;
-        
-        // Special pre-fix for "glued" numbers like "31,100" where "3" is level and "1,100" is exp.
-        // We look for patterns where a digit is immediately followed by a number that starts with 1-3 digits then comma.
-        // e.g. "31,100" -> insert space -> "3 1,100"
         
         const gluedFix = cleanRaw.replace(/(\d)(\d{1,3}(,\d{3})+)/g, '$1 $2');
         
@@ -515,42 +496,30 @@
              if (!isNaN(cleanNum)) tokens.push(cleanNum);
         }
         
-        // Heuristic Parser
         let nextLvl = 1;
         let buffer = [];
         
         for (let i = 0; i < tokens.length; i++) {
             let num = tokens[i];
             
-            // Check for exact match
             if (num === nextLvl) {
-                // Found a level marker. Process previous buffer if exists.
                 if (buffer.length > 0 && nextLvl > 1) {
                     const total = Math.max(...buffer);
                     newTable.push({ level: nextLvl - 1, req: 0, total: total });
                 }
                 
-                // Start new buffer for this level
                 buffer = [];
                 nextLvl++;
-            } 
-            // Check for uncomma'd glue (e.g. "2400" -> "2", "400")
-            // Only if num is significantly larger than nextLvl to avoid false positives
-            else {
+            } else {
                 const sNum = num.toString();
                 const sLvl = nextLvl.toString();
                 if (sNum.length > sLvl.length && sNum.startsWith(sLvl)) {
-                     // Potential glue!
-                     // Split
                      const remainder = parseInt(sNum.substring(sLvl.length));
                      if (!isNaN(remainder)) {
-                         // Process previous level if needed
                          if (buffer.length > 0 && nextLvl > 1) {
                             const total = Math.max(...buffer);
                             newTable.push({ level: nextLvl - 1, req: 0, total: total });
                          }
-                         
-                         // Start current level buffer with remainder
                          buffer = [remainder];
                          nextLvl++;
                          continue;
@@ -560,7 +529,6 @@
             }
         }
         
-        // Handle last level
         if (buffer.length > 0 && nextLvl > 1) {
              const total = Math.max(...buffer);
              newTable.push({ level: nextLvl - 1, req: 0, total: total });
@@ -569,9 +537,7 @@
         if (newTable.length > 10) {
             newTable.sort((a,b) => a.level - b.level);
             
-            // Fix reqs
             for(let i=0; i<newTable.length-1; i++) {
-                 // Req for Lvl X is (Total at X+1) - (Total at X)
                  if (i < newTable.length - 1) {
                      const nextTotal = newTable[i+1].total;
                      const curTotal = newTable[i].total;
@@ -581,14 +547,12 @@
             
             // SAVE TO PUBLIC DB (ROOT LEVEL)
             if (currentUser && !currentUser.isGuest) {
-                // Changing path to 'public_data'
                 db.ref('public_data/exp_tables/character').set(newTable).then(() => {
                     alert("Data saved to Public Database!");
                 }).catch(err => {
                     alert("Error saving: " + err.message);
                 });
             } else {
-                // Fallback for guest mode (local only)
                 EXP_TABLE = newTable;
                 document.getElementById('data-status').innerText = "Using Local Import";
                 document.getElementById('data-status').style.color = "var(--warning)";
