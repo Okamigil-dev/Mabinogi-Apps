@@ -542,7 +542,7 @@
         const uInfo = document.getElementById('user-info');
         if (user) {
             currentUser = user;
-            document.getElementById('connection-status').innerText = "Online & Syncing";
+            document.getElementById('connection-status').innerText = "Online";
             document.getElementById('connection-status').style.color = "var(--accent)";
             try {
                 const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
