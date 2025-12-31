@@ -18,8 +18,11 @@
             --bg: #09090b;
             --sidebar-bg: #121214;
             --card-bg: #18181b;
-            --accent: #facc15; /* Yellow for Gold/Market focus */
-            --accent-dim: rgba(250, 204, 21, 0.1);
+            
+            /* Updated Accent to Purple (Wishlist Theme) */
+            --accent: #a78bfa; 
+            --accent-dim: rgba(167, 139, 250, 0.1);
+            
             --border: #27272a;
             --text-main: #e4e4e7;
             --text-dim: #a1a1aa;
@@ -68,7 +71,7 @@
         .content-grid { display: grid; grid-template-columns: 280px 1fr 320px; flex-grow: 1; overflow: hidden; }
         .panel { background: var(--bg); display: flex; flex-direction: column; border-right: 1px solid var(--border); overflow-y: auto; }
         .panel:last-child { border-right: none; }
-        .center-panel { background: #0c0c0e; }
+        .center-panel { background: #0c0c0e; display: flex; flex-direction: column; }
 
         /* --- Components --- */
         .panel-label { font-size: 11px; font-weight: 600; color: var(--text-dim); margin-bottom: 8px; display: block; text-transform: uppercase; }
@@ -89,8 +92,39 @@
         /* Legend */
         .legend-text { font-size: 10px; color: var(--text-dim); text-align: center; margin-top: 5px; opacity: 0.7; font-family: 'JetBrains Mono', monospace; }
 
+        /* FOLDER TABS SYSTEM */
+        .folder-bar {
+            display: flex; gap: 6px; flex-wrap: wrap; /* Changed to wrap */
+            padding: 15px 20px 0 20px;
+            border-bottom: 1px solid var(--border); flex-shrink: 0; background: #0c0c0e;
+        }
+        
+        .folder-tab {
+            padding: 8px 16px; 
+            background: var(--card-bg); 
+            color: var(--text-dim);
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            border: 1px solid var(--border);
+            border-radius: 6px 6px 0 0; /* Slightly simpler radius for wrapped look */
+            cursor: pointer; white-space: nowrap;
+            transition: 0.2s;
+            margin-bottom: -1px; /* Overlap border */
+            position: relative;
+            user-select: none;
+            flex-grow: 1; /* Allow to grow to fill lines */
+            text-align: center;
+        }
+        .folder-tab:hover { background: #27272a; color: #fff; }
+        .folder-tab.active {
+            background: #0c0c0e; /* Match background of content area */
+            color: var(--accent);
+            border-color: var(--border);
+            border-bottom-color: #0c0c0e; /* Hide bottom border to merge */
+            z-index: 2;
+        }
+        
         /* Wishlist Item Card */
-        .wish-list { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .wish-list { padding: 20px; display: flex; flex-direction: column; gap: 10px; flex-grow: 1; overflow-y: auto; }
         
         .wish-card { 
             background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; 
@@ -274,8 +308,11 @@
                 </div>
             </div>
 
-            <!-- CENTER PANEL: Items -->
+            <!-- CENTER PANEL: Items (Tabs View) -->
             <div class="panel center-panel">
+                <!-- FOLDER TABS -->
+                <div id="folder-tabs" class="folder-bar"></div>
+                
                 <div id="wish-container" class="wish-list"></div>
                 
                 <div id="empty-state" style="display:none; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--text-dim); text-align:center;">
@@ -302,6 +339,21 @@
                         <div>
                             <label class="panel-label" style="margin-bottom:4px;">Item Name</label>
                             <input type="text" id="new-item-name" class="input-dark" placeholder="e.g. Broken Log">
+                        </div>
+
+                        <!-- Category Field -->
+                        <div>
+                            <label class="panel-label" style="margin-bottom:4px;">Category</label>
+                            <input type="text" id="new-item-category" class="input-dark" placeholder="e.g. Equipment" list="category-list">
+                            <datalist id="category-list">
+                                <option value="Equipment">
+                                <option value="Enchant Scrolls">
+                                <option value="Materials">
+                                <option value="Consumables">
+                                <option value="Totems">
+                                <option value="Beauty">
+                                <option value="Misc">
+                            </datalist>
                         </div>
 
                         <div>
@@ -345,8 +397,9 @@
     const db = firebase.database();
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
-    let items = [], currentUser = null, activeFilter = 'all', activeSort = 'default';
+    let items = [], currentUser = null, activeFilter = 'all', activeSort = 'default', activeCategory = 'All';
     let editingId = null;
+    let collapsedFolders = {}; // Store open/closed state of folders
 
     auth.onAuthStateChanged(user => {
         const uInfo = document.getElementById('user-info');
@@ -374,7 +427,11 @@
                 const data = snap.val() || [];
                 items = Array.isArray(data) ? data : Object.values(data);
                 items = items.filter(i => i); // Clean nulls
-                renderList();
+                // Load folder states if saved, or default
+                db.ref(`users/${user.uid}/wishlist_settings`).once('value', s => {
+                    if(s.val() && s.val().collapsed) collapsedFolders = s.val().collapsed;
+                    renderList();
+                });
             });
         } else { 
             currentUser = { uid: 'local_guest', isGuest: true };
@@ -386,6 +443,9 @@
             
             const localData = JSON.parse(localStorage.getItem('mabi_wishlist_data') || '[]');
             items = localData;
+            // Load local folder states
+            const localSettings = JSON.parse(localStorage.getItem('mabi_wishlist_settings') || '{}');
+            if(localSettings.collapsed) collapsedFolders = localSettings.collapsed;
             renderList();
         }
     });
@@ -394,8 +454,12 @@
         if (!currentUser) return;
         if (currentUser.isGuest) {
             localStorage.setItem('mabi_wishlist_data', JSON.stringify(items));
+            // Save folder states too
+            localStorage.setItem('mabi_wishlist_settings', JSON.stringify({ collapsed: collapsedFolders }));
         } else {
             db.ref(`users/${currentUser.uid}/wishlist`).set(items);
+            // Save folder states separately to avoid cluttering main list
+             db.ref(`users/${currentUser.uid}/wishlist_settings`).update({ collapsed: collapsedFolders });
         }
     }
 
@@ -404,9 +468,11 @@
         const priceInp = document.getElementById('new-item-price');
         const prioInp = document.getElementById('new-item-prio');
         const statusInp = document.getElementById('new-item-status');
+        const catInp = document.getElementById('new-item-category'); // New
         
         const name = nameInp.value.trim();
         const price = parseInt(priceInp.value.replace(/,/g, '')) || 0;
+        const category = catInp.value.trim() || "Uncategorized"; // Default
         
         if (!name) return;
         
@@ -418,6 +484,7 @@
                 item.price = price;
                 item.priority = prioInp.value;
                 item.status = statusInp.value;
+                item.category = category;
             }
             cancelEdit();
         } else {
@@ -428,6 +495,7 @@
                 price: price,
                 priority: prioInp.value,
                 status: statusInp.value,
+                category: category,
                 owned: false
             });
         }
@@ -436,6 +504,9 @@
         if (!editingId) {
              nameInp.value = '';
              priceInp.value = '';
+             // Keep category input populated for faster entry of same type, or clear it? 
+             // Clearing it is safer.
+             catInp.value = ''; 
         }
         
         pushData();
@@ -456,9 +527,10 @@
 
         // Populate Fields
         document.getElementById('new-item-name').value = item.name;
-        document.getElementById('new-item-price').value = item.price.toLocaleString(); // Add commas back for display
+        document.getElementById('new-item-price').value = item.price.toLocaleString(); 
         document.getElementById('new-item-prio').value = item.priority;
         document.getElementById('new-item-status').value = item.status;
+        document.getElementById('new-item-category').value = item.category || "Uncategorized";
 
         // On mobile, open the right drawer
         if (window.innerWidth <= 1000) {
@@ -475,8 +547,9 @@
         
         document.getElementById('new-item-name').value = '';
         document.getElementById('new-item-price').value = '';
-        document.getElementById('new-item-prio').value = 'high'; // Reset to default
+        document.getElementById('new-item-prio').value = 'high'; 
         document.getElementById('new-item-status').value = 'abundant';
+        document.getElementById('new-item-category').value = '';
     }
 
     function deleteItem(id) {
@@ -497,7 +570,6 @@
         }
     }
 
-    // New helper to toggle status from badge click
     function toggleStatus(id) {
         const item = items.find(i => i.id === id);
         if (item) {
@@ -522,6 +594,11 @@
         document.getElementById(`btn-sort-${s}`).classList.add('active');
         renderList();
     }
+
+    function setCategory(cat) {
+        activeCategory = cat;
+        renderList();
+    }
     
     // --- FORMATTER ---
     function formatNumber(num) {
@@ -534,14 +611,43 @@
     function renderList() {
         const container = document.getElementById('wish-container');
         const emptyState = document.getElementById('empty-state');
+        const tabContainer = document.getElementById('folder-tabs');
+        
         container.innerHTML = '';
         
+        // 1. Filter by Status (Needed/Owned)
         let filtered = items;
         if (activeFilter === 'needed') filtered = items.filter(i => !i.owned);
         if (activeFilter === 'owned') filtered = items.filter(i => i.owned);
+
+        // 2. Extract Categories from FULL item list (to keep tabs stable)
+        // Note: Using 'filtered' or 'items' here is a design choice. 
+        // Using 'items' ensures tabs don't disappear if you toggle filters.
+        const allCats = new Set();
+        items.forEach(i => allCats.add(i.category || "Uncategorized"));
+        const sortedCats = Array.from(allCats).sort();
+        sortedCats.unshift('All'); // Force 'All' to be first
         
+        // 3. Render Tabs
+        tabContainer.innerHTML = '';
+        sortedCats.forEach(cat => {
+            // Count items in this category (respecting current filter)
+            const count = filtered.filter(i => (cat === 'All' || (i.category || "Uncategorized") === cat)).length;
+            
+            const btn = document.createElement('div');
+            btn.className = `folder-tab ${activeCategory === cat ? 'active' : ''}`;
+            btn.innerText = `${cat} (${count})`;
+            btn.onclick = () => setCategory(cat);
+            tabContainer.appendChild(btn);
+        });
+
+        // 4. Filter by Category
+        if (activeCategory !== 'All') {
+            filtered = filtered.filter(i => (i.category || "Uncategorized") === activeCategory);
+        }
+        
+        // 5. Sort Items
         const prioMap = { 'high': 3, 'med': 2, 'low': 1 };
-        
         filtered.sort((a,b) => {
             if (a.owned !== b.owned) return a.owned ? 1 : -1;
 
@@ -558,10 +664,12 @@
         if (filtered.length === 0) {
             container.style.display = 'none';
             emptyState.style.display = 'flex';
-        } else {
-            container.style.display = 'flex';
-            emptyState.style.display = 'none';
+            updateStats();
+            return;
         }
+
+        container.style.display = 'flex';
+        emptyState.style.display = 'none';
 
         filtered.forEach(item => {
             const el = document.createElement('div');
@@ -606,7 +714,6 @@
         const remaining = totalItems - ownedItems;
         const progress = totalItems > 0 ? Math.round((ownedItems / totalItems) * 100) : 0;
         
-        // Use full number with commas for the total to satisfy "abreviating too much"
         document.getElementById('stat-total-cost').innerText = totalCost.toLocaleString() + " G";
         document.getElementById('stat-items-rem').innerText = remaining;
         document.getElementById('stat-progress').innerText = progress + "%";
