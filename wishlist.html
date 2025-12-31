@@ -101,48 +101,55 @@
         .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: #fff; }
         .stat-sub { font-size: 10px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; margin-bottom: 4px; }
 
-        /* --- CATEGORY TABS (Stacked Folders) --- */
+        /* --- CATEGORY TABS (Standard Button Style) --- */
         .tab-bar {
             display: flex; 
-            gap: 4px; 
-            padding: 15px 20px 0 20px;
+            gap: 8px; 
+            padding: 15px 20px; 
             background: var(--bg); 
             border-bottom: 1px solid var(--border);
             flex-wrap: wrap; 
             flex-shrink: 0;
-            align-items: flex-end;
+            align-items: center;
         }
 
         .tab-btn {
-            padding: 8px 16px; 
+            padding: 6px 14px; 
             background: var(--card-bg); 
             border: 1px solid var(--border); 
-            /* Folder Shape */
-            border-radius: 6px 6px 0 0; 
+            border-radius: 6px; 
             color: var(--text-dim); 
             font-size: 11px; font-weight: 700;
             cursor: pointer; white-space: nowrap; transition: 0.2s;
-            position: relative;
-            margin-bottom: -1px; 
-            flex-grow: 0; 
         }
-        .tab-btn:hover { background: #27272a; color: #fff; }
+        .tab-btn:hover { background: #27272a; color: #fff; border-color: #555; }
         
         .tab-btn.active {
-            background: #0c0c0e; /* Match content background */
-            color: var(--accent); 
-            border-color: var(--border); 
-            border-bottom-color: #0c0c0e; 
-            z-index: 2;
+            background: var(--accent); 
+            color: #000; 
+            border-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent-dim);
         }
 
         /* --- ITEM CARDS --- */
         .wish-list { padding: 20px; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 8px; }
         
         .wish-item {
-            background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;
-            padding: 12px; display: grid; grid-template-columns: 1fr auto auto; 
-            align-items: center; gap: 15px; transition: border-color 0.2s; position: relative; overflow: hidden;
+            background: var(--card-bg); 
+            border: 1px solid var(--border); 
+            border-radius: 8px;
+            padding: 12px; 
+            display: grid; 
+            grid-template-columns: 1fr auto auto; 
+            align-items: center; 
+            gap: 15px; 
+            transition: border-color 0.2s; 
+            position: relative; 
+            overflow: hidden;
+
+            /* CRITICAL FIX: Prevent vertical squishing */
+            flex-shrink: 0; 
+            min-height: 80px; 
         }
         .wish-item:hover { border-color: #444; }
         .wish-item.owned { opacity: 0.5; filter: grayscale(1); border-style: dashed; background: transparent; }
