@@ -206,7 +206,6 @@
 
         /* Mobile Layout */
         @media (max-width: 1000px) {
-            .mobile-only { display: block; }
             .content-grid { display: block; height: calc(100dvh - 50px); }
             .header-bar { display: none; }
             
@@ -247,6 +246,12 @@
             }
             .drawer-title { font-weight: 700; color: #fff; }
             .drawer-close { background: none; border: none; color: var(--text-dim); font-size: 20px; padding: 0 5px; cursor: pointer; }
+            
+            /* Mobile User Profile */
+            .user-profile-box { display: flex; align-items: center; gap: 12px; padding: 15px; border-bottom: 1px solid var(--border); }
+            .user-avatar-mobile { width: 80px; height: 80px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; flex-shrink: 0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"); }
+            .user-info-text-mobile { font-size: 13px; font-weight: 600; color: var(--text-main); word-break: break-all; line-height: 1.2; }
+            .user-status-mobile { font-size: 10px; color: var(--text-dim); }
         }
 
         #item-tooltip { position: fixed; z-index: 10000; background: rgba(18, 18, 20, 0.98); border: 1px solid var(--border); padding: 12px; border-radius: 6px; pointer-events: none; display: none; min-width: 180px; }
@@ -274,6 +279,7 @@
             <a href="tracker.html">TRACKER</a>
             <a href="barter.html" class="active">BARTER</a>
             <a href="commerce.html">COMMERCE</a>
+            <a href="wishlist.html">WISHLIST</a>
         </nav>
 
         <div class="header-bar">
@@ -354,7 +360,7 @@
                     <summary>Configuration</summary>
                     <div class="drawer-content">
                          <label style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
-                            <span style="font-size:12px;">Hide Completed Materials (Raw Only)</span>
+                            <span style="font-size:12px;">Hide Stockpiled (2+ Weeks)</span>
                             <input type="checkbox" id="toggle-hide-completed" class="toggle-input">
                             <div class="toggle-switch"></div>
                         </label>
@@ -725,23 +731,21 @@
         }
 
         function calculateTotalProfit(slots, maxSlots) {
-            let bestCity = "-", maxTotal = 0, maxScore = 0;
+            let bestCity = "-", maxTotal = 0;
             const mult = getProfitMultiplier();
 
             commerceTowns.forEach(city => {
                 let total = 0;
-                let totalScore = 0;
                 for(let k=0; k<maxSlots; k++) {
                     const item = slots[k];
                     if(!item) continue;
                     const key = `${item.item}_${city}`.replace(/[.#$[\]]/g, "_");
                     const price = publicPrices[key] || 0;
                     total += Math.floor(price * item.qtyInSlot * mult);
-                    totalScore += Math.floor((price * item.qtyInSlot) / 34); // Score = Base Profit / 34
                 }
-                if(total > maxTotal) { maxTotal = total; maxScore = totalScore; bestCity = city; }
+                if(total > maxTotal) { maxTotal = total; bestCity = city; }
             });
-            return { city: bestCity, total: maxTotal, score: maxScore };
+            return { city: bestCity, total: maxTotal };
         }
 
         function calculateLoadout(){
@@ -752,8 +756,8 @@
             const p1 = calculateTotalProfit(res.slots1, res.s1.slots);
             const p2 = calculateTotalProfit(res.slots2, res.s2.slots);
             
-            document.getElementById('transport-profit-1').innerHTML = `<span>Best: ${p1.city}</span><div style="text-align:right;"><div>${p1.total.toLocaleString()} D</div><div style="font-size:9px;color:#aaa;">${p1.score.toLocaleString()} Score</div></div>`;
-            document.getElementById('transport-profit-2').innerHTML = `<span>Best: ${p2.city}</span><div style="text-align:right;"><div>${p2.total.toLocaleString()} D</div><div style="font-size:9px;color:#aaa;">${p2.score.toLocaleString()} Score</div></div>`;
+            document.getElementById('transport-profit-1').innerHTML = `<span>Best: ${p1.city}</span><span>${p1.total.toLocaleString()} D</span>`;
+            document.getElementById('transport-profit-2').innerHTML = `<span>Best: ${p2.city}</span><span>${p2.total.toLocaleString()} D</span>`;
 
             ['grid-1','grid-2'].forEach((id,i)=>{
                 const g=document.getElementById(id); g.innerHTML=''; const stats=i===0?res.s1:res.s2, slots=i===0?res.slots1:res.slots2;
@@ -764,7 +768,11 @@
                         const icon=document.createElement('div'); icon.className='item-icon'; icon.style.width='100%'; icon.style.height='100%'; applyIcon(icon,item.item); 
                         icon.innerHTML=`<span class="stack-label" style="position:absolute;bottom:2px;right:2px;font-size:9px;color:#fff;pointer-events:none;text-shadow:0 1px 2px #000;">${item.qtyInSlot}</span>`; 
                         icon.onclick=(e)=> { if(e.shiftKey) clearItem(item.item); else updateItemQty(item.item,-1); }; 
-                        icon.onmouseenter=(e)=>showTooltip(e,item); icon.onmouseleave=()=>document.getElementById('item-tooltip').style.display='none'; 
+                        
+                        // ADDED: Hover tooltip to sidebar items as well
+                        icon.onmouseenter=(e)=>showTooltip(e,item); 
+                        icon.onmouseleave=()=>document.getElementById('item-tooltip').style.display='none'; 
+                        
                         slot.appendChild(icon); 
                     }
                     g.appendChild(slot);
@@ -808,11 +816,10 @@
                 e.className=`item-entry ${qty>=item.limit?'at-limit':''}`;
                 e.innerHTML=`<div class="item-icon-box"></div><div style="flex-grow:1;"><div class="item-name-sidebar">${item.item}</div><div class="item-meta">${item.weight}kg | Limit: ${item.limit}</div></div><div class="qty-control"><button class="q-btn minus">−</button><div class="q-val">${qty}</div><button class="q-btn plus">+</button></div>`;
                 
-                // ADDED: Hover tooltip to sidebar item icon
                 const iconBox = e.querySelector('.item-icon-box');
                 applyIcon(iconBox,item.item);
-                
-                // CHANGED: Hover tooltip attached to the whole row
+
+                // CHANGED: Hover tooltip attached to the whole row for better UX
                 e.onmouseenter=(ev)=>showTooltip(ev,item);
                 e.onmouseleave=()=>document.getElementById('item-tooltip').style.display='none';
                 
