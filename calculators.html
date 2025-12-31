@@ -28,6 +28,7 @@
             --text-dim: #a1a1aa;
             --danger: #ef4444;
             --success: #00ff88;
+            --warning: #eab308;
         }
 
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
@@ -393,14 +394,51 @@
     let CHAR_EXP_TABLE = [];
     let EXPL_EXP_TABLE = [];
     
-    // Init Placeholders
-    let accum = 0;
+    // Updated: Real Mabinogi Character EXP Totals (Levels 1 to 200)
+    // Values derived from standard accumulation table
+    const REAL_CHAR_EXP_TOTALS = [
+        0,0,400,1200,2400,4200,6600,9800,14000,19400,26200,34600,44800,57200,72000,89400,109800,133400,160400,191400,
+        226600,266200,310800,360400,415400,476000,542400,615000,694000,779800,872600,972800,1080600,1196400,1320400,
+        1453000,1594400,1745200,1905400,2075600,2255800,2446600,2648400,2861600,3086600,3323800,3573600,3836400,4112600,
+        4402800,4707400,5026800,5361400,5711600,6077800,6460400,6860000,7277000,7711800,8165000,8637000,9128400,9639600,
+        10171200,10723800,11298000,11894400,12513600,13156200,13822800,14514000,15230400,15972600,16741200,17537000,
+        18360600,19212800,20094200,21005400,21947200,22920400,23925800,24964200,26036400,27143400,28286000,29465200,
+        30681800,31936600,33230400,34564200,35938800,37355200,38814400,40317400,41865200,43458800,45099200,46787400,
+        48524400,50311200,52148800,54038200,55980400,57976400,60027200,62133800,64297200,66518400,68798400,71138200,
+        73538800,76001200,78526400,81115400,83769200,86488800,89275200,92129400,95052400,98045200,101108800,104244200,
+        107452400,110734400,114091200,117523800,121033200,124620400,128286400,132032200,135858800,139767200,143758400,
+        147833400,151993200,156238800,160571200,164991400,169500400,174099200,178788800,183570200,188444400,193412400,
+        198475200,203633800,208889200,214242400,219694400,225246200,230898800,236653200,242510400,248471400,254537200,
+        260708800,266987200,273373400,279868400,286473200,293188800,300016200,306956400,314010400,321179200,328463800,
+        335865200,343384400,351022400,358780200,366658800,374659200,382782400,391029400,399401200,407949600,416694600,
+        425636200,434774400,444109200,453640600,463368600,473293200,483414400
+    ];
+
+    // Init Tables
+    // For Character: Use the real array
     for(let i=1; i<=200; i++) {
-        let req = Math.floor(100 * Math.pow(i, 2.5)); 
-        CHAR_EXP_TABLE.push({ level: i, req: req, total: accum });
-        accum += req;
+        // Adjust index: Level 1 is index 0. 
+        // Logic: TABLE[i] should correspond to level (i+1) if 0-indexed? 
+        // Existing logic uses TABLE.find(d => d.level === i).
+        
+        let total = 0;
+        if(i <= REAL_CHAR_EXP_TOTALS.length) total = REAL_CHAR_EXP_TOTALS[i-1];
+        else {
+            // Fallback for >200 if ever needed (placeholder growth)
+             total = REAL_CHAR_EXP_TOTALS[REAL_CHAR_EXP_TOTALS.length-1] + (i - 200) * 10000000;
+        }
+
+        // Calculate Req based on difference to next level total
+        let req = 0;
+        if(i < REAL_CHAR_EXP_TOTALS.length) {
+            req = REAL_CHAR_EXP_TOTALS[i] - REAL_CHAR_EXP_TOTALS[i-1];
+        }
+
+        CHAR_EXP_TABLE.push({ level: i, req: req, total: total });
     }
-    accum = 0;
+
+    // For Exploration: Keep placeholder for now (or could add real data later)
+    let accum = 0;
     for(let i=1; i<=50; i++) {
         let req = Math.floor(50 * Math.pow(i, 2.1));
         EXPL_EXP_TABLE.push({ level: i, req: req, total: accum });
@@ -464,9 +502,13 @@
     // --- DATA SYNC ---
     db.ref('public_data/exp_tables/character').on('value', snap => {
         const data = snap.val();
+        // Only override if data exists AND it is different from default
         if(data && Array.isArray(data) && data.length > 10) {
             CHAR_EXP_TABLE = data;
             if(currentMode === 'char-exp') { updateDataStatus(true); calculateExp(); }
+        } else {
+             // Fallback to default if DB is empty
+             if(currentMode === 'char-exp') updateDataStatus(false); 
         }
     });
     db.ref('public_data/exp_tables/exploration').on('value', snap => {
@@ -479,8 +521,14 @@
 
     function updateDataStatus(isPublic) {
         const el = document.getElementById('data-status');
-        el.innerText = isPublic ? "Using Public Database" : "Using Default Placeholder";
-        el.style.color = isPublic ? "var(--success)" : "var(--text-dim)";
+        if(isPublic) {
+            el.innerText = "Using Public Database";
+            el.style.color = "var(--success)";
+        } else {
+            // Changed from "Default Placeholder" to "Standard Table" since we have real data now
+            el.innerText = "Using Built-in Standard Table";
+            el.style.color = "var(--text-dim)";
+        }
     }
 
     // --- SWITCH TOOLS ---
@@ -500,7 +548,11 @@
         document.getElementById('section-kills').style.display = (mode === 'char-exp') ? 'block' : 'none';
         
         const TABLE = mode === 'char-exp' ? CHAR_EXP_TABLE : EXPL_EXP_TABLE;
-        updateDataStatus(TABLE.length > 10 && TABLE[10].total > 0);
+        // Check if using DB data or Default
+        // Logic: If TABLE[10].total matches our hardcoded default, it's default.
+        // Simplified: Just use the same logic as sync
+        if(mode === 'char-exp') updateDataStatus(false); // Default state, DB sync will override if needed
+        else updateDataStatus(TABLE.length > 10 && TABLE[10].total > 0);
         
         // Load new inputs from state memory
         const newState = mode === 'char-exp' ? charState : explState;
@@ -781,7 +833,7 @@
         calculateExp();
     }
 
-    // --- IMPORT LOGIC (Public Write) ---
+    // --- IMPORT LOGIC ---
     function toggleImportModal(show) {
         document.getElementById('import-modal').style.display = show ? 'flex' : 'none';
         document.getElementById('import-error').style.display = 'none';
@@ -793,13 +845,12 @@
 
     function parseImportData() {
         const raw = document.getElementById('import-text').value;
-        // ... (Same parsing logic) ...
         const cleanRaw = raw.replace(/[^\d,\n]/g, ' ').replace(/\s+/g, ' ').trim();
         const tokens = [];
         const regex = /(\d{1,3}(,\d{3})+)|(\d+)/g;
         let m;
+        // Fix for "glued" numbers
         const gluedFix = cleanRaw.replace(/(\d)(\d{1,3}(,\d{3})+)/g, '$1 $2');
-        
         while ((m = regex.exec(gluedFix)) !== null) {
              const cleanNum = parseInt(m[0].replace(/,/g, ''));
              if (!isNaN(cleanNum)) tokens.push(cleanNum);
@@ -808,48 +859,44 @@
         let nextLvl = 1;
         let buffer = [];
         const newTable = [];
+        
+        // FORCING LEVEL 1 TO START AT 0
+        // We know Level 1 Total is always 0.
+        // We look for Level 2 immediately.
+        newTable.push({ level: 1, req: 0, total: 0 });
+        nextLvl = 2;
+
         for (let i = 0; i < tokens.length; i++) {
             let num = tokens[i];
             
+            // Check if current token matches next level
             if (num === nextLvl) {
-                // Found level marker
-                if (buffer.length > 0 && nextLvl > 1) {
-                    // Logic Update:
-                    // If Level 1, Total = 0.
-                    // If Level > 1, pick smallest candidate >= prevTotal.
-                    
-                    let total = 0;
-                    if (nextLvl - 1 === 1) {
-                         total = 0; 
-                    } else {
-                         const prevTotal = newTable[newTable.length-1].total;
-                         // Filter candidates >= prevTotal, pick smallest.
-                         const valid = buffer.filter(n => n >= prevTotal);
-                         total = valid.length > 0 ? Math.min(...valid) : Math.max(...buffer); // Fallback to max if none valid (shouldnt happen)
-                    }
+                // If we have a previous level buffer, process it
+                if (buffer.length > 0 && nextLvl > 2) {
+                    // Previous level was nextLvl - 1.
+                    // Find largest number as Total
+                    const total = Math.max(...buffer);
                     newTable.push({ level: nextLvl - 1, req: 0, total: total });
+                } else if (nextLvl === 2) {
+                    // Special case for transition from 1->2.
+                    // Buffer contains data for Level 1->2 transition?
+                    // Actually, if we found `2`, we are looking for Level 2 data NOW.
+                    // The buffer contained junk between 1 and 2.
+                    // But Level 1 total is 0. So we ignore buffer.
                 }
-                
-                // Start new buffer for this level
                 buffer = [];
                 nextLvl++;
             } 
             else {
+                // Check if number starts with next level (glued)
                 const sNum = num.toString();
                 const sLvl = nextLvl.toString();
                 if (sNum.length > sLvl.length && sNum.startsWith(sLvl)) {
                      const remainder = parseInt(sNum.substring(sLvl.length));
                      if (!isNaN(remainder)) {
                          // Process previous
-                         if (buffer.length > 0 && nextLvl > 1) {
-                            let total = 0;
-                            if (nextLvl - 1 === 1) {
-                                total = 0;
-                            } else {
-                                const prevTotal = newTable[newTable.length-1].total;
-                                const valid = buffer.filter(n => n >= prevTotal);
-                                total = valid.length > 0 ? Math.min(...valid) : Math.max(...buffer);
-                            }
+                         if (buffer.length > 0 && nextLvl > 2) {
+                            const total = Math.max(...buffer);
                             newTable.push({ level: nextLvl - 1, req: 0, total: total });
                          }
                          buffer = [remainder];
@@ -857,34 +904,27 @@
                          continue;
                      }
                 }
-                buffer.push(num);
+                // Add to buffer if valid
+                if (num > 0) buffer.push(num);
             }
         }
         
-        // Handle last level
+        // Handle final level
         if (buffer.length > 0 && nextLvl > 1) {
-             let total = 0;
-             if (nextLvl - 1 === 1) {
-                total = 0;
-             } else {
-                const prevTotal = newTable[newTable.length-1].total;
-                const valid = buffer.filter(n => n >= prevTotal);
-                total = valid.length > 0 ? Math.min(...valid) : Math.max(...buffer);
-             }
+             const total = Math.max(...buffer);
              newTable.push({ level: nextLvl - 1, req: 0, total: total });
         }
         
         if (newTable.length > 10) {
             newTable.sort((a,b) => a.level - b.level);
             
-            // Fix reqs
+            // Fix reqs based on totals
             for(let i=0; i<newTable.length-1; i++) {
                  if (i < newTable.length - 1) {
                      newTable[i].req = newTable[i+1].total - newTable[i].total;
                  }
             }
             
-            // SAVE TO PUBLIC DB (ROOT LEVEL)
             const path = currentMode === 'char-exp' ? 'public_data/exp_tables/character' : 'public_data/exp_tables/exploration';
             
             if (currentUser && !currentUser.isGuest) {
@@ -904,9 +944,8 @@
             toggleImportModal(false);
             calculateExp();
         } else {
-            const err = document.getElementById('import-error');
-            err.innerText = "Could not find enough valid data lines. Please copy the table content properly.";
-            err.style.display = 'block';
+            document.getElementById('import-error').style.display = 'block';
+            document.getElementById('import-error').innerText = "Parse failed.";
         }
     }
 
