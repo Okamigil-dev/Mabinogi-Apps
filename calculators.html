@@ -185,6 +185,8 @@
 
             .user-profile-box { display: flex; align-items: center; gap: 12px; padding: 15px; border-bottom: 1px solid var(--border); }
             .user-avatar-mobile { width: 40px; height: 40px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; flex-shrink: 0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"); }
+            .user-info-text-mobile { font-size: 13px; font-weight: 600; color: var(--text-main); word-break: break-all; line-height: 1.2; }
+            .user-status-mobile { font-size: 10px; color: var(--text-dim); }
         }
     </style>
 </head>
@@ -819,7 +821,9 @@
         const tokens = [];
         const regex = /(\d{1,3}(,\d{3})+)|(\d+)/g;
         let m;
+        // Special pre-fix for "glued" numbers
         const gluedFix = cleanRaw.replace(/(\d)(\d{1,3}(,\d{3})+)/g, '$1 $2');
+        
         while ((m = regex.exec(gluedFix)) !== null) {
              const cleanNum = parseInt(m[0].replace(/,/g, ''));
              if (!isNaN(cleanNum)) tokens.push(cleanNum);
@@ -830,7 +834,9 @@
         const newTable = [];
         for (let i = 0; i < tokens.length; i++) {
             let num = tokens[i];
+            
             if (num === nextLvl) {
+                // Found level marker
                 if (buffer.length > 0 && nextLvl > 1) {
                     // Logic Update:
                     // If Level 1, Total = 0.
@@ -847,16 +853,19 @@
                     }
                     newTable.push({ level: nextLvl - 1, req: 0, total: total });
                 }
+                
+                // Start new buffer for this level
                 buffer = [];
                 nextLvl++;
             } else {
+                // Not the level number, check for glued
                 const sNum = num.toString();
                 const sLvl = nextLvl.toString();
                 if (sNum.length > sLvl.length && sNum.startsWith(sLvl)) {
                      const remainder = parseInt(sNum.substring(sLvl.length));
                      if (!isNaN(remainder)) {
+                         // Process previous
                          if (buffer.length > 0 && nextLvl > 1) {
-                            // Same logic as above
                             let total = 0;
                             if (nextLvl - 1 === 1) {
                                 total = 0;
@@ -875,8 +884,8 @@
                 buffer.push(num);
             }
         }
+        
         if (buffer.length > 0 && nextLvl > 1) {
-             // Last level logic
              let total = 0;
              if (nextLvl - 1 === 1) {
                 total = 0;
@@ -890,13 +899,14 @@
         
         if (newTable.length > 10) {
             newTable.sort((a,b) => a.level - b.level);
+            
             for(let i=0; i<newTable.length-1; i++) {
                  if (i < newTable.length - 1) {
                      newTable[i].req = newTable[i+1].total - newTable[i].total;
                  }
             }
             
-            // Save to correct path based on mode
+            // SAVE TO PUBLIC DB (ROOT LEVEL)
             const path = currentMode === 'char-exp' ? 'public_data/exp_tables/character' : 'public_data/exp_tables/exploration';
             
             if (currentUser && !currentUser.isGuest) {
@@ -908,16 +918,17 @@
             } else {
                 if(currentMode === 'char-exp') CHAR_EXP_TABLE = newTable;
                 else EXPL_EXP_TABLE = newTable;
-                
                 document.getElementById('data-status').innerText = "Using Local Import";
                 document.getElementById('data-status').style.color = "var(--warning)";
                 alert("Saved locally.");
             }
+            
             toggleImportModal(false);
             calculateExp();
         } else {
-            document.getElementById('import-error').style.display = 'block';
-            document.getElementById('import-error').innerText = "Parse failed.";
+            const err = document.getElementById('import-error');
+            err.innerText = "Could not find enough valid data lines. Please copy the table content properly.";
+            err.style.display = 'block';
         }
     }
 
