@@ -17,14 +17,19 @@
             --bg: #09090b;
             --sidebar-bg: #121214;
             --card-bg: #18181b;
-            --accent: #00ff88;
-            --accent-dim: rgba(0, 255, 136, 0.1);
+            /* Updated to Yellow for Commerce Theme */
+            --accent: #facc15;
+            --accent-dim: rgba(250, 204, 21, 0.1);
+            
             --border: #27272a;
             --text-main: #e4e4e7;
             --text-dim: #a1a1aa;
+            
             --warning: #facc15;
             --warning-dim: rgba(250, 204, 21, 0.1);
             --danger: #ef4444;
+            --success: #00ff88; /* Added for Profit/Cap Badges */
+            
             --slot-size: 50px;
         }
 
@@ -216,7 +221,7 @@
         .action-btn.accent { 
             border-color: var(--accent-dim); 
             color: var(--accent); 
-            background: rgba(0, 255, 136, 0.05); 
+            background: rgba(250, 204, 21, 0.05); 
         }
         .action-btn.accent:hover { 
             background: var(--accent); 
@@ -262,7 +267,7 @@
         .market-row.head { background: var(--card-bg); font-weight: 600; color: var(--text-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; position: sticky; top: 0; z-index: 10; }
         .market-row.active-dest { background: var(--accent-dim); border-left: 2px solid var(--accent); }
         
-        .profit-val { font-family: 'JetBrains Mono', monospace; font-weight: 600; text-align: right; color: var(--accent); }
+        .profit-val { font-family: 'JetBrains Mono', monospace; font-weight: 600; text-align: right; color: var(--success); }
         .profit-val.negative { color: var(--danger); }
         .score-val { font-family: 'JetBrains Mono', monospace; text-align: right; color: var(--text-dim); }
 
@@ -345,19 +350,11 @@
             .right-panel { right: 0; transform: translateX(100%); border-left: 1px solid var(--border); }
             .right-panel.active { transform: translateX(0); visibility: visible; }
             
-            .mobile-backdrop {
-                display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
-                z-index: 1500; opacity: 0; pointer-events: none; transition: opacity 0.3s;
-                backdrop-filter: blur(4px);
-            }
-            .mobile-backdrop.active { opacity: 1; pointer-events: all; }
+            .center-panel { height: 100%; width: 100%; border: none; z-index: 1 !important; position: relative; }
+            .materials-dual-layout { gap: 10px; padding: 0 10px; }
+            .mobile-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1500; }
+            .mobile-backdrop.active { display: block; }
             
-            .center-panel { 
-                height: 100%; width: 100%; max-width: 100%; 
-                border: none; z-index: 1 !important; position: relative; 
-            }
-
-            /* Mobile Sidebar Components */
             .drawer-header { 
                 display: flex; justify-content: space-between; align-items: center;
                 padding: 15px; border-bottom: 1px solid var(--border); background: var(--sidebar-bg);
@@ -371,6 +368,9 @@
             .user-info-text-mobile { font-size: 13px; font-weight: 600; color: var(--text-main); word-break: break-all; line-height: 1.2; }
             .user-status-mobile { font-size: 10px; color: var(--text-dim); }
         }
+
+        #item-tooltip { position: fixed; z-index: 10000; background: rgba(18, 18, 20, 0.98); border: 1px solid var(--border); padding: 12px; border-radius: 6px; pointer-events: none; display: none; min-width: 180px; }
+        .tt-profit { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--success); margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--border); }
     </style>
 </head>
 <body>
@@ -395,6 +395,7 @@
             <a href="tracker.html">TRACKER</a>
             <a href="barter.html">BARTER</a>
             <a href="commerce.html" class="active">COMMERCE</a>
+            <a href="wishlist.html">WISHLIST</a>
         </nav>
 
         <div class="header-bar">
@@ -468,7 +469,7 @@
                         
                         <!-- BEST TRANSPORT BADGE (NEW) -->
                         <div id="transport-suggestions" style="display:none; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
-                            <div id="badge-cap" style="font-size:10px; padding:3px 8px; background:rgba(0,255,136,0.1); border:1px solid var(--accent); border-radius:4px; color:var(--accent); font-weight:600; font-family:'JetBrains Mono', monospace;"></div>
+                            <div id="badge-cap" style="font-size:10px; padding:3px 8px; background:rgba(0,255,136,0.1); border:1px solid var(--success); border-radius:4px; color:var(--success); font-weight:600; font-family:'JetBrains Mono', monospace;"></div>
                             <div id="badge-eff" style="font-size:10px; padding:3px 8px; background:rgba(250,204,21,0.1); border:1px solid var(--warning); border-radius:4px; color:var(--warning); font-weight:600; font-family:'JetBrains Mono', monospace;"></div>
                         </div>
 
@@ -606,6 +607,10 @@
 
     <script>
         // --- 1. CONFIGURATION & DATA ---
+        // Format: { "OriginTown": { "DestTown": BaseSeconds, ... }, ... }
+        // Keeping structure but emptying values as requested to shelf the feature
+        const travelTimes = {}; 
+
         const townIcons={"Tir Chonaill":"tradeposts/Commerce_Tir_Chonaill_Icon.png","Dunbarton":"tradeposts/Commerce_Dunbarton_Icon.png","Bangor":"tradeposts/Commerce_Bangor_Icon.png","Emain Macha":"tradeposts/Commerce_Emain_Macha_Icon.png","Taillteann":"tradeposts/Commerce_Taillteann_Icon.png","Tara":"tradeposts/Commerce_Tara_Icon.png","Cobh":"tradeposts/Commerce_Port_Cobh_Icon.png","Belvast":"tradeposts/Commerce_Commonwealth_of_Belvast_Icon.png","Qilla":"tradeposts/Commerce_Qilla_Icon.png","Cor":"tradeposts/Commerce_Cor_Icon.png","Vales":"tradeposts/Commerce_Vales_Icon.png","Filia":"tradeposts/Commerce_Filia_Icon.png","Karu Forest":"tradeposts/Commerce_Karu_Forest_Icon.png","Oasis":"tradeposts/Commerce_Oasis_Icon.png","Lake Calida":"tradeposts/Commerce_Calida_Icon.png","Pera Volcano":"tradeposts/Commerce_Pera_Icon.png","Scathach Beach":"tradeposts/Commerce_Beach_of_Scathach_Icon.png"};
         
         const transportIcons={
@@ -635,6 +640,7 @@
             "Husky": 1.86, "Camel": 2.15, "Skiff": 2.4, "Air Ship": 2.4
         };
 
+        // Updated city order: Filia is now after Qilla
         const citiesByType={"Normal":["Tir Chonaill","Dunbarton","Bangor","Emain Macha","Taillteann","Tara","Cobh","Belvast","Qilla","Filia","Cor","Vales"],"Barter":["Karu Forest","Oasis","Lake Calida","Pera Volcano","Scathach Beach"],"Group":["Qilla","Filia","Cor","Vales"]};
         const masteryRanks={"1":0.15,"2":0.14,"3":0.13,"4":0.12,"5":0.11,"6":0.10,"7":0.09,"8":0.08,"9":0.07,"A":0.06,"B":0.05,"C":0.04,"D":0.03,"E":0.02,"F":0.01};
         const guaranteeLetters={"None":{normal:0,barter:0,fine_normal:0,fine_barter:0},"Ogre":{normal:0.30,barter:0.15,fine_normal:0.90,fine_barter:0.45},"Goblin":{normal:0.40,barter:0.20,fine_normal:1.20,fine_barter:0.60},"Imp":{normal:0.50,barter:0.25,fine_normal:1.50,fine_barter:0.75},"Irusan's (Special)":{normal:3.00,barter:0.75,fine_normal:3.00,fine_barter:0.75}};
