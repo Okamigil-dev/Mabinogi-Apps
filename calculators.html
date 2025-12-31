@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mabi Tools</title>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* V2.7 Theme */
+            --bg: #09090b;
+            --sidebar-bg: #121214;
+            --card-bg: #18181b;
+            
+            /* Tool Theme: Sky Blue */
+            --accent: #38bdf8;
+            --accent-dim: rgba(56, 189, 248, 0.1);
+            
+            --border: #27272a;
+            --text-main: #e4e4e7;
+            --text-dim: #a1a1aa;
+            --danger: #ef4444;
+            --success: #00ff88;
+        }
+
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            font-size: 13px;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Global Nav --- */
+        .global-nav {
+            display: flex; align-items: center; gap: 20px; padding: 0 20px; height: 40px;
+            background: #050506; border-bottom: 1px solid var(--border); flex-shrink: 0;
+        }
+        .global-nav a {
+            font-size: 11px; font-weight: 700; color: var(--text-dim); text-decoration: none;
+            letter-spacing: 0.5px; transition: color 0.2s;
+        }
+        .global-nav a:hover { color: #fff; }
+        .global-nav a.active { color: var(--accent); }
+
+        /* Layout */
+        .interface-container { display: flex; flex-direction: column; height: 100%; width: 100%; }
+        .header-bar { background: var(--sidebar-bg); border-bottom: 1px solid var(--border); padding: 10px 20px; flex-shrink: 0; }
+        .title-section { display: flex; justify-content: space-between; align-items: center; }
+        .main-title { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 0.5px; }
+
+        .content-grid { display: grid; grid-template-columns: 280px 1fr 320px; flex-grow: 1; overflow: hidden; }
+        .panel { background: var(--bg); display: flex; flex-direction: column; border-right: 1px solid var(--border); overflow-y: auto; }
+        .panel:last-child { border-right: none; }
+        .center-panel { background: #0c0c0e; display: flex; flex-direction: column; padding: 20px; align-items: center; }
+
+        /* Components */
+        .panel-label { font-size: 11px; font-weight: 600; color: var(--text-dim); margin-bottom: 8px; display: block; text-transform: uppercase; }
+        .config-section { padding: 20px; border-bottom: 1px solid var(--border); }
+        
+        .input-dark { background: var(--card-bg); border: 1px solid var(--border); color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 13px; padding: 8px; border-radius: 6px; width: 100%; transition: border-color 0.2s; }
+        .input-dark:focus { border-color: var(--accent); }
+        select.input-dark { -webkit-appearance: none; font-family: 'Inter', sans-serif; cursor: pointer; }
+        textarea.input-dark { resize: vertical; min-height: 100px; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+        
+        .hub-btn { 
+            color: var(--text-dim); text-decoration: none; font-weight: 600; font-size: 12px; 
+            padding: 8px 12px; border-radius: 6px; transition: 0.2s; 
+            border: 1px solid transparent; background: transparent; cursor: pointer; text-align: left; width: 100%;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .hub-btn:hover { color: #fff; background: var(--border); }
+        .hub-btn.active { color: var(--accent); background: var(--accent-dim); border-color: var(--accent); }
+        
+        /* Tool Icon */
+        .tool-icon { width: 24px; height: 24px; border-radius: 4px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; font-size: 12px; }
+        
+        /* Calculator Inputs */
+        .calc-box {
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
+            padding: 30px; width: 100%; max-width: 600px;
+        }
+        
+        .calc-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .calc-group { display: flex; flex-direction: column; gap: 5px; }
+        .calc-label { font-size: 11px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; }
+        
+        .result-box {
+            background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+            padding: 20px; margin-top: 20px; text-align: center;
+        }
+        .result-val { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; color: var(--accent); }
+        .result-sub { font-size: 11px; color: var(--text-dim); margin-top: 5px; }
+
+        /* Multiplier List Item */
+        .mult-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px; border: 1px solid var(--border); border-radius: 6px;
+            margin-bottom: 8px; background: var(--card-bg); transition: 0.2s;
+        }
+        .mult-item:hover { border-color: #555; }
+        .mult-info { display: flex; align-items: center; gap: 10px; }
+        .mult-val { font-family: 'JetBrains Mono', monospace; color: var(--accent); font-size: 12px; font-weight: 700; }
+        
+        /* Toggles */
+        .toggle-switch { width: 36px; height: 20px; background: var(--border); border-radius: 99px; position: relative; transition: 0.2s; flex-shrink: 0; cursor: pointer; }
+        .toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: #fff; border-radius: 50%; transition: 0.2s; }
+        input:checked + .toggle-switch { background: var(--accent); }
+        input:checked + .toggle-switch::after { transform: translateX(16px); }
+        .toggle-input { display: none; }
+        
+        .btn-mini { width: 24px; height: 24px; border: none; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
+        .btn-mini:hover { background: var(--border); color: #fff; }
+        .btn-mini.del:hover { background: rgba(239,68,68,0.2); color: var(--danger); }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000;
+            display: none; align-items: center; justify-content: center; padding: 20px;
+            backdrop-filter: blur(4px);
+        }
+        .modal-card {
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
+            padding: 20px; width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 15px;
+        }
+
+        /* Mobile */
+        .mobile-nav { display: none; }
+        .mobile-backdrop { display: none; }
+        .drawer-header { display: none; } 
+        .mobile-only { display: none; }
+
+        @media (max-width: 1000px) {
+            .mobile-only { display: block; }
+            .content-grid { display: block; height: calc(100dvh - 50px); }
+            .header-bar { display: none; }
+            .global-nav { display: none; }
+
+            .mobile-nav { 
+                display: flex; justify-content: space-between; align-items: center; 
+                padding: 10px 15px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border); 
+                height: 50px; z-index: 50; flex-shrink: 0;
+            }
+            .nav-trigger { background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 14px; cursor: pointer; }
+            
+            .left-panel, .right-panel {
+                position: fixed; top: 0; bottom: 0; width: 300px; max-width: 85%; z-index: 1001; 
+                box-shadow: 0 0 50px rgba(0,0,0,0.8); 
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s;
+                visibility: hidden; 
+            }
+            .left-panel { left: 0; transform: translateX(-100%); border-right: 1px solid var(--border); }
+            .right-panel { right: 0; transform: translateX(100%); border-left: 1px solid var(--border); }
+            .left-panel.active, .right-panel.active { transform: translateX(0); visibility: visible; }
+            
+            .center-panel { height: 100%; width: 100%; border: none; padding: 15px; }
+            .mobile-backdrop { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(4px); }
+            .mobile-backdrop.active { opacity: 1; pointer-events: all; }
+            
+            .drawer-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--border); background: var(--sidebar-bg); }
+            .drawer-title { font-weight: 700; color: #fff; }
+            .drawer-close { background: none; border: none; color: var(--text-dim); font-size: 20px; padding: 0 5px; cursor: pointer; }
+
+            .user-profile-box { display: flex; align-items: center; gap: 12px; padding: 15px; border-bottom: 1px solid var(--border); }
+            .user-avatar-mobile { width: 40px; height: 40px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; flex-shrink: 0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"); }
+            .user-info-text-mobile { font-size: 13px; font-weight: 600; color: var(--text-main); word-break: break-all; line-height: 1.2; }
+            .user-status-mobile { font-size: 10px; color: var(--text-dim); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Mobile Navigation -->
+    <div class="mobile-nav">
+        <div style="display:flex; gap:12px; align-items:center;">
+             <button class="nav-trigger" onclick="window.location.href='index.html'" style="padding: 6px 10px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            </button>
+            <button class="nav-trigger" onclick="toggleSidebar('left')">☰ Tools</button>
+        </div>
+        <span style="font-weight:700; color:#fff;">Calculators</span>
+        <button class="nav-trigger" onclick="toggleSidebar('right')">Rules ⚙</button>
+    </div>
+
+    <div class="mobile-backdrop" id="mobile-backdrop" onclick="closeSidebars()"></div>
+
+    <div class="interface-container">
+        <!-- GLOBAL NAVIGATION BAR -->
+        <nav class="global-nav">
+            <a href="index.html">HOME</a>
+            <a href="tracker.html">TRACKER</a>
+            <a href="barter.html">BARTER</a>
+            <a href="commerce.html">COMMERCE</a>
+            <a href="wishlist.html">WISHLIST</a>
+            <a href="calculators.html" class="active">CALCULATORS</a>
+        </nav>
+
+        <!-- Desktop Header -->
+        <div class="header-bar">
+            <div class="title-section">
+                <div style="display:flex; align-items:center;">
+                    <span class="main-title">MABI CALCULATORS</span>
+                </div>
+                <div style="display:flex; gap:12px; align-items:center;">
+                    <div style="text-align:right;">
+                        <div id="user-info" style="font-size:12px; font-weight:600; color:var(--text-main);">Guest</div>
+                        <div id="connection-status" style="font-size:10px; color:var(--text-dim);">Local Mode</div>
+                    </div>
+                    <div id="user-avatar" style="width: 36px; height: 36px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; background-image: url('data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23a1a1aa\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E');"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-grid">
+            <!-- LEFT PANEL: Tool Selector -->
+            <div class="panel left-panel" id="left-panel">
+                <div class="drawer-header">
+                    <span class="drawer-title">Toolbox</span>
+                    <button class="drawer-close" onclick="closeSidebars()">×</button>
+                </div>
+
+                <div class="user-profile-box mobile-only">
+                    <div id="mobile-user-avatar" class="user-avatar-mobile"></div>
+                    <div style="flex-grow:1; min-width:0;">
+                        <div id="mobile-user-info" class="user-info-text-mobile">Guest</div>
+                        <div id="mobile-connection-status" class="user-status-mobile">Local Mode</div>
+                    </div>
+                </div>
+
+                <div class="config-section" style="border-bottom:none;">
+                    <label class="panel-label">Leveling</label>
+                    <button class="hub-btn active" onclick="setTool('char-exp')">
+                        <div class="tool-icon">Lv</div> Character EXP
+                    </button>
+                    <button class="hub-btn" onclick="setTool('explore-exp')" style="opacity:0.5;">
+                        <div class="tool-icon">Ex</div> Exploration (WIP)
+                    </button>
+                    
+                    <label class="panel-label" style="margin-top:20px;">Growth</label>
+                    <button class="hub-btn" onclick="setTool('ego-feed')" style="opacity:0.5;">
+                        <div class="tool-icon">Eg</div> Spirit Weapon (WIP)
+                    </button>
+                    <button class="hub-btn" onclick="setTool('erg-break')" style="opacity:0.5;">
+                        <div class="tool-icon">Er</div> Erg Breaker (WIP)
+                    </button>
+                </div>
+            </div>
+
+            <!-- CENTER PANEL: Calculator Workspace -->
+            <div class="panel center-panel">
+                
+                <!-- Character EXP Calculator -->
+                <div id="tool-char-exp" class="calc-box">
+                    <h2 style="font-size:20px; font-weight:700; color:#fff; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:15px;">Character Level</h2>
+                    
+                    <div class="calc-group" style="margin-bottom:20px;">
+                        <label class="calc-label">Current Total Accumulated EXP</label>
+                        <!-- Added onchange for format, oninput for calc -->
+                        <input type="text" id="cur-total-exp" class="input-dark" placeholder="e.g. 10,000,000" oninput="calculateExp()" onchange="formatInput(this)" style="font-size:14px; font-family:'JetBrains Mono';">
+                    </div>
+
+                    <div class="calc-row" style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:15px; margin-bottom:20px;">
+                        <div class="calc-group">
+                            <label class="calc-label" style="opacity:0.7;">Current Level</label>
+                            <input type="number" id="disp-lvl" class="input-dark" value="1" min="1" max="200" style="background:transparent; border:none; font-size:18px; font-weight:700; color:#fff; padding:0;" onchange="updateTotalFromLevel(this.value)">
+                        </div>
+                        <div class="calc-group">
+                            <label class="calc-label" style="opacity:0.7;">Current %</label>
+                            <div id="disp-pct" style="font-size:18px; font-weight:700; color:#fff;">0.00%</div>
+                        </div>
+                    </div>
+
+                    <div class="calc-group" style="margin-bottom:20px;">
+                        <label class="calc-label" style="color:var(--accent);">Target Level</label>
+                        <input type="number" id="tgt-lvl" class="input-dark" value="200" min="1" max="200" style="font-size:16px; font-weight:700;" oninput="calculateExp()">
+                    </div>
+
+                    <div class="result-box">
+                        <div class="calc-label">EXP Needed</div>
+                        <div id="res-exp" class="result-val">0</div>
+                        <div id="res-sub" class="result-sub">For Target Level</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT PANEL: Multipliers -->
+            <div class="panel right-panel" id="right-panel">
+                <div class="drawer-header">
+                    <span class="drawer-title">Multipliers</span>
+                    <button class="drawer-close" onclick="closeSidebars()">×</button>
+                </div>
+                
+                <div class="config-section">
+                    <label class="panel-label">Data Source</label>
+                    <button onclick="toggleImportModal(true)" class="hub-btn" style="text-align:center; justify-content:center; border:1px dashed var(--accent);">Import Wiki Data</button>
+                    <div id="data-status" style="font-size:10px; color:var(--text-dim); margin-top:5px; text-align:center;">Using Default Table</div>
+                </div>
+
+                <div class="config-section">
+                    <label class="panel-label" style="color:var(--accent);">ACTIVE BUFFS</label>
+                    <div id="multiplier-list"></div>
+                </div>
+
+                <div class="config-section" style="border-bottom:none;">
+                    <label class="panel-label">Add Custom Buff</label>
+                    <div style="display:flex; gap:8px; margin-bottom:8px;">
+                        <input type="text" id="new-mult-name" class="input-dark" placeholder="Name (e.g. GM Event)" style="flex:1;">
+                        <input type="number" id="new-mult-val" class="input-dark" style="width:70px;" placeholder="%" step="0.1">
+                    </div>
+                    <div style="display:flex; gap:8px; margin-bottom:12px;">
+                        <select id="new-mult-type" class="input-dark">
+                            <option value="mult">Multiplier (x)</option>
+                            <option value="bonus">Bonus (%)</option>
+                        </select>
+                        <button onclick="addMultiplier()" class="hub-btn" style="background:var(--card-bg); border-color:var(--text-dim); justify-content:center; flex:1;">+ Add</button>
+                    </div>
+                </div>
+
+                <div class="config-section" style="border-top:1px solid var(--border);">
+                    <label class="panel-label">Estimated Kills</label>
+                    <div style="background:var(--card-bg); border-radius:8px; padding:10px; font-size:12px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                            <span style="color:var(--text-dim);">Shadow Wiz (Elite)</span>
+                            <span id="run-wiz" style="color:#fff;">0</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                            <span style="color:var(--text-dim);">Baltane (Nowhere)</span>
+                            <span id="run-baltane" style="color:#fff;">0</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between;">
+                            <span style="color:var(--text-dim);">Tech Duinn Mobs</span>
+                            <span id="run-tech" style="color:#fff;">0</span>
+                        </div>
+                         <div style="margin-top:4px; font-size:9px; color:var(--text-dim); text-align:right;">(Turtle/Crab/Millipede)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Import Modal -->
+    <div id="import-modal" class="modal-overlay">
+        <div class="modal-card">
+            <h3 style="font-size:16px; font-weight:700; color:#fff; margin:0;">Import EXP Table</h3>
+            <p style="font-size:12px; color:var(--text-dim); line-height:1.4;">
+                Copy the level table from the wiki (Level, Exp, Total) and paste it below. 
+                The tool will extract the numbers automatically.
+                This will be shared publicly for all users!
+            </p>
+            <textarea id="import-text" class="input-dark" placeholder="Paste data here...&#10;1  0  0&#10;2  10  10&#10;..."></textarea>
+            <div style="display:flex; gap:10px;">
+                <button onclick="parseImportData()" class="hub-btn active" style="justify-content:center; text-align:center;">Parse & Save Public</button>
+                <button onclick="toggleImportModal(false)" class="hub-btn" style="justify-content:center; text-align:center; border-color:var(--danger); color:var(--danger);">Cancel</button>
+            </div>
+            <div id="import-error" style="color:var(--danger); font-size:11px; display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+    const firebaseConfig = { apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM", authDomain: "mabinogi-tracker.firebaseapp.com", databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com", projectId: "mabinogi-tracker", storageBucket: "mabinogi-tracker.firebasestorage.app", appId: "1:267690802644:web:fccdd005d5c8990504ea41", measurementId: "G-VBDBKQ3M1B" };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+    let currentUser = null;
+    let skipRender = false;
+
+    // --- EXP DATA PLACEHOLDER ---
+    let EXP_TABLE = [];
+    let cumulative = 0;
+    for(let i=1; i<=200; i++) {
+        let req = Math.floor(100 * Math.pow(i, 2.5)); 
+        EXP_TABLE.push({ level: i, req: req, total: cumulative });
+        cumulative += req;
+    }
+
+    // Default Multipliers
+    let defaultMultipliers = [
+        { id: 'def_pot', name: '2x EXP Potion', val: 2.0, active: false, fixed: true, group: 'potion' },
+        { id: 'def_pot4', name: '4x EXP Potion', val: 4.0, active: false, fixed: true, group: 'potion' },
+        { id: 'def_pot5', name: '5x EXP Potion', val: 5.0, active: false, fixed: true, group: 'potion' },
+        { id: 'def_vip', name: 'VIP Service (10%)', val: 1.1, active: false, fixed: true },
+        { id: 'def_prism', name: 'Yellow Prism (2x)', val: 2.0, active: false, fixed: true },
+        { id: 'def_talent', name: 'Cleric/Talent (2x)', val: 2.0, active: false, fixed: true }
+    ];
+    let multipliers = JSON.parse(JSON.stringify(defaultMultipliers));
+
+    // --- AUTH ---
+    auth.onAuthStateChanged(user => {
+        const uInfo = document.getElementById('user-info');
+        const uAvatar = document.getElementById('user-avatar');
+        const status = document.getElementById('connection-status');
+        const mobileUser = document.getElementById('mobile-user-info');
+        
+        if (user) {
+            currentUser = user;
+            status.innerText = "Online & Syncing";
+            status.style.color = "var(--accent)";
+            
+            try {
+                const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
+                const name = cached.username || user.email;
+                uInfo.innerText = name;
+                if(mobileUser) mobileUser.innerText = name;
+                if(cached.avatar) { uAvatar.style.backgroundImage = `url('${cached.avatar}')`; document.getElementById('mobile-user-avatar').style.backgroundImage = `url('${cached.avatar}')`; }
+            } catch(e) {}
+            
+            // Load state
+            db.ref(`users/${user.uid}/calc_state`).once('value', s => loadState(s.val()));
+        } else {
+            currentUser = { uid: 'local_guest', isGuest: true };
+            uInfo.innerText = "Guest";
+            status.innerText = "Local Mode";
+            loadState(JSON.parse(localStorage.getItem('mabi_calc_state') || '{}'));
+        }
+    });
+    
+    // --- PUBLIC DATA SYNC ---
+    db.ref('public_data/exp_tables/character').on('value', (snap) => {
+        const data = snap.val();
+        if(data && Array.isArray(data) && data.length > 10) {
+            EXP_TABLE = data;
+            document.getElementById('data-status').innerText = "Using Public Database";
+            document.getElementById('data-status').style.color = "var(--success)";
+            calculateExp();
+        }
+    });
+
+    function saveState() {
+        const state = {
+            totalExp: document.getElementById('cur-total-exp').value,
+            tgt: document.getElementById('tgt-lvl').value,
+            multipliers: multipliers
+            // Note: expTable removed from user state, relies on public or default
+        };
+        
+        if(currentUser && !currentUser.isGuest) db.ref(`users/${currentUser.uid}/calc_state`).set(state);
+        else localStorage.setItem('mabi_calc_state', JSON.stringify(state));
+    }
+
+    function loadState(data) {
+        if(!data) { renderMultipliers(); return; }
+        if(data.totalExp) {
+            document.getElementById('cur-total-exp').value = data.totalExp;
+        }
+        if(data.tgt) document.getElementById('tgt-lvl').value = data.tgt;
+        if(data.multipliers && Array.isArray(data.multipliers) && data.multipliers.length > 0) {
+            multipliers = data.multipliers;
+            multipliers.forEach(m => {
+                if(['def_pot', 'def_pot4', 'def_pot5'].includes(m.id)) m.group = 'potion';
+            });
+        } else {
+            multipliers = JSON.parse(JSON.stringify(defaultMultipliers));
+        }
+        
+        if (multipliers.length === 0) multipliers = JSON.parse(JSON.stringify(defaultMultipliers));
+
+        renderMultipliers();
+        calculateExp();
+    }
+
+    // --- IMPORT LOGIC (Public Write) ---
+    function toggleImportModal(show) {
+        document.getElementById('import-modal').style.display = show ? 'flex' : 'none';
+        document.getElementById('import-error').style.display = 'none';
+    }
+
+    function parseImportData() {
+        const raw = document.getElementById('import-text').value;
+        const lines = raw.split('\n');
+        const newTable = [];
+        
+        // Smarter Stream Parsing Logic
+        // Clean all separators to simple spaces to handle weird formats like 1-400-2400
+        const cleanRaw = raw.replace(/[^\d,\n]/g, ' ').replace(/\s+/g, ' ').trim();
+        
+        // Extract numbers. Handle the glued comma case: "31,100" -> "3" "1100"
+        // Regex logic:
+        // 1. Matches standard numbers 123
+        // 2. Matches comma numbers 1,234
+        // 3. Matches glued: digit(s) immediately followed by comma number: (\d+)((\d{1,3}(,\d{3})+))
+        
+        // Let's just tokenize by splitting carefully.
+        // We know we are looking for sequential levels: 1, 2, 3...
+        
+        // Simple Tokenizer
+        const tokens = [];
+        // Regex to find numbers, potentially with commas
+        const regex = /(\d{1,3}(,\d{3})+)|(\d+)/g;
+        let m;
+        
+        // Special pre-fix for "glued" numbers like "31,100" where "3" is level and "1,100" is exp.
+        // We look for patterns where a digit is immediately followed by a number that starts with 1-3 digits then comma.
+        // e.g. "31,100" -> insert space -> "3 1,100"
+        
+        const gluedFix = cleanRaw.replace(/(\d)(\d{1,3}(,\d{3})+)/g, '$1 $2');
+        
+        while ((m = regex.exec(gluedFix)) !== null) {
+             const cleanNum = parseInt(m[0].replace(/,/g, ''));
+             if (!isNaN(cleanNum)) tokens.push(cleanNum);
+        }
+        
+        // Heuristic Parser
+        let nextLvl = 1;
+        let buffer = [];
+        
+        for (let i = 0; i < tokens.length; i++) {
+            let num = tokens[i];
+            
+            // Check for exact match
+            if (num === nextLvl) {
+                // Found a level marker. Process previous buffer if exists.
+                if (buffer.length > 0 && nextLvl > 1) {
+                    const total = Math.max(...buffer);
+                    newTable.push({ level: nextLvl - 1, req: 0, total: total });
+                }
+                
+                // Start new buffer for this level
+                buffer = [];
+                nextLvl++;
+            } 
+            // Check for uncomma'd glue (e.g. "2400" -> "2", "400")
+            // Only if num is significantly larger than nextLvl to avoid false positives
+            else {
+                const sNum = num.toString();
+                const sLvl = nextLvl.toString();
+                if (sNum.length > sLvl.length && sNum.startsWith(sLvl)) {
+                     // Potential glue!
+                     // Split
+                     const remainder = parseInt(sNum.substring(sLvl.length));
+                     if (!isNaN(remainder)) {
+                         // Process previous level if needed
+                         if (buffer.length > 0 && nextLvl > 1) {
+                            const total = Math.max(...buffer);
+                            newTable.push({ level: nextLvl - 1, req: 0, total: total });
+                         }
+                         
+                         // Start current level buffer with remainder
+                         buffer = [remainder];
+                         nextLvl++;
+                         continue;
+                     }
+                }
+                buffer.push(num);
+            }
+        }
+        
+        // Handle last level
+        if (buffer.length > 0 && nextLvl > 1) {
+             const total = Math.max(...buffer);
+             newTable.push({ level: nextLvl - 1, req: 0, total: total });
+        }
+        
+        if (newTable.length > 10) {
+            newTable.sort((a,b) => a.level - b.level);
+            
+            // Fix reqs
+            for(let i=0; i<newTable.length-1; i++) {
+                 // Req for Lvl X is (Total at X+1) - (Total at X)
+                 if (i < newTable.length - 1) {
+                     const nextTotal = newTable[i+1].total;
+                     const curTotal = newTable[i].total;
+                     newTable[i].req = nextTotal - curTotal;
+                 }
+            }
+            
+            // SAVE TO PUBLIC DB
+            if (currentUser && !currentUser.isGuest) {
+                db.ref('public_data/exp_tables/character').set(newTable).then(() => {
+                    alert("Data saved to Public Database!");
+                }).catch(err => {
+                    alert("Error saving: " + err.message);
+                });
+            } else {
+                // Fallback for guest mode (local only)
+                EXP_TABLE = newTable;
+                document.getElementById('data-status').innerText = "Using Local Import";
+                document.getElementById('data-status').style.color = "var(--warning)";
+                alert("Saved locally (Guest Mode).");
+            }
+            
+            toggleImportModal(false);
+            calculateExp();
+        } else {
+            const err = document.getElementById('import-error');
+            err.innerText = "Could not find enough valid data lines. Please copy the table content properly.";
+            err.style.display = 'block';
+        }
+    }
+
+    // Format on blur/change
+    function formatInput(input) {
+        let val = input.value.replace(/,/g, '').replace(/\D/g, '');
+        if(val) {
+            val = parseInt(val).toLocaleString();
+            input.value = val;
+        }
+    }
+    
+    function updateTotalFromLevel(newLevel) {
+        const lvl = parseInt(newLevel) || 1;
+        if (lvl < 1 || lvl > 200) return;
+        
+        const levelData = EXP_TABLE.find(d => d.level === lvl);
+        if (levelData) {
+            const total = levelData.total;
+            const input = document.getElementById('cur-total-exp');
+            input.value = total.toLocaleString();
+            calculateExp();
+        }
+    }
+
+    function calculateExp() {
+        const rawVal = document.getElementById('cur-total-exp').value.replace(/,/g, '');
+        const totalExp = parseInt(rawVal) || 0;
+        const tgtLvl = parseInt(document.getElementById('tgt-lvl').value) || 200;
+        
+        let curLvl = 1;
+        let curPct = 0;
+        
+        for (let i = 0; i < EXP_TABLE.length; i++) {
+            const lvlData = EXP_TABLE[i];
+            const nextLvlData = EXP_TABLE[i+1];
+            
+            if (!nextLvlData) {
+                curLvl = lvlData.level;
+                curPct = 100; 
+                break;
+            }
+            
+            if (totalExp >= lvlData.total && totalExp < nextLvlData.total) {
+                curLvl = lvlData.level;
+                const expInLevel = totalExp - lvlData.total;
+                curPct = lvlData.req > 0 ? (expInLevel / lvlData.req) * 100 : 0;
+                break;
+            }
+        }
+
+        if (document.activeElement.id !== 'disp-lvl') {
+             document.getElementById('disp-lvl').value = curLvl;
+        }
+        document.getElementById('disp-pct').innerText = curPct.toFixed(2) + "%";
+
+        let targetTotalExp = 0;
+        const targetData = EXP_TABLE.find(d => d.level === tgtLvl);
+        if (targetData) targetTotalExp = targetData.total;
+        
+        let diff = targetTotalExp - totalExp;
+        if (diff < 0) diff = 0;
+        
+        document.getElementById('res-exp').innerText = diff.toLocaleString();
+        document.getElementById('res-sub').innerText = diff > 0 ? `To reach Level ${tgtLvl}` : "Target Reached";
+
+        let mult = 1.0;
+        multipliers.forEach(m => {
+            if (m.active) mult *= m.val;
+        });
+
+        const wizExp = 250000 * mult;
+        const baltaneExp = 1500000 * mult; 
+        const techMobExp = 18457 * mult;
+
+        document.getElementById('run-wiz').innerText = Math.ceil(diff / wizExp).toLocaleString();
+        document.getElementById('run-baltane').innerText = Math.ceil(diff / baltaneExp).toLocaleString();
+        document.getElementById('run-tech').innerText = Math.ceil(diff / techMobExp).toLocaleString();
+
+        saveState();
+    }
+
+    // --- MULTIPLIER MANAGER ---
+    function formatMultiplierDisplay(val) {
+        if (val >= 2.0 && val % 1 === 0) return Math.round(val) + "x"; 
+        if (val >= 2.0) return val + "x"; 
+        const pct = Math.round((val - 1) * 100);
+        return "+" + pct + "%";
+    }
+
+    function renderMultipliers() {
+        const list = document.getElementById('multiplier-list');
+        list.innerHTML = '';
+        multipliers.forEach((m, idx) => {
+            const div = document.createElement('div');
+            div.className = 'mult-item';
+            div.innerHTML = `
+                <div class="mult-info">
+                    <label style="display:flex; align-items:center; cursor:pointer;">
+                        <input type="checkbox" class="toggle-input" ${m.active ? 'checked' : ''} onchange="toggleMult(${idx})">
+                        <div class="toggle-switch" style="transform:scale(0.8); margin:0;"></div>
+                    </label>
+                    <span style="font-size:12px; color:${m.active ? '#fff' : 'var(--text-dim)'}; margin-left: 10px;">${m.name}</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span class="mult-val">${formatMultiplierDisplay(m.val)}</span>
+                    ${!m.fixed ? `<button onclick="deleteMult(${idx})" class="btn-mini del">×</button>` : ''}
+                </div>
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    function toggleMult(idx) {
+        const target = multipliers[idx];
+        if (target.group === 'potion' && !target.active) {
+            multipliers.forEach(m => {
+                if (m.group === 'potion' && m !== target) m.active = false;
+            });
+        }
+        target.active = !target.active;
+        renderMultipliers();
+        calculateExp();
+    }
+
+    function addMultiplier() {
+        const name = document.getElementById('new-mult-name').value.trim();
+        let valInput = parseFloat(document.getElementById('new-mult-val').value);
+        const type = document.getElementById('new-mult-type').value;
+        
+        if(!name || !valInput) return;
+
+        let finalVal = 1.0;
+        
+        if (type === 'bonus') {
+            finalVal = 1 + (valInput / 100);
+        } else {
+            finalVal = valInput;
+        }
+        
+        multipliers.push({ id: Date.now(), name, val: finalVal, active: true, fixed: false });
+        
+        document.getElementById('new-mult-name').value = '';
+        document.getElementById('new-mult-val').value = '';
+        renderMultipliers();
+        calculateExp();
+    }
+
+    function deleteMult(idx) {
+        multipliers.splice(idx, 1);
+        renderMultipliers();
+        calculateExp();
+    }
+
+    // --- UI HELPERS ---
+    function setTool(id) {
+        if (id !== 'char-exp') alert("This tool is a Work in Progress!");
+    }
+
+    window.toggleSidebar = (side) => {
+        const left = document.getElementById('left-panel');
+        const right = document.getElementById('right-panel');
+        const backdrop = document.getElementById('mobile-backdrop');
+        closeSidebars();
+        if (side === 'left') { left.classList.add('active'); backdrop.classList.add('active'); }
+        if (side === 'right') { right.classList.add('active'); backdrop.classList.add('active'); }
+    };
+    window.closeSidebars = () => {
+        document.getElementById('left-panel').classList.remove('active');
+        document.getElementById('right-panel').classList.remove('active');
+        document.getElementById('mobile-backdrop').classList.remove('active');
+    };
+    
+    // Init with calc
+    calculateExp();
+    </script>
+</body>
+</html>
