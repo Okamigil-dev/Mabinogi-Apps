@@ -18,11 +18,8 @@
             --bg: #09090b;
             --sidebar-bg: #121214;
             --card-bg: #18181b;
-            
-            /* Updated Accent to Purple (Wishlist Theme) */
             --accent: #a78bfa; 
             --accent-dim: rgba(167, 139, 250, 0.1);
-            
             --border: #27272a;
             --text-main: #e4e4e7;
             --text-dim: #a1a1aa;
@@ -130,6 +127,9 @@
             background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; 
             padding: 12px 15px; display: flex; align-items: center; gap: 15px;
             transition: all 0.2s; position: relative; overflow: hidden;
+            /* FIX: Prevent Squishing */
+            min-height: 80px; 
+            flex-shrink: 0;
         }
         .wish-card:hover { border-color: #3f3f46; transform: translateY(-1px); }
         .wish-card.owned { opacity: 0.5; filter: grayscale(1); background: var(--bg); border-style: dashed; }
