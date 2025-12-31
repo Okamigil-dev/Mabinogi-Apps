@@ -14,7 +14,7 @@
     
     <style>
         :root {
-            /* V2.7 Theme - Matching Tracker/Commerce */
+            /* V2.7 Theme */
             --bg: #09090b;
             --sidebar-bg: #121214;
             --card-bg: #18181b;
@@ -29,7 +29,17 @@
             --danger: #ef4444;
             --neon-yellow: #facc15;
             --neon-cyan: #22d3ee;
-            --neon-purple: #a78bfa; /* For Wishlist */
+            --neon-purple: #a78bfa;
+            
+            /* Custom Timer Colors */
+            --custom-pink: #f472b6;
+            --custom-cyan: #22d3ee;
+            --custom-orange: #fb923c;
+            --custom-purple: #a78bfa;
+            --custom-red: #ef4444;
+            --custom-blue: #3b82f6;
+            --custom-yellow: #eab308;
+            --custom-gray: #71717a;
         }
 
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
@@ -49,6 +59,12 @@
         }
         body.ready { opacity: 1; }
 
+        /* Scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
         /* --- Global Navigation --- */
         .global-nav {
             display: flex;
@@ -67,11 +83,18 @@
             text-decoration: none;
             letter-spacing: 0.5px;
             transition: color 0.2s;
+            display: flex; align-items: center; gap: 6px;
         }
         .global-nav a:hover { color: #fff; }
         .global-nav a.active { color: var(--accent); }
 
-        /* --- Layout Containers (Matching Tracker) --- */
+        .nav-icon { 
+            width: 14px; height: 14px; stroke-width: 2.5; stroke: currentColor; fill: none; 
+            stroke-linecap: round; stroke-linejoin: round; opacity: 0.8; 
+        }
+        .global-nav a:hover .nav-icon, .global-nav a.active .nav-icon { opacity: 1; }
+
+        /* --- Layout Containers --- */
         .interface-container { 
             display: flex; 
             flex-direction: column; 
@@ -100,6 +123,8 @@
             align-items: center; 
             justify-content: center;
             padding: 40px;
+            display: flex;
+            flex-direction: column;
         }
 
         /* --- Components --- */
@@ -120,19 +145,21 @@
         #user-info-display { font-size: 14px; font-weight: 600; color: #fff; line-height: 1.2; }
         #guest-mode-label { font-size: 11px; color: var(--text-dim); }
 
-        /* Hub Links */
+        /* Dashboard Grid */
         .grid { 
             display: grid; 
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
             gap: 16px; 
             width: 100%; 
+            max-width: 900px;
         }
         
         .hub-link {
             background: var(--card-bg); border: 1px solid var(--border);
             padding: 24px; border-radius: 12px; text-decoration: none; color: var(--text-main);
-            display: flex; align-items: center; justify-content: space-between; 
+            display: flex; flex-direction: column; gap: 12px;
             transition: all 0.2s ease; position: relative; overflow: hidden;
+            min-height: 110px; justify-content: space-between;
         }
         
         .hub-link::before {
@@ -150,8 +177,10 @@
         .hub-link.barter:hover::before { background: var(--neon-cyan); }
         .hub-link.wishlist:hover::before { background: var(--neon-purple); }
         
+        .link-top { display: flex; justify-content: space-between; align-items: flex-start; }
+        
         .link-title { 
-            font-size: 16px; font-weight: 600; display: block; 
+            font-size: 16px; font-weight: 700; display: block; 
             margin-bottom: 4px; color: #fff; transition: color 0.2s; 
         }
         
@@ -161,6 +190,21 @@
         .hub-link.wishlist:hover .link-title { color: var(--neon-purple); }
 
         .link-desc { font-size: 13px; color: var(--text-dim); }
+        
+        /* Mini Stats inside Cards */
+        .stat-badge {
+            font-family: 'JetBrains Mono', monospace; font-size: 11px;
+            padding: 4px 8px; border-radius: 4px; background: rgba(255,255,255,0.05);
+            color: var(--text-dim); border: 1px solid var(--border);
+        }
+        
+        .progress-rail {
+            width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden;
+            margin-top: auto;
+        }
+        .progress-fill { height: 100%; width: 0%; transition: width 0.5s; }
+        .tracker .progress-fill { background: var(--accent); }
+        .wishlist .progress-fill { background: var(--neon-purple); }
 
         /* Timers */
         .timer-card { background: var(--card-bg); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); border-left: 3px solid var(--accent); margin-bottom: 8px; }
@@ -249,6 +293,8 @@
                 z-index: 1; 
                 padding: 20px;
                 max-width: 100%; 
+                display: flex; /* Flexbox for grid centering */
+                overflow-y: auto;
             }
 
             .mobile-backdrop { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(4px); }
@@ -293,23 +339,42 @@
     <div class="interface-container">
         <!-- GLOBAL NAVIGATION BAR -->
         <nav class="global-nav">
-            <a href="index.html" class="active">HOME</a>
-            <a href="tracker.html">TRACKER</a>
-            <a href="barter.html">BARTER</a>
-            <a href="commerce.html">COMMERCE</a>
-            <a href="wishlist.html">WISHLIST</a>
+            <a href="index.html" class="active">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                HOME
+            </a>
+            <a href="tracker.html">
+                <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                TRACKER
+            </a>
+            <a href="barter.html">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M7 10h14l-4-4"/><path d="M17 14H3l4 4"/></svg>
+                BARTER
+            </a>
+            <a href="commerce.html">
+                <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                COMMERCE
+            </a>
+            <a href="wishlist.html">
+                <svg class="nav-icon" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                WISHLIST
+            </a>
+            <a href="calculators.html">
+                <svg class="nav-icon" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="18" x2="16" y2="18"/><line x1="8" y1="18" x2="8" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+                CALCULATORS
+            </a>
         </nav>
 
         <!-- Desktop Header -->
         <div class="header-bar">
             <div class="title-section">
                 <div style="display:flex; align-items:center;">
-                    <span class="main-title">HOME</span>
+                    <span class="main-title">DASHBOARD</span>
                 </div>
-                <!-- Mini User Info in Header (matches other pages) -->
+                <!-- Mini User Info in Header -->
                 <div style="display:flex; gap:12px; align-items:center;">
                     
-                    <!-- Settings Gear (Hidden by default, shown when logged in) -->
+                    <!-- Settings Gear -->
                     <a href="settings.html" id="header-settings-btn" style="display:none; color:var(--text-dim); transition:color 0.2s; align-items:center;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-dim)'">
                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                     </a>
@@ -363,39 +428,64 @@
                 </div>
             </div>
 
-            <!-- CENTER PANEL: Hub Links -->
+            <!-- CENTER PANEL: Hub Links (Enhanced with Live Stats) -->
             <div class="panel center-panel">
                 <div class="grid">
                     <a href="tracker.html" class="hub-link tracker">
-                        <div class="link-info">
-                            <span class="link-title">Task Tracker</span>
-                            <span class="link-desc">Daily & Weekly Reset Tracker</span>
+                        <div class="link-top">
+                            <div class="link-info">
+                                <span class="link-title">Task Tracker</span>
+                                <span class="link-desc">Daily & Weekly Checklist</span>
+                            </div>
+                            <div id="dash-tracker-stat" class="stat-badge">--</div>
                         </div>
+                        <!-- Mini Progress -->
+                        <div class="progress-rail"><div id="dash-tracker-bar" class="progress-fill" style="width:0%"></div></div>
                     </a>
 
                     <a href="commerce.html" class="hub-link commerce">
-                        <div class="link-info">
-                            <span class="link-title">Trading Post</span>
-                            <span class="link-desc">Commerce Routes & Profit Sync</span>
+                         <div class="link-top">
+                            <div class="link-info">
+                                <span class="link-title">Trading Post</span>
+                                <span class="link-desc">Commerce Routes</span>
+                            </div>
                         </div>
+                        <div style="margin-top:auto; font-size:10px; color:var(--text-dim);">Manage Loadouts & Profits</div>
                     </a>
 
                     <a href="barter.html" class="hub-link barter">
-                        <div class="link-info">
-                            <span class="link-title">Barter Tracker</span>
-                            <span class="link-desc">Material & Stock Management</span>
+                        <div class="link-top">
+                            <div class="link-info">
+                                <span class="link-title">Barter Tracker</span>
+                                <span class="link-desc">Material Management</span>
+                            </div>
                         </div>
+                         <div style="margin-top:auto; font-size:10px; color:var(--text-dim);">Track Crafting Needs</div>
+                    </a>
+                    
+                    <a href="wishlist.html" class="hub-link wishlist">
+                        <div class="link-top">
+                            <div class="link-info">
+                                <span class="link-title">Market Wishlist</span>
+                                <span class="link-desc">Goal Tracker</span>
+                            </div>
+                            <div id="dash-wish-stat" class="stat-badge">--</div>
+                        </div>
+                        <div class="progress-rail"><div id="dash-wish-bar" class="progress-fill" style="width:0%"></div></div>
                     </a>
 
-                    <a href="wishlist.html" class="hub-link wishlist">
-                        <div class="link-info">
-                            <span class="link-title">Market Wishlist</span>
-                            <span class="link-desc">Price & Stock Tracker</span>
+                    <a href="calculators.html" class="hub-link tracker">
+                        <div class="link-top">
+                            <div class="link-info">
+                                <span class="link-title">Calculators</span>
+                                <span class="link-desc">Leveling and EXP Tools</span>
+                            </div>
                         </div>
+                        <div style="margin-top:auto; font-size:10px; color:var(--text-dim);">Character & Exploration EXP</div>
                     </a>
                 </div>
                 <div style="margin-top: 60px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #444;">
-                    System v2.7 // Ready
+                    System v2.8 // Dashboard Active
                 </div>
             </div>
 
@@ -421,7 +511,6 @@
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
     let tasks = [], customTimers = [], currentUser = null;
-    // Default timer settings
     let timerSettings = { daily: true, mon: true, thu: true, sat: true };
 
     auth.onAuthStateChanged(user => {
@@ -474,7 +563,8 @@
             // Load tasks and timer settings
             db.ref(`users/${user.uid}`).on('value', snap => {
                 const data = snap.val() || {};
-                // Force array like in tracker.html
+                
+                // 1. Handle Tasks
                 if (data.tasks) {
                     tasks = Array.isArray(data.tasks) ? data.tasks : Object.values(data.tasks);
                     tasks = tasks.filter(t => t); 
@@ -482,7 +572,7 @@
                     tasks = [];
                 }
                 
-                // Load Timer Settings
+                // 2. Load Timer Settings
                 if (data.timerSettings) timerSettings = data.timerSettings;
                 if (data.customTimers) customTimers = Array.isArray(data.customTimers) ? data.customTimers : Object.values(data.customTimers);
                 else customTimers = [];
@@ -490,6 +580,19 @@
                 applyTimerSettings();
                 renderSidebar();
                 renderCustomTimers();
+                
+                // Update Dashboard Stats (Tracker)
+                updateTrackerCard();
+            });
+
+            // Load Wishlist Data for Dashboard
+            db.ref(`users/${user.uid}/wishlist`).on('value', snap => {
+                const wData = snap.val() || {};
+                let items = [];
+                if (Array.isArray(wData)) items = wData.filter(i => i);
+                else items = wData.items || [];
+                
+                updateWishlistCard(items);
             });
 
         } else {
@@ -513,9 +616,44 @@
             applyTimerSettings();
             renderSidebar();
             renderCustomTimers();
+            updateTrackerCard();
+
+            // Load Local Wishlist
+            const wRaw = localStorage.getItem('mabi_wishlist_data');
+            let wItems = [];
+            if (wRaw) {
+                const parsed = JSON.parse(wRaw);
+                if(Array.isArray(parsed)) wItems = parsed;
+                else wItems = parsed.items || [];
+            }
+            updateWishlistCard(wItems);
         }
         document.body.classList.add('ready');
     });
+
+    // --- DASHBOARD UPDATERS ---
+    
+    function updateTrackerCard() {
+        // Calculate Daily Progress
+        const dailyTasks = tasks.filter(t => t.freq === 'daily'); // Basic check for daily type
+        const total = dailyTasks.length;
+        const done = dailyTasks.filter(t => t.done >= t.max).length; // Assuming max > 0
+        const pct = total > 0 ? (done / total) * 100 : 0;
+        
+        document.getElementById('dash-tracker-stat').innerText = `${done}/${total}`;
+        document.getElementById('dash-tracker-bar').style.width = `${pct}%`;
+    }
+
+    function updateWishlistCard(items) {
+        const total = items.length;
+        const owned = items.filter(i => i.owned).length;
+        const pct = total > 0 ? (owned / total) * 100 : 0;
+
+        document.getElementById('dash-wish-stat').innerText = `${Math.round(pct)}%`;
+        document.getElementById('dash-wish-bar').style.width = `${pct}%`;
+    }
+
+    // --- EXISTING FUNCTIONS ---
 
     function applyTimerSettings() {
         document.getElementById('card-daily').style.display = (timerSettings.daily !== false) ? 'block' : 'none';
@@ -532,9 +670,7 @@
             const div = document.createElement('div');
             div.className = 'timer-card';
             
-            // Replicate Color Logic from Tracker
-            let colorVar = 'var(--accent)'; // Default green if color undefined
-            // Note: Colors are defined in CSS variables above (custom-pink, etc)
+            let colorVar = 'var(--accent)'; 
             if(t.color) {
                 if(t.color === 'pink') colorVar = 'var(--custom-pink)';
                 else if(t.color === 'cyan') colorVar = 'var(--neon-cyan)'; 
@@ -546,7 +682,7 @@
                 else if(t.color === 'yellow') colorVar = 'var(--neon-yellow)';
                 else if(t.color === 'gray') colorVar = 'var(--custom-gray)';
             } else {
-                 colorVar = 'var(--custom-pink)'; // Default pink for legacy custom timers
+                 colorVar = 'var(--custom-pink)'; 
             }
             
             div.style.borderLeftColor = colorVar;
@@ -582,7 +718,6 @@
             return;
         }
 
-        // Simple render of pending tasks
         pending.forEach(t => {
             const div = document.createElement('div');
             div.className = 'mini-task-row';
@@ -590,7 +725,6 @@
             if(t.type === 'mon') color = 'var(--mon)';
             if(t.type === 'thu') color = 'var(--thu)';
             if(t.type === 'sat') color = 'var(--sat)';
-            // Custom timer color logic for dots
             if(String(t.type).startsWith('custom_')) {
                 const cTimer = customTimers.find(ct => 'custom_'+ct.id === t.type);
                 if(cTimer && cTimer.color) {
