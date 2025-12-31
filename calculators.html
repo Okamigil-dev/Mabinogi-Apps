@@ -831,12 +831,7 @@
         // 2. Aggressive clean: remove everything except digits, commas, spaces, newlines
         cleanRaw = cleanRaw.replace(/[^\d,\s]/g, ' ');
         
-        // 3. Fix Glued "Level + FormattedNumber" (e.g., 501,347,500 -> 50 1,347,500)
-        // Matches digits immediately followed by a number that MUST start with a comma group.
-        // Captures (LevelDigits) (CommaFormattedNumber)
-        cleanRaw = cleanRaw.replace(/(\d+)(\d{1,3}(?:,\d{3})+)/g, '$1 $2');
-
-        // 4. Tokenize
+        // 3. Tokenize
         // Remove commas from numbers now that we've used them for splitting
         cleanRaw = cleanRaw.replace(/,/g, ''); 
         const tokens = cleanRaw.trim().split(/\s+/).map(t => parseInt(t)).filter(n => !isNaN(n));
@@ -844,10 +839,6 @@
         let nextLvl = 1;
         let buffer = [];
         const newTable = [];
-        
-        // Standard start: Level 1 is 0.
-        newTable.push({ level: 1, req: 0, total: 0 });
-        nextLvl = 2;
 
         for (let i = 0; i < tokens.length; i++) {
             let num = tokens[i];
@@ -859,16 +850,21 @@
                     // The largest number in buffer is likely the Total Exp for (nextLvl-1)
                     const total = Math.max(...buffer);
                     // Sanity check: Total exp shouldn't decrease (unless reset, unlikely here)
-                    const prevTotal = newTable.length > 0 ? newTable[newTable.length-1].total : -1;
-                    if (total >= prevTotal) {
-                         newTable.push({ level: nextLvl - 1, req: 0, total: total });
+                    // We simply push, allowing for overwrites if we started late
+                    
+                    // Special check for Level 1 being found after finding 2
+                    if (nextLvl === 2) {
+                        const l1 = newTable.find(x => x.level === 1);
+                        if(l1) l1.total = total;
+                        else newTable.push({ level: 1, req: 0, total: total });
+                    } else {
+                        newTable.push({ level: nextLvl - 1, req: 0, total: total });
                     }
                 }
                 buffer = [];
                 nextLvl++;
             } 
             // LOGIC 2: Glued Unformatted (e.g., 102676 -> 10 2676 -> found '2' inside '2676'?)
-            // Only strictly needed for start of file usually
             else {
                 const sNum = num.toString();
                 const sLvl = nextLvl.toString();
@@ -882,7 +878,11 @@
                     if (!isNaN(remainder)) {
                          if (buffer.length > 0) {
                              const total = Math.max(...buffer);
-                             if (newTable.length > 0 && total >= newTable[newTable.length-1].total) {
+                             if (nextLvl === 2) {
+                                 const l1 = newTable.find(x => x.level === 1);
+                                 if(l1) l1.total = total;
+                                 else newTable.push({ level: 1, req: 0, total: total });
+                             } else {
                                 newTable.push({ level: nextLvl - 1, req: 0, total: total });
                              }
                          }
@@ -901,11 +901,18 @@
         // Final buffer flush (for the last level found)
         if (buffer.length > 0 && nextLvl > 1) {
              const total = Math.max(...buffer);
-             // Verify it's larger than previous
-             const prevTotal = newTable.length > 0 ? newTable[newTable.length-1].total : -1;
-             if (total >= prevTotal) {
+             if (nextLvl === 2) {
+                 const l1 = newTable.find(x => x.level === 1);
+                 if(l1) l1.total = total;
+                 else newTable.push({ level: 1, req: 0, total: total });
+             } else {
                  newTable.push({ level: nextLvl - 1, req: 0, total: total });
              }
+        }
+        
+        // Ensure Level 1 exists
+        if (!newTable.find(x => x.level === 1)) {
+             newTable.unshift({ level: 1, req: 0, total: 0 });
         }
         
         if (newTable.length > 10) {
