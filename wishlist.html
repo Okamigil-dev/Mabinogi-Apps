@@ -14,23 +14,22 @@
     
     <style>
         :root {
-            /* V2.7 Theme - Consistent with Suite */
+            /* V2.7 Theme */
             --bg: #09090b;
             --sidebar-bg: #121214;
             --card-bg: #18181b;
+            
+            /* Theme: Violet/Purple Accent */
             --accent: #a78bfa; 
             --accent-dim: rgba(167, 139, 250, 0.1);
+            
             --border: #27272a;
             --text-main: #e4e4e7;
             --text-dim: #a1a1aa;
             --danger: #ef4444;
             --success: #00ff88;
+            --warning: #eab308;
             --info: #3b82f6;
-            
-            /* Priority Colors */
-            --prio-high: #ef4444;
-            --prio-med: #facc15;
-            --prio-low: #3b82f6;
         }
 
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
@@ -47,7 +46,7 @@
             flex-direction: column;
         }
 
-        /* --- Global Nav (Standard) --- */
+        /* --- Global Nav --- */
         .global-nav {
             display: flex; align-items: center; gap: 20px; padding: 0 20px; height: 40px;
             background: #050506; border-bottom: 1px solid var(--border); flex-shrink: 0;
@@ -60,7 +59,7 @@
         .global-nav a.active { color: var(--accent); }
 
         /* Layout */
-        .interface-container { display: flex; flex-direction: column; height: 100%; width: 100%; border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+        .interface-container { display: flex; flex-direction: column; height: 100%; width: 100%; }
         .header-bar { background: var(--sidebar-bg); border-bottom: 1px solid var(--border); padding: 10px 20px; flex-shrink: 0; }
         .title-section { display: flex; justify-content: space-between; align-items: center; }
         .main-title { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 0.5px; }
@@ -68,106 +67,99 @@
         .content-grid { display: grid; grid-template-columns: 280px 1fr 320px; flex-grow: 1; overflow: hidden; }
         .panel { background: var(--bg); display: flex; flex-direction: column; border-right: 1px solid var(--border); overflow-y: auto; }
         .panel:last-child { border-right: none; }
-        .center-panel { background: #0c0c0e; display: flex; flex-direction: column; }
+        .center-panel { background: #0c0c0e; display: flex; flex-direction: column; padding: 0; align-items: stretch; }
 
-        /* --- Components --- */
+        /* Components */
         .panel-label { font-size: 11px; font-weight: 600; color: var(--text-dim); margin-bottom: 8px; display: block; text-transform: uppercase; }
         .config-section { padding: 20px; border-bottom: 1px solid var(--border); }
         
         .input-dark { background: var(--card-bg); border: 1px solid var(--border); color: #fff; font-family: 'Inter', sans-serif; font-size: 13px; padding: 8px; border-radius: 6px; width: 100%; transition: border-color 0.2s; }
         .input-dark:focus { border-color: var(--accent); }
+        select.input-dark { cursor: pointer; }
         
-        .hub-btn { color: var(--text-dim); text-decoration: none; font-weight: 600; font-size: 12px; padding: 6px 12px; border-radius: 6px; transition: 0.2s; border: 1px solid transparent; background: transparent; cursor: pointer; text-align: center; }
+        .hub-btn { 
+            color: var(--text-dim); text-decoration: none; font-weight: 600; font-size: 12px; 
+            padding: 8px 12px; border-radius: 6px; transition: 0.2s; 
+            border: 1px solid transparent; background: transparent; cursor: pointer; text-align: left; width: 100%;
+            display: flex; align-items: center; gap: 10px;
+        }
         .hub-btn:hover { color: #fff; background: var(--border); }
         .hub-btn.active { color: var(--accent); background: var(--accent-dim); border-color: var(--accent); }
         
-        /* Stats Card */
-        .stat-card { background: var(--card-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; }
-        .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 16px; color: #fff; font-weight: 700; margin-top: 4px; word-break: break-all; }
-        .stat-label { font-size: 11px; color: var(--text-dim); font-weight: 600; text-transform: uppercase; }
+        /* Stats Box */
+        .stat-box {
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;
+            padding: 15px; margin-bottom: 10px;
+        }
+        .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: #fff; }
+        .stat-sub { font-size: 10px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; margin-bottom: 4px; }
 
-        /* Legend */
-        .legend-text { font-size: 10px; color: var(--text-dim); text-align: center; margin-top: 5px; opacity: 0.7; font-family: 'JetBrains Mono', monospace; }
-
-        /* FOLDER TABS SYSTEM */
-        .folder-bar {
-            display: flex; gap: 6px; flex-wrap: wrap; /* Changed to wrap */
-            padding: 15px 20px 0 20px;
-            border-bottom: 1px solid var(--border); flex-shrink: 0; background: #0c0c0e;
-        }
-        
-        .folder-tab {
-            padding: 8px 16px; 
-            background: var(--card-bg); 
-            color: var(--text-dim);
-            font-size: 11px; font-weight: 700; text-transform: uppercase;
-            border: 1px solid var(--border);
-            border-radius: 6px 6px 0 0; /* Slightly simpler radius for wrapped look */
-            cursor: pointer; white-space: nowrap;
-            transition: 0.2s;
-            margin-bottom: -1px; /* Overlap border */
-            position: relative;
-            user-select: none;
-            flex-grow: 1; /* Allow to grow to fill lines */
-            text-align: center;
-        }
-        .folder-tab:hover { background: #27272a; color: #fff; }
-        .folder-tab.active {
-            background: #0c0c0e; /* Match background of content area */
-            color: var(--accent);
-            border-color: var(--border);
-            border-bottom-color: #0c0c0e; /* Hide bottom border to merge */
-            z-index: 2;
-        }
-        
-        /* Wishlist Item Card */
-        .wish-list { padding: 20px; display: flex; flex-direction: column; gap: 10px; flex-grow: 1; overflow-y: auto; }
-        
-        .wish-card { 
-            background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; 
-            padding: 12px 15px; display: flex; align-items: center; gap: 15px;
-            transition: all 0.2s; position: relative; overflow: hidden;
-            /* FIX: Prevent Squishing */
-            min-height: 80px; 
+        /* --- CATEGORY TABS (Standard Button Style) --- */
+        .tab-bar {
+            display: flex; 
+            gap: 8px; 
+            padding: 15px 20px; /* Even padding */
+            background: var(--bg); 
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap; 
             flex-shrink: 0;
+            align-items: center;
         }
-        .wish-card:hover { border-color: #3f3f46; transform: translateY(-1px); }
-        .wish-card.owned { opacity: 0.5; filter: grayscale(1); background: var(--bg); border-style: dashed; }
-        
-        .wish-info { flex-grow: 1; min-width: 0; }
-        .wish-name { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .wish-meta { display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--text-dim); }
-        
-        /* Display Price */
-        .price-display {
-            font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 12px;
-            color: var(--accent); cursor: help;
-        }
-        
-        .status-badge { 
-            font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase; 
-            background: #27272a; color: #aaa; cursor: pointer; user-select: none;
-        }
-        .status-abundant { background: rgba(0, 255, 136, 0.15); color: var(--success); }
-        .status-scarce { background: rgba(250, 204, 21, 0.15); color: var(--warning); }
-        .status-none { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
-        
-        .prio-indicator { width: 4px; height: 100%; position: absolute; left: 0; top: 0; background: var(--border); }
-        .prio-high { background: var(--prio-high); }
-        .prio-med { background: var(--prio-med); }
-        .prio-low { background: var(--prio-low); }
 
-        .card-actions { display: flex; gap: 8px; opacity: 1; transition: opacity 0.2s; }
-        
-        .icon-btn { 
-            width: 28px; height: 28px; border-radius: 4px; border: 1px solid var(--border); 
-            background: var(--bg); color: var(--text-dim); cursor: pointer; 
-            display: flex; align-items: center; justify-content: center; transition: 0.2s; 
+        .tab-btn {
+            padding: 6px 14px; 
+            background: var(--card-bg); 
+            border: 1px solid var(--border); 
+            border-radius: 6px; /* Standard rounded corners */
+            color: var(--text-dim); 
+            font-size: 11px; font-weight: 700;
+            cursor: pointer; white-space: nowrap; transition: 0.2s;
         }
-        .icon-btn:hover { color: #fff; border-color: #fff; }
-        .icon-btn.check:hover { color: var(--success); border-color: var(--success); }
-        .icon-btn.edit:hover { color: var(--info); border-color: var(--info); }
-        .icon-btn.del:hover { color: var(--danger); border-color: var(--danger); }
+        .tab-btn:hover { background: #27272a; color: #fff; border-color: #555; }
+        
+        .tab-btn.active {
+            background: var(--accent); 
+            color: #000; /* Contrast text */
+            border-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent-dim);
+        }
+
+        /* --- ITEM CARDS --- */
+        .wish-list { padding: 20px; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 8px; }
+        
+        .wish-item {
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;
+            padding: 12px; display: grid; grid-template-columns: 1fr auto auto; 
+            align-items: center; gap: 15px; transition: border-color 0.2s; position: relative; overflow: hidden;
+        }
+        .wish-item:hover { border-color: #444; }
+        .wish-item.owned { opacity: 0.5; filter: grayscale(1); border-style: dashed; background: transparent; }
+
+        .wish-content { display: flex; flex-direction: column; gap: 4px; }
+        .wish-name { font-weight: 600; font-size: 14px; color: #fff; }
+        .wish-meta { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-dim); }
+        
+        .badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; background: #27272a; color: #aaa; }
+        .badge-cat { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); color: var(--text-dim); }
+        
+        .badge-stock { cursor: pointer; user-select: none; }
+        .status-abundant { color: var(--success); background: rgba(0, 255, 136, 0.1); }
+        .status-scarce { color: var(--warning); background: rgba(234, 179, 8, 0.1); }
+        .status-none { color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+
+        .wish-price { font-family: 'JetBrains Mono', monospace; color: var(--accent); font-weight: 700; text-align: right; font-size: 13px; }
+        
+        .action-row { display: flex; gap: 5px; }
+        .btn-icon { 
+            width: 28px; height: 28px; border: 1px solid var(--border); background: var(--bg); 
+            color: var(--text-dim); cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center;
+        }
+        .btn-icon:hover { border-color: #666; color: #fff; }
+        .btn-icon.del:hover { border-color: var(--danger); color: var(--danger); background: rgba(239,68,68,0.1); }
+        .btn-icon.check:hover { border-color: var(--success); color: var(--success); background: rgba(0,255,136,0.1); }
+
+        /* Add Item Form */
+        .add-row { display: grid; grid-template-columns: 1fr 100px 40px; gap: 10px; margin-bottom: 20px; width: 100%; max-width: 800px; }
 
         /* Mobile */
         .mobile-nav { display: none; }
@@ -198,7 +190,7 @@
             .right-panel { right: 0; transform: translateX(100%); border-left: 1px solid var(--border); }
             .left-panel.active, .right-panel.active { transform: translateX(0); visibility: visible; }
             
-            .center-panel { height: 100%; width: 100%; border: none; }
+            .center-panel { height: 100%; width: 100%; border: none; padding: 0; }
             .mobile-backdrop { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(4px); }
             .mobile-backdrop.active { opacity: 1; pointer-events: all; }
             
@@ -208,8 +200,6 @@
 
             .user-profile-box { display: flex; align-items: center; gap: 12px; padding: 15px; border-bottom: 1px solid var(--border); }
             .user-avatar-mobile { width: 40px; height: 40px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; flex-shrink: 0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"); }
-            .user-info-text-mobile { font-size: 13px; font-weight: 600; color: var(--text-main); word-break: break-all; line-height: 1.2; }
-            .user-status-mobile { font-size: 10px; color: var(--text-dim); }
         }
     </style>
 </head>
@@ -237,6 +227,7 @@
             <a href="barter.html">BARTER</a>
             <a href="commerce.html">COMMERCE</a>
             <a href="wishlist.html" class="active">WISHLIST</a>
+            <a href="calculators.html">CALCULATORS</a>
         </nav>
 
         <!-- Desktop Header -->
@@ -272,20 +263,18 @@
                 </div>
                 
                 <div class="config-section">
-                    <div class="stat-card">
-                        <div class="stat-label">Total Gold Needed</div>
-                        <div id="stat-total-cost" class="stat-val" style="color:var(--accent);">0</div>
+                    <label class="panel-label">Summary</label>
+                    <div class="stat-box">
+                        <div class="stat-sub">Total Gold Needed</div>
+                        <div id="stat-total-cost" class="stat-val" style="color:var(--accent);">0 G</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Items Remaining</div>
+                    <div class="stat-box">
+                        <div class="stat-sub">Items Remaining</div>
                         <div id="stat-items-rem" class="stat-val">0</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Collection Progress</div>
+                    <div class="stat-box">
+                        <div class="stat-sub">Funded</div>
                         <div id="stat-progress" class="stat-val" style="color:var(--success);">0%</div>
-                    </div>
-                    <div class="legend-text">
-                        K=1,000 | M=1,000,000 | B=1,000,000,000
                     </div>
                 </div>
 
@@ -301,7 +290,7 @@
                 <div class="config-section" style="border-bottom:none;">
                     <label class="panel-label">Sort Order</label>
                     <div style="display:flex; flex-direction:column; gap:8px;">
-                        <button onclick="setSort('default')" id="btn-sort-default" class="hub-btn active" style="text-align:left;">Default (Priority)</button>
+                        <button onclick="setSort('default')" id="btn-sort-default" class="hub-btn active" style="text-align:left;">Date Added (Newest)</button>
                         <button onclick="setSort('priceAsc')" id="btn-sort-priceAsc" class="hub-btn" style="text-align:left;">Price: Low to High</button>
                         <button onclick="setSort('priceDesc')" id="btn-sort-priceDesc" class="hub-btn" style="text-align:left;">Price: High to Low</button>
                     </div>
@@ -310,12 +299,14 @@
 
             <!-- CENTER PANEL: Items (Tabs View) -->
             <div class="panel center-panel">
-                <!-- FOLDER TABS -->
-                <div id="folder-tabs" class="folder-bar"></div>
+                <!-- CATEGORY TABS -->
+                <div id="category-tabs" class="tab-bar">
+                    <!-- JS Injected -->
+                </div>
                 
                 <div id="wish-container" class="wish-list"></div>
                 
-                <div id="empty-state" style="display:none; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--text-dim); text-align:center;">
+                <div id="empty-state" style="display:none; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--text-dim); text-align:center; padding-top:50px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:15px; opacity:0.5;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
                     <div>Your wishlist is empty.</div>
                     <div style="font-size:11px; margin-top:5px;">Add items using the panel on the right.</div>
@@ -338,46 +329,31 @@
                         
                         <div>
                             <label class="panel-label" style="margin-bottom:4px;">Item Name</label>
-                            <input type="text" id="new-item-name" class="input-dark" placeholder="e.g. Broken Log">
+                            <input type="text" id="new-item-name" class="input-dark" placeholder="e.g. Erg 50 Weapon">
                         </div>
 
-                        <!-- Category Field -->
+                        <!-- Category Field (UPDATED) -->
                         <div>
                             <label class="panel-label" style="margin-bottom:4px;">Category</label>
                             <input type="text" id="new-item-category" class="input-dark" placeholder="e.g. Equipment" list="category-list">
                             <datalist id="category-list">
-                                <option value="Equipment">
-                                <option value="Enchant Scrolls">
-                                <option value="Materials">
-                                <option value="Consumables">
-                                <option value="Totems">
-                                <option value="Beauty">
-                                <option value="Misc">
+                                <!-- Populated dynamically -->
                             </datalist>
                         </div>
 
                         <div>
                             <label class="panel-label" style="margin-bottom:4px;">Price (Gold)</label>
-                            <input type="text" id="new-item-price" class="input-dark" placeholder="0" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')">
+                            <input type="text" id="new-item-price" class="input-dark" placeholder="0" inputmode="decimal" oninput="validatePriceInput(this)">
                         </div>
 
-                        <div style="display:flex; gap:10px;">
-                            <div style="flex:1;">
-                                <label class="panel-label" style="margin-bottom:4px;">Priority</label>
-                                <select id="new-item-prio" class="input-dark">
-                                    <option value="high">High</option>
-                                    <option value="med">Medium</option>
-                                    <option value="low">Low</option>
-                                </select>
-                            </div>
-                            <div style="flex:1;">
-                                <label class="panel-label" style="margin-bottom:4px;">Status</label>
-                                <select id="new-item-status" class="input-dark">
-                                    <option value="abundant">In Stock</option>
-                                    <option value="scarce">Scarce</option>
-                                    <option value="none">Out of Stock</option>
-                                </select>
-                            </div>
+                        <!-- Status Field -->
+                        <div>
+                            <label class="panel-label" style="margin-bottom:4px;">Status</label>
+                            <select id="new-item-status" class="input-dark">
+                                <option value="abundant">In Stock</option>
+                                <option value="scarce">Scarce</option>
+                                <option value="none">Out of Stock</option>
+                            </select>
                         </div>
 
                         <div style="display:flex; gap:10px; margin-top:10px;">
@@ -398,8 +374,8 @@
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
     let items = [], currentUser = null, activeFilter = 'all', activeSort = 'default', activeCategory = 'All';
+    let savedCategories = []; // Initialize empty as requested
     let editingId = null;
-    let collapsedFolders = {}; // Store open/closed state of folders
 
     auth.onAuthStateChanged(user => {
         const uInfo = document.getElementById('user-info');
@@ -411,7 +387,7 @@
 
         if (user) { 
             currentUser = user;
-            status.innerText = "Online & Syncing";
+            status.innerText = "Online";
             status.style.color = "var(--accent)";
             if(mobileStatus) { mobileStatus.innerText = "Online"; mobileStatus.style.color = "var(--accent)"; }
             
@@ -424,14 +400,14 @@
             } catch(e) {}
             
             db.ref(`users/${user.uid}/wishlist`).on('value', (snap) => {
-                const data = snap.val() || [];
-                items = Array.isArray(data) ? data : Object.values(data);
-                items = items.filter(i => i); // Clean nulls
-                // Load folder states if saved, or default
-                db.ref(`users/${user.uid}/wishlist_settings`).once('value', s => {
-                    if(s.val() && s.val().collapsed) collapsedFolders = s.val().collapsed;
-                    renderList();
-                });
+                const data = snap.val() || {};
+                if (Array.isArray(data)) {
+                    items = data.filter(i => i);
+                } else {
+                    items = data.items || [];
+                    if(data.categories) savedCategories = data.categories;
+                }
+                renderList();
             });
         } else { 
             currentUser = { uid: 'local_guest', isGuest: true };
@@ -441,72 +417,84 @@
             status.style.color = "var(--text-dim)";
             if(mobileStatus) { mobileStatus.innerText = "Local Mode"; mobileStatus.style.color = "var(--text-dim)"; }
             
-            const localData = JSON.parse(localStorage.getItem('mabi_wishlist_data') || '[]');
-            items = localData;
-            // Load local folder states
-            const localSettings = JSON.parse(localStorage.getItem('mabi_wishlist_settings') || '{}');
-            if(localSettings.collapsed) collapsedFolders = localSettings.collapsed;
+            const localRaw = localStorage.getItem('mabi_wishlist_data');
+            if (localRaw) {
+                const parsed = JSON.parse(localRaw);
+                if (Array.isArray(parsed)) {
+                    items = parsed; 
+                } else {
+                    items = parsed.items || [];
+                    if(parsed.categories) savedCategories = parsed.categories;
+                }
+            }
             renderList();
         }
     });
 
     function pushData() {
+        // No defaults enforced
+        const payload = { items: items, categories: savedCategories };
+
         if (!currentUser) return;
         if (currentUser.isGuest) {
-            localStorage.setItem('mabi_wishlist_data', JSON.stringify(items));
-            // Save folder states too
-            localStorage.setItem('mabi_wishlist_settings', JSON.stringify({ collapsed: collapsedFolders }));
+            localStorage.setItem('mabi_wishlist_data', JSON.stringify(payload));
         } else {
-            db.ref(`users/${currentUser.uid}/wishlist`).set(items);
-            // Save folder states separately to avoid cluttering main list
-             db.ref(`users/${currentUser.uid}/wishlist_settings`).update({ collapsed: collapsedFolders });
+            db.ref(`users/${currentUser.uid}/wishlist`).set(payload);
         }
+    }
+
+    function validatePriceInput(input) {
+        let val = input.value;
+        val = val.replace(/[^0-9.]/g, '');
+        const parts = val.split('.');
+        if (parts.length > 2) {
+            val = parts[0] + '.' + parts.slice(1).join('');
+        }
+        input.value = val;
     }
 
     function addItem() {
         const nameInp = document.getElementById('new-item-name');
+        const catInp = document.getElementById('new-item-category');
         const priceInp = document.getElementById('new-item-price');
-        const prioInp = document.getElementById('new-item-prio');
         const statusInp = document.getElementById('new-item-status');
-        const catInp = document.getElementById('new-item-category'); // New
         
         const name = nameInp.value.trim();
-        const price = parseInt(priceInp.value.replace(/,/g, '')) || 0;
-        const category = catInp.value.trim() || "Uncategorized"; // Default
+        const price = parseFloat(priceInp.value.replace(/,/g, '')) || 0;
+        let category = catInp.value.trim();
+        if (!category) category = "Uncategorized";
+        
+        // Save new user-defined category
+        if (category !== "Uncategorized" && !savedCategories.includes(category)) {
+            savedCategories.push(category);
+        }
         
         if (!name) return;
         
         if (editingId) {
-            // Update Existing
             const item = items.find(i => i.id === editingId);
             if (item) {
                 item.name = name;
                 item.price = price;
-                item.priority = prioInp.value;
                 item.status = statusInp.value;
                 item.category = category;
             }
             cancelEdit();
         } else {
-            // Create New
             items.push({
                 id: Date.now(),
                 name: name,
                 price: price,
-                priority: prioInp.value,
                 status: statusInp.value,
                 category: category,
                 owned: false
             });
         }
         
-        // Clear Inputs
         if (!editingId) {
              nameInp.value = '';
              priceInp.value = '';
-             // Keep category input populated for faster entry of same type, or clear it? 
-             // Clearing it is safer.
-             catInp.value = ''; 
+             // Don't clear category for easier entry of multiple items
         }
         
         pushData();
@@ -519,23 +507,17 @@
 
         editingId = id;
         
-        // Switch Right Panel to Edit Mode
         document.getElementById('form-header').innerText = "EDIT ITEM";
         document.getElementById('right-panel-title').innerText = "Edit Item";
         document.getElementById('btn-submit').innerText = "Save Changes";
         document.getElementById('btn-cancel').style.display = 'block';
 
-        // Populate Fields
         document.getElementById('new-item-name').value = item.name;
-        document.getElementById('new-item-price').value = item.price.toLocaleString(); 
-        document.getElementById('new-item-prio').value = item.priority;
+        document.getElementById('new-item-price').value = item.price; 
         document.getElementById('new-item-status').value = item.status;
         document.getElementById('new-item-category').value = item.category || "Uncategorized";
 
-        // On mobile, open the right drawer
-        if (window.innerWidth <= 1000) {
-            toggleSidebar('right');
-        }
+        if (window.innerWidth <= 1000) toggleSidebar('right');
     }
 
     function cancelEdit() {
@@ -547,7 +529,6 @@
         
         document.getElementById('new-item-name').value = '';
         document.getElementById('new-item-price').value = '';
-        document.getElementById('new-item-prio').value = 'high'; 
         document.getElementById('new-item-status').value = 'abundant';
         document.getElementById('new-item-category').value = '';
     }
@@ -600,65 +581,67 @@
         renderList();
     }
     
-    // --- FORMATTER ---
     function formatNumber(num) {
         if (num >= 1000000000) return (num / 1000000000).toFixed(1).replace(/\.0$/, '') + 'B';
         if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
         if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
-        return num.toLocaleString();
+        return num.toLocaleString(undefined, { maximumFractionDigits: 2 });
     }
 
     function renderList() {
         const container = document.getElementById('wish-container');
         const emptyState = document.getElementById('empty-state');
-        const tabContainer = document.getElementById('folder-tabs');
+        const tabContainer = document.getElementById('category-tabs');
         
+        // 1. Populate Autocomplete Datalist
+        const dl = document.getElementById('category-list');
+        dl.innerHTML = '';
+        savedCategories.sort().forEach(c => {
+            const op = document.createElement('option');
+            op.value = c;
+            dl.appendChild(op);
+        });
+
         container.innerHTML = '';
         
-        // 1. Filter by Status (Needed/Owned)
-        let filtered = items;
-        if (activeFilter === 'needed') filtered = items.filter(i => !i.owned);
-        if (activeFilter === 'owned') filtered = items.filter(i => i.owned);
-
-        // 2. Extract Categories from FULL item list (to keep tabs stable)
-        // Note: Using 'filtered' or 'items' here is a design choice. 
-        // Using 'items' ensures tabs don't disappear if you toggle filters.
-        const allCats = new Set();
+        // 2. Prepare Tabs (Saved + Used)
+        const allCats = new Set(savedCategories);
         items.forEach(i => allCats.add(i.category || "Uncategorized"));
         const sortedCats = Array.from(allCats).sort();
-        sortedCats.unshift('All'); // Force 'All' to be first
         
+        // Ensure "Uncategorized" is last, "All" is first
+        if (sortedCats.includes('Uncategorized')) {
+             sortedCats.splice(sortedCats.indexOf('Uncategorized'), 1);
+             sortedCats.push('Uncategorized');
+        }
+        sortedCats.unshift('All');
+
         // 3. Render Tabs
         tabContainer.innerHTML = '';
         sortedCats.forEach(cat => {
-            // Count items in this category (respecting current filter)
-            const count = filtered.filter(i => (cat === 'All' || (i.category || "Uncategorized") === cat)).length;
-            
+            const count = items.filter(i => (cat === 'All' || (i.category || "Uncategorized") === cat)).length;
             const btn = document.createElement('div');
-            btn.className = `folder-tab ${activeCategory === cat ? 'active' : ''}`;
+            btn.className = `tab-btn ${activeCategory === cat ? 'active' : ''}`;
             btn.innerText = `${cat} (${count})`;
             btn.onclick = () => setCategory(cat);
             tabContainer.appendChild(btn);
         });
 
-        // 4. Filter by Category
+        // 4. Filter Items
+        let filtered = items;
+        if (activeFilter === 'needed') filtered = items.filter(i => !i.owned);
+        if (activeFilter === 'owned') filtered = items.filter(i => i.owned);
+        
         if (activeCategory !== 'All') {
             filtered = filtered.filter(i => (i.category || "Uncategorized") === activeCategory);
         }
         
-        // 5. Sort Items
-        const prioMap = { 'high': 3, 'med': 2, 'low': 1 };
+        // 5. Sort (Removed Priority)
         filtered.sort((a,b) => {
             if (a.owned !== b.owned) return a.owned ? 1 : -1;
-
-            if (activeSort === 'priceAsc') {
-                return a.price - b.price;
-            } else if (activeSort === 'priceDesc') {
-                return b.price - a.price;
-            } else {
-                if (prioMap[a.priority] !== prioMap[b.priority]) return prioMap[b.priority] - prioMap[a.priority];
-                return a.name.localeCompare(b.name);
-            }
+            if (activeSort === 'priceAsc') return a.price - b.price;
+            if (activeSort === 'priceDesc') return b.price - a.price;
+            return b.id - a.id; // Default: Newest first
         });
 
         if (filtered.length === 0) {
@@ -673,7 +656,7 @@
 
         filtered.forEach(item => {
             const el = document.createElement('div');
-            el.className = `wish-card ${item.owned ? 'owned' : ''}`;
+            el.className = `wish-item ${item.owned ? 'owned' : ''}`;
             
             let badgeClass = 'status-none';
             let badgeText = 'Out of Stock';
@@ -683,22 +666,22 @@
             const fmtPrice = formatNumber(item.price);
             
             el.innerHTML = `
-                <div class="prio-indicator prio-${item.priority}"></div>
-                <div class="wish-info">
+                <div class="wish-content">
                     <div class="wish-name">${item.name}</div>
                     <div class="wish-meta">
-                        <span class="price-display" title="${item.price.toLocaleString()} G" onclick="editItem(${item.id})">
-                            ${fmtPrice} G
-                        </span>
-                        <span class="status-badge ${badgeClass}" onclick="toggleStatus(${item.id})">${badgeText}</span>
+                        <span class="badge badge-cat">${item.category || 'Uncategorized'}</span>
+                        <span class="badge ${badgeClass} badge-stock" onclick="toggleStatus(${item.id})">${badgeText}</span>
                     </div>
                 </div>
-                <div class="card-actions">
-                    <button class="icon-btn edit" onclick="editItem(${item.id})" title="Edit Item">✎</button>
-                    <button class="icon-btn check" onclick="toggleOwned(${item.id})" title="Toggle Owned">
+                <div class="wish-price" title="${item.price.toLocaleString(undefined, { maximumFractionDigits: 2 })} G">
+                    ${fmtPrice} G
+                </div>
+                <div class="action-row">
+                    <button class="btn-icon edit" onclick="editItem(${item.id})" title="Edit">✎</button>
+                    <button class="btn-icon check" onclick="toggleOwned(${item.id})" title="Toggle Owned">
                         ${item.owned ? '↩' : '✔'}
                     </button>
-                    <button class="icon-btn del" onclick="deleteItem(${item.id})" title="Delete">×</button>
+                    <button class="btn-icon del" onclick="deleteItem(${item.id})" title="Delete">×</button>
                 </div>
             `;
             container.appendChild(el);
@@ -714,7 +697,7 @@
         const remaining = totalItems - ownedItems;
         const progress = totalItems > 0 ? Math.round((ownedItems / totalItems) * 100) : 0;
         
-        document.getElementById('stat-total-cost').innerText = totalCost.toLocaleString() + " G";
+        document.getElementById('stat-total-cost').innerText = totalCost.toLocaleString(undefined, { maximumFractionDigits: 2 }) + " G";
         document.getElementById('stat-items-rem').innerText = remaining;
         document.getElementById('stat-progress').innerText = progress + "%";
     }
