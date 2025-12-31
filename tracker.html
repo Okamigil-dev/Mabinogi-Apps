@@ -383,6 +383,7 @@
             <a href="tracker.html" class="active">TRACKER</a>
             <a href="barter.html">BARTER</a>
             <a href="commerce.html">COMMERCE</a>
+            <a href="wishlist.html">WISHLIST</a>
         </nav>
 
         <!-- Desktop Header -->
@@ -936,8 +937,21 @@
             const hasGlobalTasks = tasks.some(t => t.cat === cat);
             const isComplete = finalTasks.length > 0 && finalTasks.every(t => t.done >= t.max);
 
+            // LOGIC: Show group if:
+            // 1. It has relevant tasks OR we are in Edit Mode OR it's an empty group in the user's list
+            // 2. AND (we are in Edit Mode OR "Hide Completed" is OFF OR the group is NOT complete)
+            // 3. AND (it matches the current view - Daily vs Weekly - unless it is empty)
+
+            // Calculate if group has *any* tasks relevant to this view
             const groupTasksInView = finalTasks.length;
+            
+            // Check if group is empty in the global context (true empty group)
             const isEmptyGroup = !hasGlobalTasks && catOrder.includes(cat);
+
+            // Refined Logic:
+            // - If in Edit Mode: Show Empty Groups OR Groups with Relevant Tasks. Hide irrelevant groups (Weekly groups in Daily view).
+            // - If Normal Mode: Show Groups with Relevant Tasks (filtered by completion).
+            
             const relevantForView = groupTasksInView > 0 || (isEdit && isEmptyGroup);
             
             const shouldShow = relevantForView && (isEdit || !hideCompletedGroups || !isComplete);
