@@ -151,6 +151,14 @@
         .mobile-backdrop { display: none; }
         .drawer-header { display: none; } 
         .mobile-only { display: none; }
+        
+        /* Artifact Row */
+        .artifact-row {
+            display: flex; justify-content: space-between; margin-bottom: 5px;
+            font-size: 12px;
+        }
+        .artifact-name { color: var(--text-dim); }
+        .artifact-val { color: #fff; font-family: 'JetBrains Mono', monospace; }
 
         @media (max-width: 1000px) {
             .mobile-only { display: block; }
@@ -289,6 +297,40 @@
                             <div id="disp-pct" style="font-size:18px; font-weight:700; color:#fff;">0.00%</div>
                         </div>
                     </div>
+                    
+                    <!-- NEW: Exploration Settings (Hidden by default) -->
+                    <div id="expl-settings" class="calc-row" style="display:none; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:15px; margin-bottom:20px;">
+                        <div class="calc-group">
+                            <label class="calc-label" style="opacity:0.7;">Exploration Mastery</label>
+                            <select id="expl-mastery" class="input-dark" onchange="calculateExp()">
+                                <option value="N" selected>Rank N/F (0%)</option>
+                                <option value="E">Rank E (10%)</option>
+                                <option value="D">Rank D (15%)</option>
+                                <option value="C">Rank C (20%)</option>
+                                <option value="B">Rank B (25%)</option>
+                                <option value="A">Rank A (30%)</option>
+                                <option value="9">Rank 9 (35%)</option>
+                                <option value="8">Rank 8 (40%)</option>
+                                <option value="7">Rank 7 (45%)</option>
+                                <option value="6">Rank 6 (50%)</option>
+                                <option value="5">Rank 5 (55%)</option>
+                                <option value="4">Rank 4 (60%)</option>
+                                <option value="3">Rank 3 (65%)</option>
+                                <option value="2">Rank 2 (70%)</option>
+                                <option value="1">Rank 1 (80%)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="calc-group">
+                            <label class="calc-label" style="opacity:0.7;">Fynn Bell Bonus (%)</label>
+                            <input type="number" id="fynn-bell" class="input-dark" value="0" placeholder="Required for crafting" oninput="calculateExp()">
+                        </div>
+
+                        <div class="calc-group" style="grid-column: 1 / -1;">
+                            <label class="calc-label" style="color:var(--accent);">Custom Craft Base EXP</label>
+                            <input type="text" id="custom-base-exp" class="input-dark" placeholder="Item Base EXP (e.g. 5000)" oninput="calculateExp()" onchange="formatInput(this)">
+                        </div>
+                    </div>
 
                     <div class="calc-group" style="margin-bottom:20px;">
                         <label class="calc-label" style="color:var(--accent);">Target Level</label>
@@ -311,11 +353,7 @@
                     <button class="drawer-close" onclick="closeSidebars()">×</button>
                 </div>
                 
-                <div class="config-section">
-                    <label class="panel-label">Data Source</label>
-                    <button onclick="toggleImportModal(true)" class="hub-btn" style="text-align:center; justify-content:center; border:1px dashed var(--accent);">Import Wiki Data</button>
-                    <div id="data-status" style="font-size:10px; color:var(--text-dim); margin-top:5px; text-align:center;">Using Default Table</div>
-                </div>
+                <!-- REMOVED DATA SOURCE SECTION -->
 
                 <div class="config-section">
                     <label class="panel-label" style="color:var(--accent);">ACTIVE BUFFS</label>
@@ -337,6 +375,7 @@
                     </div>
                 </div>
 
+                <!-- SECTION: KILLS (CHAR EXP) -->
                 <div class="config-section" id="section-kills" style="border-top:1px solid var(--border);">
                     <label class="panel-label">Estimated Kills</label>
                     <div style="background:var(--card-bg); border-radius:8px; padding:10px; font-size:12px;">
@@ -359,24 +398,16 @@
                          <div style="margin-top:4px; font-size:9px; color:var(--text-dim); text-align:right;">(Turtle/Crab/Millipede)</div>
                     </div>
                 </div>
+
+                 <!-- SECTION: ARTIFACTS (EXPL EXP) -->
+                 <div class="config-section" id="section-artifacts" style="display:none; border-top:1px solid var(--border);">
+                    <label class="panel-label">Estimated Sources</label>
+                    <div id="artifact-list" style="background:var(--card-bg); border-radius:8px; padding:10px;">
+                        <!-- JS populated -->
+                    </div>
+                    <div style="margin-top:4px; font-size:9px; color:var(--text-dim); text-align:right;" id="art-note">*Uses specific formulas for Gems vs Items</div>
+                </div>
             </div>
-        </div>
-    </div>
-    
-    <!-- Import Modal -->
-    <div id="import-modal" class="modal-overlay">
-        <div class="modal-card">
-            <h3 id="modal-title" style="font-size:16px; font-weight:700; color:#fff; margin:0;">Import EXP Table</h3>
-            <p style="font-size:12px; color:var(--text-dim); line-height:1.4;">
-                Copy the level table from the wiki (Level, Exp, Total) and paste it below. 
-                The tool will extract the numbers automatically.
-            </p>
-            <textarea id="import-text" class="input-dark" placeholder="Paste data here...&#10;1  0  0&#10;2  10  10&#10;..."></textarea>
-            <div style="display:flex; gap:10px;">
-                <button onclick="parseImportData()" class="hub-btn active" style="justify-content:center; text-align:center;">Parse & Save Public</button>
-                <button onclick="toggleImportModal(false)" class="hub-btn" style="justify-content:center; text-align:center; border-color:var(--danger); color:var(--danger);">Cancel</button>
-            </div>
-            <div id="import-error" style="color:var(--danger); font-size:11px; display:none;"></div>
         </div>
     </div>
 
@@ -395,48 +426,80 @@
     let EXPL_EXP_TABLE = [];
     
     // Updated: Real Mabinogi Character EXP Totals (Levels 1 to 200)
-    // Values derived from standard accumulation table
     const REAL_CHAR_EXP_TOTALS = [
-        0,0,400,1200,2400,4200,6600,9800,14000,19400,26200,34600,44800,57200,72000,89400,109800,133400,160400,191400,
-        226600,266200,310800,360400,415400,476000,542400,615000,694000,779800,872600,972800,1080600,1196400,1320400,
-        1453000,1594400,1745200,1905400,2075600,2255800,2446600,2648400,2861600,3086600,3323800,3573600,3836400,4112600,
-        4402800,4707400,5026800,5361400,5711600,6077800,6460400,6860000,7277000,7711800,8165000,8637000,9128400,9639600,
-        10171200,10723800,11298000,11894400,12513600,13156200,13822800,14514000,15230400,15972600,16741200,17537000,
-        18360600,19212800,20094200,21005400,21947200,22920400,23925800,24964200,26036400,27143400,28286000,29465200,
-        30681800,31936600,33230400,34564200,35938800,37355200,38814400,40317400,41865200,43458800,45099200,46787400,
-        48524400,50311200,52148800,54038200,55980400,57976400,60027200,62133800,64297200,66518400,68798400,71138200,
-        73538800,76001200,78526400,81115400,83769200,86488800,89275200,92129400,95052400,98045200,101108800,104244200,
-        107452400,110734400,114091200,117523800,121033200,124620400,128286400,132032200,135858800,139767200,143758400,
-        147833400,151993200,156238800,160571200,164991400,169500400,174099200,178788800,183570200,188444400,193412400,
-        198475200,203633800,208889200,214242400,219694400,225246200,230898800,236653200,242510400,248471400,254537200,
-        260708800,266987200,273373400,279868400,286473200,293188800,300016200,306956400,314010400,321179200,328463800,
-        335865200,343384400,351022400,358780200,366658800,374659200,382782400,391029400,399401200,407949600,416694600,
-        425636200,434774400,444109200,453640600,463368600,473293200,483414400
+        0, 400, 1100, 2100, 3400, 5000, 6800, 8800, 11000, 13400,
+        16000, 18800, 21800, 25100, 28700, 32600, 36900, 41600, 46700, 52300,
+        58500, 65300, 72900, 81300, 90600, 100900, 112200, 124700, 138500, 153800,
+        170600, 189100, 209400, 231600, 255900, 282500, 311500, 343100, 377500, 414800,
+        455200, 498900, 546100, 597000, 651800, 710800, 774100, 842000, 914700, 992400,
+        1075400, 1163900, 1258200, 1358600, 1465300, 1578600, 1698800, 1826100, 1960900, 2103400,
+        2254000, 2413000, 2580600, 2757300, 2943300, 3139000, 3344700, 3560700, 3787400, 4025200,
+        4274400, 4535400, 4808600, 5094300, 5393000, 5705000, 6030700, 6370600, 6725000, 7094400,
+        7479200, 7879800, 8296700, 8730300, 9181000, 9649400, 10135800, 10640700, 11164700, 11708100,
+        12271500, 12855400, 13460200, 14086500, 14734700, 15405400, 16099100, 16816300, 17557600, 18323500,
+        18572500, 18836500, 19116500, 19413500, 19728500, 20062500, 20416500, 20791500, 21188500, 21608500,
+        22052500, 22521500, 23016500, 23538500, 24088500, 24667500, 25276500, 25916500, 26588500, 27293500,
+        28032500, 28806500, 29616500, 30463500, 31348500, 32272500, 33236500, 34241500, 35288500, 36378500,
+        37512500, 38691500, 39916500, 41188500, 42508500, 43877500, 45296500, 46766500, 48288500, 49863500,
+        51492500, 53176500, 54916500, 56713500, 58568500, 60482500, 62456500, 64491500, 66588500, 68748500,
+        70972500, 73261500, 75616500, 78038500, 80528500, 83087500, 85716500, 88416500, 91188500, 94033500,
+        96952500, 99946500, 103016500, 106163500, 109388500, 112692500, 116076500, 119541500, 123088500, 126718500,
+        130432500, 134231500, 138116500, 142088500, 146148500, 150297500, 154536500, 158866500, 163288500, 167803500,
+        172412500, 177116500, 181916500, 186813500, 191808500, 196902500, 202096500, 207391500, 212788500, 218288500,
+        223893500, 229608500, 235438500, 241388500, 247463500, 253668500, 260013500, 266508500, 273163500, 279988500
     ];
 
+    // Updated: Real Mabinogi Exploration EXP Totals (Levels 1 to 50)
+    const REAL_EXPL_EXP_TOTALS = [
+        0, 676, 1984, 3886, 6350, 9350, 12866, 16884, 21396, 26400,
+        31900, 37906, 44434, 51506, 59150, 67400, 76296, 85884, 96216, 107350,
+        119350, 132286, 146234, 161276, 177500, 195000, 213876, 234234, 256186, 279850,
+        305350, 332816, 362384, 394196, 428400, 465150, 504606, 546934, 592306, 640900,
+        692900, 748496, 807884, 871266, 938850, 1010850, 1087486, 1168984, 1255576, 1347500
+    ];
+
+    // Exploration Items
+    const EXPL_ITEMS = [
+        { name: "Serving Crock", exp: 20000, type: 'standard' },
+        { name: "Small Hippo", exp: 24000, type: 'standard' },
+        { name: "Tabula Ocular", exp: 28000, type: 'standard' },
+        { name: "Elephant Statue", exp: 2920, type: 'standard' },
+        { name: "Fynni Gem (A)", exp: 3600, type: 'fynni' },
+        { name: "Fynni Gem (B)", exp: 2700, type: 'fynni' },
+        { name: "Fynni Gem (C)", exp: 1800, type: 'fynni' },
+        { name: "Fynni Gem (D)", exp: 900, type: 'fynni' },
+        { name: "Fynni Gem (E)", exp: 180, type: 'fynni' }
+    ];
+
+    // Exploration Mastery Bonuses (Add to 1)
+    const EXPL_MASTERY_BONUS = {
+        'N': 0, 'F': 0, 'E': 0.10, 'D': 0.15, 'C': 0.20, 'B': 0.25, 'A': 0.30, 
+        '9': 0.35, '8': 0.40, '7': 0.45, '6': 0.50, '5': 0.55, '4': 0.60, '3': 0.65, 
+        '2': 0.70, '1': 0.80
+    };
+
     // Init Tables
-    // For Character: Use the real array
     for(let i=1; i<=200; i++) {
         let total = 0;
         if(i <= REAL_CHAR_EXP_TOTALS.length) total = REAL_CHAR_EXP_TOTALS[i-1];
-        else {
-             total = REAL_CHAR_EXP_TOTALS[REAL_CHAR_EXP_TOTALS.length-1] + (i - 200) * 10000000;
-        }
+        else total = REAL_CHAR_EXP_TOTALS[REAL_CHAR_EXP_TOTALS.length-1] + (i - 200) * 10000000;
 
         let req = 0;
-        if(i < REAL_CHAR_EXP_TOTALS.length) {
-            req = REAL_CHAR_EXP_TOTALS[i] - REAL_CHAR_EXP_TOTALS[i-1];
-        }
+        if(i < REAL_CHAR_EXP_TOTALS.length) req = REAL_CHAR_EXP_TOTALS[i] - REAL_CHAR_EXP_TOTALS[i-1];
 
         CHAR_EXP_TABLE.push({ level: i, req: req, total: total });
     }
 
-    // For Exploration: Keep placeholder for now (or could add real data later)
-    let accum = 0;
+    // UPDATED: Use REAL_EXPL_EXP_TOTALS instead of placeholder formula
     for(let i=1; i<=50; i++) {
-        let req = Math.floor(50 * Math.pow(i, 2.1));
-        EXPL_EXP_TABLE.push({ level: i, req: req, total: accum });
-        accum += req;
+        let total = 0;
+        if(i <= REAL_EXPL_EXP_TOTALS.length) total = REAL_EXPL_EXP_TOTALS[i-1];
+        else total = REAL_EXPL_EXP_TOTALS[REAL_EXPL_EXP_TOTALS.length-1] + (i - 50) * 200000; // Fallback
+
+        let req = 0;
+        if(i < REAL_EXPL_EXP_TOTALS.length) req = REAL_EXPL_EXP_TOTALS[i] - REAL_EXPL_EXP_TOTALS[i-1];
+
+        EXPL_EXP_TABLE.push({ level: i, req: req, total: total });
     }
 
     // --- SEPARATE STATE OBJECTS ---
@@ -449,7 +512,10 @@
     let explState = {
         totalExp: 0,
         tgt: 50,
-        multipliers: []
+        multipliers: [],
+        mastery: 'N', // UPDATED: Default is now N (0%)
+        bell: 0,
+        customBase: 0
     };
 
     // --- DEFAULT BUFFS ---
@@ -469,9 +535,15 @@
         { id: 'balt_2', name: 'Baltane Crystal (2x)', val: 2.0, active: false, fixed: true, group: 'baltane', special: 'baltane_only' },
         { id: 'balt_3', name: 'Baltane Crystal (3x)', val: 3.0, active: false, fixed: true, group: 'baltane', special: 'baltane_only' }
     ];
+
+    const EXPL_DEFAULTS = [
+        { id: 'adv_robe', name: 'Adventurer Robe (+15%)', val: 1.15, active: false, fixed: true },
+        { id: 'grandmaster', name: 'Grandmaster Adventurer (+50%)', val: 1.50, active: false, fixed: true }
+    ];
+
     // Init state with deep copy
     charState.multipliers = JSON.parse(JSON.stringify(CHAR_DEFAULTS));
-    explState.multipliers = []; // Empty for now
+    explState.multipliers = JSON.parse(JSON.stringify(EXPL_DEFAULTS));
 
     // --- AUTH ---
     auth.onAuthStateChanged(user => {
@@ -493,34 +565,7 @@
         }
     });
 
-    // --- DATA SYNC ---
-    db.ref('public_data/exp_tables/character').on('value', snap => {
-        const data = snap.val();
-        if(data && Array.isArray(data) && data.length > 10) {
-            CHAR_EXP_TABLE = data;
-            if(currentMode === 'char-exp') { updateDataStatus(true); calculateExp(); }
-        } else {
-             if(currentMode === 'char-exp') updateDataStatus(false); 
-        }
-    });
-    db.ref('public_data/exp_tables/exploration').on('value', snap => {
-        const data = snap.val();
-        if(data && Array.isArray(data) && data.length > 10) {
-            EXPL_EXP_TABLE = data;
-            if(currentMode === 'explore-exp') { updateDataStatus(true); calculateExp(); }
-        }
-    });
-
-    function updateDataStatus(isPublic) {
-        const el = document.getElementById('data-status');
-        if(isPublic) {
-            el.innerText = "Using Public Database";
-            el.style.color = "var(--success)";
-        } else {
-            el.innerText = "Using Built-in Standard Table";
-            el.style.color = "var(--text-dim)";
-        }
-    }
+    // Removed Sync Listeners and updateDataStatus function
 
     // --- SWITCH TOOLS ---
     function setTool(mode) {
@@ -534,11 +579,13 @@
         document.getElementById('btn-char-exp').classList.toggle('active', mode === 'char-exp');
         document.getElementById('btn-explore-exp').classList.toggle('active', mode === 'explore-exp');
         document.getElementById('calc-title').innerText = mode === 'char-exp' ? "Character Level" : "Exploration Level";
-        document.getElementById('section-kills').style.display = (mode === 'char-exp') ? 'block' : 'none';
         
+        // Visibility Toggles
+        document.getElementById('section-kills').style.display = (mode === 'char-exp') ? 'block' : 'none';
+        document.getElementById('section-artifacts').style.display = (mode === 'explore-exp') ? 'block' : 'none';
+        document.getElementById('expl-settings').style.display = (mode === 'explore-exp') ? 'grid' : 'none';
+
         const TABLE = mode === 'char-exp' ? CHAR_EXP_TABLE : EXPL_EXP_TABLE;
-        if(mode === 'char-exp') updateDataStatus(false);
-        else updateDataStatus(TABLE.length > 10 && TABLE[10].total > 0);
         
         const newState = mode === 'char-exp' ? charState : explState;
         loadInputsFromState(newState);
@@ -553,11 +600,21 @@
     function saveInputsToState(stateObj) {
         stateObj.totalExp = document.getElementById('cur-total-exp').value;
         stateObj.tgt = document.getElementById('tgt-lvl').value;
+        if (currentMode === 'explore-exp') {
+            stateObj.mastery = document.getElementById('expl-mastery').value;
+            stateObj.bell = document.getElementById('fynn-bell').value;
+            stateObj.customBase = document.getElementById('custom-base-exp').value;
+        }
     }
     
     function loadInputsFromState(stateObj) {
         document.getElementById('cur-total-exp').value = stateObj.totalExp || "";
         document.getElementById('tgt-lvl').value = stateObj.tgt || (currentMode==='char-exp'?200:50);
+        if (currentMode === 'explore-exp') {
+            document.getElementById('expl-mastery').value = stateObj.mastery || 'N';
+            document.getElementById('fynn-bell').value = stateObj.bell || 0;
+            document.getElementById('custom-base-exp').value = stateObj.customBase || "";
+        }
     }
 
     // --- PERSISTENCE ---
@@ -582,7 +639,10 @@
         if(data.expl) {
             explState.totalExp = data.expl.totalExp;
             explState.tgt = data.expl.tgt;
-            if(data.expl.multipliers) explState.multipliers = mergeSavedMults(EXPL_BUFFS, data.expl.multipliers);
+            if(data.expl.multipliers) explState.multipliers = mergeSavedMults(EXPL_DEFAULTS, data.expl.multipliers);
+            explState.mastery = data.expl.mastery || 'N';
+            explState.bell = data.expl.bell || 0;
+            explState.customBase = data.expl.customBase || "";
         }
         
         if(data.lastMode) setTool(data.lastMode);
@@ -594,6 +654,7 @@
     
     function mergeSavedMults(defaults, saved) {
         let merged = JSON.parse(JSON.stringify(defaults));
+        if(!saved) return merged; // Handle empty saved
         const savedMap = {};
         saved.forEach(m => savedMap[m.id] = m);
         
@@ -665,7 +726,7 @@
         document.getElementById('res-exp').innerText = diff.toLocaleString();
         document.getElementById('res-sub').innerText = diff > 0 ? `To reach Level ${tgtLvl}` : "Target Reached";
 
-        // 3. Runs (Char Mode Only)
+        // 3. Runs / Artifacts
         if (currentMode === 'char-exp') {
             let generalMult = 1.0;
             let baltaneMult = 1.0;
@@ -687,6 +748,78 @@
             document.getElementById('run-baltane').innerText = Math.ceil(diff / baltaneExp).toLocaleString();
             document.getElementById('run-zombie').innerText = Math.ceil(diff / zombieExp).toLocaleString();
             document.getElementById('run-tech').innerText = Math.ceil(diff / techMobExp).toLocaleString();
+        } else {
+             // EXPLORATION CALC
+             const masteryKey = document.getElementById('expl-mastery').value;
+             const masteryBonus = EXPL_MASTERY_BONUS[masteryKey] || 0.0;
+             const bellPct = parseFloat(document.getElementById('fynn-bell').value) || 0;
+             const bellEfficiency = bellPct / 100;
+             
+             // UPDATED: Fixed "Dot" issue by stripping both dots and commas for Custom Base EXP input
+             const customBaseRaw = document.getElementById('custom-base-exp').value.replace(/[,.]/g, '');
+             const customBase = parseFloat(customBaseRaw) || 0;
+
+             // Extract Buffs
+             let robeBonus = 0;
+             let gmBonus = 0;
+             let eventMult = 1.0;
+
+             activeMults.forEach(m => {
+                 if (m.active) {
+                    if (m.id === 'adv_robe') robeBonus = 0.15;
+                    else if (m.id === 'grandmaster') gmBonus = 0.50;
+                    else eventMult *= m.val; 
+                 }
+             });
+
+             const artList = document.getElementById('artifact-list');
+             artList.innerHTML = '';
+             
+             // 1. Standard Items
+             EXPL_ITEMS.forEach(item => {
+                 let finalExp = 0;
+                 if (item.type === 'fynni') {
+                     // Fynni Formula: Base * (1 + (Robe * 5/9) + (GM * 5/9)) * Event
+                     const efficiency = 5/9; // 0.55555...
+                     const effBonus = (robeBonus * efficiency) + (gmBonus * efficiency);
+                     finalExp = item.exp * (1 + effBonus) * eventMult;
+                 } else {
+                     // Standard Formula: Base * (1 + Robe + GM) * Event
+                     finalExp = item.exp * (1 + robeBonus + gmBonus) * eventMult;
+                 }
+                 
+                 const req = Math.ceil(diff / finalExp);
+                 const div = document.createElement('div');
+                 div.className = 'artifact-row';
+                 div.innerHTML = `<span class="artifact-name">${item.name}</span><span class="artifact-val">${req.toLocaleString()}</span>`;
+                 artList.appendChild(div);
+             });
+
+             // 2. Custom Fynn Craft
+             if (customBase > 0) {
+                 // Formula: (Base * BellFactor) * (1 + Mastery + Robe + GM) * Event
+                 let customFinal = 0;
+                 let impossible = false;
+                 
+                 if (bellPct <= 0) impossible = true;
+                 else {
+                     customFinal = (customBase * bellEfficiency) * (1 + masteryBonus + robeBonus + gmBonus) * eventMult;
+                 }
+
+                 const div = document.createElement('div');
+                 div.className = 'artifact-row';
+                 div.style.marginTop = '10px';
+                 div.style.paddingTop = '10px';
+                 div.style.borderTop = '1px dashed var(--border)';
+                 
+                 if (impossible) {
+                     div.innerHTML = `<span class="artifact-name" style="color:var(--accent);">Custom Craft</span><span class="artifact-val" style="color:var(--danger)">Bell Required</span>`;
+                 } else {
+                     const req = Math.ceil(diff / customFinal);
+                     div.innerHTML = `<span class="artifact-name" style="color:var(--accent);">Custom Craft</span><span class="artifact-val">${req.toLocaleString()}</span>`;
+                 }
+                 artList.appendChild(div);
+             }
         }
         
         saveFullState();
@@ -811,142 +944,6 @@
         arr.splice(idx, 1);
         renderMultipliers();
         calculateExp();
-    }
-
-    // --- IMPORT LOGIC ---
-    function toggleImportModal(show) {
-        document.getElementById('import-modal').style.display = show ? 'flex' : 'none';
-        document.getElementById('import-error').style.display = 'none';
-        if(show) {
-            const modeName = currentMode === 'char-exp' ? 'Character' : 'Exploration';
-            document.getElementById('modal-title').innerText = `Import ${modeName} EXP Table`;
-        }
-    }
-
-    function parseImportData() {
-        const raw = document.getElementById('import-text').value;
-        // 1. Remove Headers and non-data text to avoid NaNs
-        // Replace "Level" "Total" "Experience" etc with spaces
-        let cleanRaw = raw.replace(/(Level|Total|Experience|Exp|Current)/gi, ' ');
-        // 2. Aggressive clean: remove everything except digits, commas, spaces, newlines
-        cleanRaw = cleanRaw.replace(/[^\d,\s]/g, ' ');
-        
-        // 3. Tokenize
-        // Remove commas from numbers now that we've used them for splitting
-        cleanRaw = cleanRaw.replace(/,/g, ''); 
-        const tokens = cleanRaw.trim().split(/\s+/).map(t => parseInt(t)).filter(n => !isNaN(n));
-        
-        let nextLvl = 1;
-        let buffer = [];
-        const newTable = [];
-
-        for (let i = 0; i < tokens.length; i++) {
-            let num = tokens[i];
-            
-            // LOGIC 1: Exact Match (Sequential)
-            if (num === nextLvl) {
-                if (buffer.length > 0) {
-                    // We found next level marker.
-                    // The largest number in buffer is likely the Total Exp for (nextLvl-1)
-                    const total = Math.max(...buffer);
-                    // Sanity check: Total exp shouldn't decrease (unless reset, unlikely here)
-                    // We simply push, allowing for overwrites if we started late
-                    
-                    // Special check for Level 1 being found after finding 2
-                    if (nextLvl === 2) {
-                        const l1 = newTable.find(x => x.level === 1);
-                        if(l1) l1.total = total;
-                        else newTable.push({ level: 1, req: 0, total: total });
-                    } else {
-                        newTable.push({ level: nextLvl - 1, req: 0, total: total });
-                    }
-                }
-                buffer = [];
-                nextLvl++;
-            } 
-            // LOGIC 2: Glued Unformatted (e.g., 102676 -> 10 2676 -> found '2' inside '2676'?)
-            else {
-                const sNum = num.toString();
-                const sLvl = nextLvl.toString();
-                
-                // If token starts with nextLvl (and has extra digits)
-                // e.g. nextLvl=2, token=2676. 
-                if (sNum.length > sLvl.length && sNum.startsWith(sLvl)) {
-                    const remainderStr = sNum.substring(sLvl.length);
-                    const remainder = parseInt(remainderStr);
-                    
-                    if (!isNaN(remainder)) {
-                         if (buffer.length > 0) {
-                             const total = Math.max(...buffer);
-                             if (nextLvl === 2) {
-                                 const l1 = newTable.find(x => x.level === 1);
-                                 if(l1) l1.total = total;
-                                 else newTable.push({ level: 1, req: 0, total: total });
-                             } else {
-                                newTable.push({ level: nextLvl - 1, req: 0, total: total });
-                             }
-                         }
-                         // The remainder is the current level's exp
-                         buffer = [remainder];
-                         nextLvl++;
-                         continue; // Skip pushing `num` to buffer
-                    }
-                }
-                
-                // Add to buffer
-                buffer.push(num);
-            }
-        }
-        
-        // Final buffer flush (for the last level found)
-        if (buffer.length > 0 && nextLvl > 1) {
-             const total = Math.max(...buffer);
-             if (nextLvl === 2) {
-                 const l1 = newTable.find(x => x.level === 1);
-                 if(l1) l1.total = total;
-                 else newTable.push({ level: 1, req: 0, total: total });
-             } else {
-                 newTable.push({ level: nextLvl - 1, req: 0, total: total });
-             }
-        }
-        
-        // Ensure Level 1 exists
-        if (!newTable.find(x => x.level === 1)) {
-             newTable.unshift({ level: 1, req: 0, total: 0 });
-        }
-        
-        if (newTable.length > 10) {
-            newTable.sort((a,b) => a.level - b.level);
-            
-            // Calc Reqs
-            for(let i=0; i<newTable.length; i++) {
-                 if (i < newTable.length - 1) {
-                     newTable[i].req = newTable[i+1].total - newTable[i].total;
-                 }
-            }
-            
-            const path = currentMode === 'char-exp' ? 'public_data/exp_tables/character' : 'public_data/exp_tables/exploration';
-            
-            if (currentUser && !currentUser.isGuest) {
-                db.ref(path).set(newTable).then(() => {
-                    alert("Data saved to Public Database!");
-                }).catch(err => {
-                    alert("Error saving: " + err.message);
-                });
-            } else {
-                if(currentMode === 'char-exp') CHAR_EXP_TABLE = newTable;
-                else EXPL_EXP_TABLE = newTable;
-                document.getElementById('data-status').innerText = "Using Local Import";
-                document.getElementById('data-status').style.color = "var(--warning)";
-                alert("Saved locally.");
-            }
-            
-            toggleImportModal(false);
-            calculateExp();
-        } else {
-            document.getElementById('import-error').style.display = 'block';
-            document.getElementById('import-error').innerText = "Parse failed. Could not find enough levels.";
-        }
     }
 
     // UI Helpers
