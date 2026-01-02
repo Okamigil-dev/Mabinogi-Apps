@@ -248,6 +248,14 @@
                         <option value="enduring">Enduring Melody</option>
                     </select>
 
+                    <!-- Mounted Toggle for March Song -->
+                    <div id="march-mounted-container" style="display:none; margin-top:8px;">
+                        <div class="toggle-row">
+                            <span class="stat-name">Mounted?</span>
+                            <label><input type="checkbox" id="march-mounted" class="toggle-input" onchange="calc()"><div class="toggle-switch"></div></label>
+                        </div>
+                    </div>
+
                     <label class="panel-label" style="margin-top:15px;">Skill Rank</label>
                     <select id="skill-rank" class="input-dark" disabled>
                         <option value="1">Rank 1 (Max)</option>
@@ -480,11 +488,16 @@
             name: 'Vivace', 
             stats: [
                 { name: 'Magic Attack', base: 20.00, suffix: '%' },
-                { name: 'Cast/Atk Speed', base: 11.00, suffix: '%', reforgeKey: 'reforge-cast-spd' }
+                { name: 'Alchemic Damage', base: 20.00, suffix: '%' },
+                { name: 'Magic Cast Speed', base: 11.00, suffix: '%', reforgeKey: 'reforge-cast-spd' },
+                { name: 'Attack Speed', base: 11.00, suffix: '%', reforgeKey: 'reforge-atk-spd' },
+                { name: 'Alchemy Cast Speed', base: 11.00, suffix: '%', reforgeKey: 'reforge-alch-spd' }
             ],
             hasHarmony: true,
             reforges: [
-                { id: 'reforge-cast-spd', label: 'Magic Cast Spd Reforge (Lvl)' }
+                { id: 'reforge-cast-spd', label: 'Magic Cast Spd Reforge (Lvl)' },
+                { id: 'reforge-atk-spd', label: 'Attack Spd Reforge (Lvl)' },
+                { id: 'reforge-alch-spd', label: 'Alchemy Cast Spd Reforge (Lvl)' }
             ]
         },
         'march': { 
@@ -599,6 +612,7 @@
         }
         
         document.getElementById('harmony-container').style.display = songData.hasHarmony ? 'flex' : 'none';
+        document.getElementById('march-mounted-container').style.display = 'none'; // Re-hide old toggle
         
         calc();
     }
@@ -802,6 +816,8 @@
         document.getElementById('right-panel').classList.remove('active');
         document.getElementById('mobile-backdrop').classList.remove('active');
     };
+
+    // Init will be triggered by auth listener or fallback
     </script>
 </body>
 </html>
