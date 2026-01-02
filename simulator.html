@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Music Buff Calculator</title>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* V2.7 Theme */
+            --bg: #09090b;
+            --sidebar-bg: #121214;
+            --card-bg: #18181b;
+            
+            /* Theme: Pink/Rose for Bard */
+            --accent: #f43f5e; 
+            --accent-dim: rgba(244, 63, 94, 0.1);
+            
+            --border: #27272a;
+            --text-main: #e4e4e7;
+            --text-dim: #a1a1aa;
+            --danger: #ef4444;
+            --success: #00ff88;
+        }
+
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            font-size: 13px;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Global Nav --- */
+        .global-nav {
+            display: flex; align-items: center; gap: 20px; padding: 0 20px; height: 40px;
+            background: #050506; border-bottom: 1px solid var(--border); flex-shrink: 0;
+        }
+        .global-nav a {
+            font-size: 11px; font-weight: 700; color: var(--text-dim); text-decoration: none;
+            letter-spacing: 0.5px; transition: color 0.2s;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .global-nav a:hover { color: #fff; }
+        .global-nav a.active { color: var(--accent); }
+        
+        .nav-icon { 
+            width: 14px; height: 14px; stroke-width: 2.5; stroke: currentColor; fill: none; 
+            stroke-linecap: round; stroke-linejoin: round; opacity: 0.8; 
+        }
+        .global-nav a:hover .nav-icon, .global-nav a.active .nav-icon { opacity: 1; }
+
+        /* Layout */
+        .interface-container { display: flex; flex-direction: column; height: 100%; width: 100%; }
+        .header-bar { background: var(--sidebar-bg); border-bottom: 1px solid var(--border); padding: 10px 20px; flex-shrink: 0; }
+        .title-section { display: flex; justify-content: space-between; align-items: center; }
+        .main-title { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 0.5px; }
+
+        .content-grid { display: grid; grid-template-columns: 300px 1fr 340px; flex-grow: 1; overflow: hidden; }
+        .panel { background: var(--bg); display: flex; flex-direction: column; border-right: 1px solid var(--border); overflow-y: auto; }
+        .panel:last-child { border-right: none; }
+        .center-panel { background: #0c0c0e; display: flex; flex-direction: column; padding: 20px; align-items: center; justify-content: center; }
+
+        /* Components */
+        .panel-label { font-size: 11px; font-weight: 600; color: var(--text-dim); margin-bottom: 8px; display: block; text-transform: uppercase; }
+        .config-section { padding: 20px; border-bottom: 1px solid var(--border); }
+        
+        .input-dark { background: var(--card-bg); border: 1px solid var(--border); color: #fff; font-family: 'Inter', sans-serif; font-size: 13px; padding: 8px; border-radius: 6px; width: 100%; transition: border-color 0.2s; }
+        .input-dark:focus { border-color: var(--accent); }
+        select.input-dark { cursor: pointer; }
+        
+        .hub-btn { 
+            color: var(--text-dim); text-decoration: none; font-weight: 600; font-size: 12px; 
+            padding: 8px 12px; border-radius: 6px; transition: 0.2s; 
+            border: 1px solid transparent; background: transparent; cursor: pointer; text-align: left; width: 100%;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .hub-btn:hover { color: #fff; background: var(--border); }
+        .hub-btn.active { color: var(--accent); background: var(--accent-dim); border-color: var(--accent); }
+        
+        /* Stats Box */
+        .stat-box {
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
+            padding: 20px; width: 100%; max-width: 500px; text-align: center;
+            margin-bottom: 15px;
+        }
+        .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 32px; font-weight: 700; color: var(--accent); }
+        .stat-sub { font-size: 12px; color: var(--text-dim); margin-top: 5px; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Result Row for Multi-Stat Songs */
+        .res-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 0; border-bottom: 1px dashed var(--border); width: 100%;
+        }
+        .res-name { font-size: 12px; color: var(--text-dim); text-transform: uppercase; }
+        .res-val { font-family: 'JetBrains Mono'; font-weight: 700; color: #fff; font-size: 14px; }
+
+        /* Stat Row */
+        .stat-input-row {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .stat-name { font-size: 11px; color: #ccc; }
+        .stat-input {
+            width: 70px; text-align: right; font-family: 'JetBrains Mono'; font-size:12px;
+        }
+        
+        /* Toggles */
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; cursor: pointer; }
+        .toggle-switch { width: 32px; height: 18px; background: var(--border); border-radius: 99px; position: relative; transition: 0.2s; flex-shrink: 0; }
+        .toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: #fff; border-radius: 50%; transition: 0.2s; }
+        input:checked + .toggle-switch { background: var(--accent); }
+        input:checked + .toggle-switch::after { transform: translateX(14px); }
+        .toggle-input { display: none; }
+
+        /* Accordion */
+        details { width: 100%; margin-bottom: 10px; }
+        summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--text-main); margin-bottom: 10px; list-style: none; display: flex; align-items: center; gap: 6px; }
+        summary::before { content: '▶'; font-size: 8px; transition: 0.2s; }
+        details[open] summary::before { transform: rotate(90deg); color: var(--accent); }
+
+        /* Mobile */
+        .mobile-nav { display: none; }
+        .mobile-backdrop { display: none; }
+        .mobile-only { display: none; }
+        .drawer-header { display: none; }
+
+        @media (max-width: 1000px) {
+            .mobile-only { display: block; }
+            .content-grid { display: block; height: calc(100dvh - 50px); }
+            .header-bar { display: none; }
+            .global-nav { display: none; }
+
+            .mobile-nav { 
+                display: flex; justify-content: space-between; align-items: center; 
+                padding: 10px 15px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border); 
+                height: 50px; z-index: 50; flex-shrink: 0;
+            }
+            .nav-trigger { background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 14px; cursor: pointer; }
+            
+            .left-panel, .right-panel {
+                position: fixed; top: 0; bottom: 0; width: 300px; max-width: 85%; z-index: 1001; 
+                box-shadow: 0 0 50px rgba(0,0,0,0.8); 
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s;
+                visibility: hidden; 
+            }
+            .left-panel { left: 0; transform: translateX(-100%); border-right: 1px solid var(--border); }
+            .right-panel { right: 0; transform: translateX(100%); border-left: 1px solid var(--border); }
+            .left-panel.active, .right-panel.active { transform: translateX(0); visibility: visible; }
+            
+            .center-panel { height: 100%; width: 100%; border: none; padding: 20px; overflow-y: auto; }
+            .mobile-backdrop { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(4px); }
+            .mobile-backdrop.active { opacity: 1; pointer-events: all; }
+            
+            .drawer-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--border); background: var(--sidebar-bg); }
+            .drawer-title { font-weight: 700; color: #fff; }
+            .drawer-close { background: none; border: none; color: var(--text-dim); font-size: 20px; padding: 0 5px; cursor: pointer; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Mobile Navigation -->
+    <div class="mobile-nav">
+        <button class="nav-trigger" onclick="toggleSidebar('left')">☰ Config</button>
+        <span style="font-weight:700; color:#fff;">Music Calc</span>
+        <button class="nav-trigger" onclick="toggleSidebar('right')">Bonuses</button>
+    </div>
+
+    <div class="mobile-backdrop" id="mobile-backdrop" onclick="closeSidebars()"></div>
+
+    <div class="interface-container">
+        <!-- GLOBAL NAVIGATION BAR -->
+        <nav class="global-nav">
+            <a href="index.html">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></polyline></svg>
+                HOME
+            </a>
+            <a href="tracker.html">
+                <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                TRACKER
+            </a>
+            <a href="barter.html">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M7 10h14l-4-4"/><path d="M17 14H3l4 4"/></svg>
+                BARTER
+            </a>
+            <a href="commerce.html">
+                <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                COMMERCE
+            </a>
+            <a href="wishlist.html">
+                <svg class="nav-icon" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                WISHLIST
+            </a>
+            <a href="calculators.html">
+                <svg class="nav-icon" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="18" x2="16" y2="18"/><line x1="8" y1="18" x2="8" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+                CALCULATORS
+            </a>
+            <a href="simulator.html" class="active">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                SIMULATOR
+            </a>
+        </nav>
+
+        <!-- Desktop Header -->
+        <div class="header-bar">
+            <div class="title-section">
+                <div style="display:flex; align-items:center;">
+                    <span class="main-title">MUSIC BUFF CALCULATOR</span>
+                </div>
+                <div style="display:flex; gap:12px; align-items:center;">
+                    <div style="text-align:right;">
+                        <div id="user-info" style="font-size:12px; font-weight:600; color:var(--text-main);">Guest</div>
+                        <div id="connection-status" style="font-size:10px; color:var(--text-dim);">Local Mode</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-grid">
+            <!-- LEFT PANEL: Skill & Performance -->
+            <div class="panel left-panel" id="left-panel">
+                <div class="drawer-header">
+                    <span class="drawer-title">Config</span>
+                    <button class="drawer-close" onclick="closeSidebars()">×</button>
+                </div>
+                
+                <div class="config-section">
+                    <label class="panel-label">Active Buff</label>
+                    <select id="active-song" class="input-dark" onchange="updateUI()">
+                        <option value="bfo">Battlefield Overture</option>
+                        <option value="vivace">Vivace</option>
+                        <option value="march">March Song</option>
+                        <option value="harvest">Harvest Song</option>
+                        <option value="enduring">Enduring Melody</option>
+                    </select>
+
+                    <label class="panel-label" style="margin-top:15px;">Skill Rank</label>
+                    <select id="skill-rank" class="input-dark" disabled>
+                        <option value="1">Rank 1 (Max)</option>
+                    </select>
+
+                    <label class="panel-label" style="margin-top:15px;">Performance Quality</label>
+                    <select id="perf-type" class="input-dark" onchange="calc()">
+                        <option value="1.0">Ordinary (100%)</option>
+                        <option value="1.1">Excellent (110%)</option>
+                        <option value="1.3">Inspiring (130%)</option>
+                    </select>
+                </div>
+
+                <div class="config-section" style="border-bottom:none;">
+                    <label class="panel-label">Additional Factors</label>
+                    
+                    <div class="stat-input-row">
+                        <span class="stat-name">MK Normal Reforge (Lvl)</span>
+                        <input type="number" id="reforge-mk-norm" class="input-dark stat-input" value="0" placeholder="Lvl" oninput="calc()">
+                    </div>
+                    <div class="stat-input-row">
+                        <span class="stat-name">MK Exc. Reforge (Lvl)</span>
+                        <input type="number" id="reforge-mk-exc" class="input-dark stat-input" value="0" placeholder="Lvl" oninput="calc()">
+                    </div>
+                    <div class="stat-input-row">
+                        <span class="stat-name">MK Insp. Reforge (Lvl)</span>
+                        <input type="number" id="reforge-mk-insp" class="input-dark stat-input" value="0" placeholder="Lvl" oninput="calc()">
+                    </div>
+                     <div style="font-size:10px; color:var(--text-dim); margin-bottom:10px;">
+                        Only the reforge matching the current Quality applies. (1 Lvl = 1%)
+                    </div>
+                    
+                    <!-- DYNAMIC SPECIFIC REFORGES -->
+                    <div id="specific-reforge-area" style="padding:10px 0; border-top:1px dashed var(--border);">
+                         <!-- Populated by JS based on song -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- CENTER PANEL: Output -->
+            <div class="panel center-panel">
+                <div class="stat-box">
+                    <div class="stat-sub">TOTAL MUSIC BUFF EFFECT BONUSES</div>
+                    <div class="stat-val" id="res-buff-stat">0</div>
+                    <div style="font-size:11px; color:var(--text-dim); margin-top:5px;">(Sum of Enchants, Titles, Sets, etc.)</div>
+                </div>
+
+                <div class="stat-box" style="border-color:var(--accent);">
+                    <div class="stat-sub" style="color:var(--accent);" id="res-label">FINAL EFFECTS</div>
+                    <div id="result-container" style="display:flex; flex-direction:column; gap:0px; margin-top:10px;">
+                        <!-- Results go here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL: Additive Bonuses -->
+            <div class="panel right-panel" id="right-panel">
+                <div class="drawer-header">
+                    <span class="drawer-title">Bonuses</span>
+                    <button class="drawer-close" onclick="closeSidebars()">×</button>
+                </div>
+                
+                <div class="config-section">
+                    <label class="panel-label">Music Buff Effect Sources</label>
+                    
+                    <!-- SKILLS & TALENTS -->
+                    <details open>
+                        <summary>Ranks & Talents</summary>
+                        <div class="stat-input-row">
+                            <span class="stat-name">Playing Inst. Rank</span>
+                            <select id="rank-pi" class="input-dark stat-input" style="width:90px;" onchange="calc()">
+                                <option value="0">Rank N</option>
+                                <option value="1">Rank F (+1)</option>
+                                <option value="2">Rank E (+2)</option>
+                                <option value="3">Rank D (+3)</option>
+                                <option value="4">Rank C (+4)</option>
+                                <option value="5">Rank B (+5)</option>
+                                <option value="6">Rank A (+6)</option>
+                                <option value="7">Rank 9 (+7)</option>
+                                <option value="8">Rank 8 (+8)</option>
+                                <option value="9">Rank 7 (+9)</option>
+                                <option value="10">Rank 6 (+10)</option>
+                                <option value="11">Rank 5 (+11)</option>
+                                <option value="12">Rank 4 (+12)</option>
+                                <option value="13">Rank 3 (+13)</option>
+                                <option value="14">Rank 2 (+14)</option>
+                                <option value="15" selected>Rank 1 (+15)</option>
+                            </select>
+                        </div>
+                        <div class="stat-input-row">
+                            <span class="stat-name">Song Rank</span>
+                            <select id="rank-song" class="input-dark stat-input" style="width:90px;" onchange="calc()">
+                                <option value="0">Rank N</option>
+                                <option value="1">Rank F (+1)</option>
+                                <option value="2">Rank E (+2)</option>
+                                <option value="3">Rank D (+3)</option>
+                                <option value="4">Rank C (+4)</option>
+                                <option value="5">Rank B (+5)</option>
+                                <option value="6">Rank A (+6)</option>
+                                <option value="7">Rank 9 (+7)</option>
+                                <option value="8">Rank 8 (+8)</option>
+                                <option value="9">Rank 7 (+9)</option>
+                                <option value="10">Rank 6 (+10)</option>
+                                <option value="11">Rank 5 (+11)</option>
+                                <option value="12">Rank 4 (+12)</option>
+                                <option value="13">Rank 3 (+13)</option>
+                                <option value="14">Rank 2 (+14)</option>
+                                <option value="15" selected>Rank 1 (+15)</option>
+                            </select>
+                        </div>
+                        <div class="toggle-row">
+                            <span class="stat-name">Grandmaster Bard (+5)</span>
+                            <label><input type="checkbox" id="gm-bard" class="toggle-input" onchange="calc()"><div class="toggle-switch"></div></label>
+                        </div>
+                    </details>
+                    
+                    <!-- GEAR -->
+                    <details open>
+                        <summary>Equipment</summary>
+                        <div class="stat-input-row">
+                            <span class="stat-name">Enchants Total</span>
+                            <input type="number" id="ench-total" class="input-dark stat-input" value="0" oninput="calc()">
+                        </div>
+                        <div class="stat-input-row">
+                            <span class="stat-name">Upgrade Effect</span>
+                            <input type="number" id="upg-total" class="input-dark stat-input" value="0" oninput="calc()">
+                        </div>
+                        <div class="toggle-row">
+                            <span class="stat-name">Troubadour Set (+3)</span>
+                            <label><input type="checkbox" id="set-troubadour" class="toggle-input" onchange="toggleSets('troub')"><div class="toggle-switch"></div></label>
+                        </div>
+                        <div class="toggle-row">
+                            <span class="stat-name">Seraphic Cant. (+5 BFO)</span>
+                            <label><input type="checkbox" id="set-seraphic" class="toggle-input" onchange="toggleSets('seraph')"><div class="toggle-switch"></div></label>
+                        </div>
+                         <div class="stat-input-row">
+                            <span class="stat-name">Fleur's Tiara</span>
+                            <input type="number" id="tiara-val" class="input-dark stat-input" value="0" oninput="calc()">
+                        </div>
+                    </details>
+                    
+                    <!-- REFORGES -->
+                    <details open>
+                        <summary>Reforges (Buff Effect)</summary>
+                         <div class="stat-input-row">
+                            <span class="stat-name">Playing Inst. Effect (Lvl)</span>
+                            <input type="number" id="reforge-pi" class="input-dark stat-input" value="0" oninput="calc()">
+                        </div>
+                    </details>
+
+                    <!-- EXTERNAL -->
+                    <details>
+                        <summary>External & Titles</summary>
+                        <div class="stat-input-row">
+                            <span class="stat-name">1st Title Bonus</span>
+                            <input type="number" id="title-1" class="input-dark" value="8" oninput="calc()">
+                        </div>
+                        <div class="stat-input-row">
+                            <span class="stat-name">2nd Title Bonus</span>
+                            <input type="number" id="title-2" class="input-dark" value="0" oninput="calc()">
+                        </div>
+                         <div class="toggle-row">
+                            <span class="stat-name">Music Buff Potion (+2)</span>
+                            <label><input type="checkbox" id="buff-pot" class="toggle-input" onchange="calc()"><div class="toggle-switch"></div></label>
+                        </div>
+                         <div class="toggle-row">
+                            <span class="stat-name">Harmonic Saint Link (+3)</span>
+                            <label><input type="checkbox" id="link-bonus" class="toggle-input" onchange="calc()"><div class="toggle-switch"></div></label>
+                        </div>
+                         <div class="stat-input-row">
+                            <span class="stat-name">Homestead Bonus</span>
+                            <input type="number" id="homestead-val" class="input-dark stat-input" value="0" oninput="calc()">
+                        </div>
+                    </details>
+
+                    <!-- PETS -->
+                    <details>
+                        <summary>Pets (Fairy Dragon)</summary>
+                        <div class="toggle-row">
+                            <span class="stat-name">Sonic Wave (+3)</span>
+                            <label><input type="checkbox" id="pet-sonic" class="toggle-input" onchange="calc()"><div class="toggle-switch"></div></label>
+                        </div>
+                        <div class="toggle-row" id="harmony-container" style="display:none;">
+                            <span class="stat-name">Harmony (+2)</span>
+                            <label><input type="checkbox" id="pet-harmony" class="toggle-input" onchange="calc()"><div class="toggle-switch"></div></label>
+                        </div>
+                    </details>
+                </div>
+            </div>
+            
+            <div class="config-section" style="border-bottom:none;">
+                <label class="panel-label">Multipliers</label>
+                <div class="stat-input-row">
+                    <span class="stat-name">Item Grade Effect %</span>
+                    <input type="number" id="item-grade" class="input-dark stat-input" value="0" placeholder="%" oninput="calc()">
+                </div>
+                <div class="stat-input-row">
+                    <span class="stat-name">Special Upgrade Effect %</span>
+                    <input type="number" id="special-upgrade" class="input-dark stat-input" value="0" placeholder="%" oninput="calc()">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // --- Firebase Init ---
+    const firebaseConfig = { apiKey: "AIzaSyC7A3Rzi-VddhqZiFGjHjjqBwCdX1ks6yM", authDomain: "mabinogi-tracker.firebaseapp.com", databaseURL: "https://mabinogi-tracker-default-rtdb.firebaseio.com", projectId: "mabinogi-tracker", storageBucket: "mabinogi-tracker.firebasestorage.app", appId: "1:267690802644:web:fccdd005d5c8990504ea41", measurementId: "G-VBDBKQ3M1B" };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+    let currentUser = null;
+    let saveTimeout = null;
+    let isLoading = true;
+    let pendingReforges = {}; 
+
+    // --- Song Data ---
+    const songs = {
+        'bfo': { 
+            name: 'Battlefield Overture', 
+            stats: [
+                { name: 'Max Damage', base: 20.00, suffix: '%' },
+                { name: 'Min Damage', base: 20.00, suffix: '%' },
+                { name: 'Critical', base: 11.00, suffix: '%' }
+            ],
+            hasHarmony: true
+        },
+        'vivace': { 
+            name: 'Vivace', 
+            stats: [
+                { name: 'Magic Attack', base: 20.00, suffix: '%' },
+                { name: 'Cast/Atk Speed', base: 11.00, suffix: '%', reforgeKey: 'reforge-cast-spd' }
+            ],
+            hasHarmony: true,
+            reforges: [
+                { id: 'reforge-cast-spd', label: 'Magic Cast Spd Reforge (Lvl)' }
+            ]
+        },
+        'march': { 
+            name: 'March Song', 
+            stats: [
+                { name: 'Walk Speed', base: 12.00, suffix: '%', reforgeKey: 'reforge-walk-spd' },
+                { name: 'Mount Speed', base: 9.00, suffix: '%', reforgeKey: 'reforge-mount-spd' }
+            ],
+            hasHarmony: false,
+            reforges: [
+                { id: 'reforge-walk-spd', label: 'Walk Speed Reforge (Lvl)' },
+                { id: 'reforge-mount-spd', label: 'Mount Speed Reforge (Lvl)' }
+            ]
+        },
+        'harvest': { 
+            name: 'Harvest Song', 
+            stats: [
+                { name: 'Gathering Speed', base: 25.00, suffix: '%', reforgeKey: 'reforge-gather-spd' }
+            ],
+            hasHarmony: true,
+            reforges: [
+                { id: 'reforge-gather-spd', label: 'Gathering Spd Reforge (Lvl)' }
+            ]
+        },
+        'enduring': { 
+            name: 'Enduring Melody', 
+            stats: [
+                { name: 'Def/M.Def', base: 11.00, suffix: '' },
+                { name: 'Prot/M.Prot', base: 5.00, suffix: '' },
+                { name: 'Recovery', base: 410.00, suffix: '%' }
+            ],
+            hasHarmony: false
+        }
+    };
+
+    // --- Auth Listener ---
+    auth.onAuthStateChanged(user => {
+        const uInfo = document.getElementById('user-info');
+        const status = document.getElementById('connection-status');
+        if (user) {
+            currentUser = user;
+            status.innerText = "Online & Syncing";
+            status.style.color = "var(--success)";
+            
+            try {
+                const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
+                uInfo.innerText = cached.username || user.email;
+            } catch(e) {}
+            
+            db.ref('users/' + user.uid + '/music_calc').once('value', snap => {
+                if(snap.val()) applyData(snap.val());
+                isLoading = false;
+                // Important: Call updateUI on load to populate inputs
+                updateUI();
+            });
+        } else {
+            currentUser = null;
+            uInfo.innerText = "Guest";
+            status.innerText = "Local Mode";
+            status.style.color = "var(--text-dim)";
+            
+            const local = localStorage.getItem('mabi_music_calc');
+            if(local) applyData(JSON.parse(local));
+            isLoading = false;
+            updateUI();
+        }
+    });
+
+    function getVal(id) {
+        const el = document.getElementById(id);
+        return el ? (parseFloat(el.value) || 0) : 0;
+    }
+
+    function toggleSets(set) {
+        if(set === 'troub') {
+            if(document.getElementById('set-troubadour').checked) document.getElementById('set-seraphic').checked = false;
+        } else {
+            if(document.getElementById('set-seraphic').checked) document.getElementById('set-troubadour').checked = false;
+        }
+        calc();
+    }
+
+    function updateUI() {
+        const songKey = document.getElementById('active-song').value;
+        const songData = songs[songKey];
+        
+        document.getElementById('res-label').innerText = `FINAL ${songData.name.toUpperCase()}`;
+        
+        // Update Specific Reforges UI
+        const container = document.getElementById('specific-reforge-area');
+        container.innerHTML = '';
+        
+        if (songData.reforges) {
+            songData.reforges.forEach(r => {
+                const row = document.createElement('div');
+                row.className = 'stat-input-row';
+                // Try to get saved value from pending cache
+                const savedVal = pendingReforges[r.id] || 0;
+                
+                row.innerHTML = `
+                    <span class="stat-name" style="color:var(--accent);">${r.label}</span>
+                    <input type="number" id="${r.id}" class="input-dark stat-input" value="${savedVal}" placeholder="Lvl" oninput="calc()">
+                `;
+                container.appendChild(row);
+            });
+            const hint = document.createElement('div');
+            hint.style.cssText = "font-size:10px; color:var(--text-dim);";
+            hint.innerText = "Adds to Base Effect before multiplication. (1 Lvl = 1%)";
+            container.appendChild(hint);
+        } else {
+            container.innerHTML = '<div style="font-size:11px;color:var(--text-dim);text-align:center;">No specific reforges for this skill</div>';
+        }
+        
+        document.getElementById('harmony-container').style.display = songData.hasHarmony ? 'flex' : 'none';
+        
+        calc();
+    }
+
+    function calc() {
+        const songKey = document.getElementById('active-song').value;
+        const songData = songs[songKey];
+
+        // 2. Sum of Music Buff Effect Bonuses
+        const enchants = getVal('ench-total');
+        const upgrades = getVal('upg-total');
+        const tiara = getVal('tiara-val');
+        const homestead = getVal('homestead-val');
+        const reforgePI = getVal('reforge-pi'); 
+        
+        const rankPI = parseFloat(document.getElementById('rank-pi').value);
+        const rankSong = parseFloat(document.getElementById('rank-song').value);
+        const gm = document.getElementById('gm-bard').checked ? 5 : 0;
+        const potion = document.getElementById('buff-pot').checked ? 2 : 0;
+        const saint = document.getElementById('link-bonus').checked ? 3 : 0;
+        const dragonSonic = document.getElementById('pet-sonic').checked ? 3 : 0;
+        const t1 = getVal('title-1');
+        const t2 = getVal('title-2');
+        
+        // Sets
+        const troubadour = document.getElementById('set-troubadour').checked ? 3 : 0;
+        let seraphic = 0;
+        if (songKey === 'bfo' && document.getElementById('set-seraphic').checked) {
+            seraphic = 5;
+        }
+
+        const buffBonusSum = enchants + upgrades + troubadour + seraphic + tiara + homestead + 
+                             reforgePI + rankPI + rankSong + gm + potion + saint + dragonSonic + 
+                             t1 + t2;
+
+        const multiplierA = 1 + (buffBonusSum * 0.01);
+
+        // 3. Performance Multiplier (Multiplier B)
+        const perfSelect = document.getElementById('perf-type').value; 
+        let perfQuality = 1.0;
+        let reforgeMK = 0;
+
+        if (perfSelect === '1.0') {
+            perfQuality = 1.0; reforgeMK = getVal('reforge-mk-norm');
+        } else if (perfSelect === '1.1') {
+            perfQuality = 1.1; reforgeMK = getVal('reforge-mk-exc');
+        } else if (perfSelect === '1.3') {
+            perfQuality = 1.3; reforgeMK = getVal('reforge-mk-insp');
+        }
+
+        const multiplierB = perfQuality + (reforgeMK * 0.01);
+        
+        // 4. Harmony
+        const dragonHarmony = (songData.hasHarmony && document.getElementById('pet-harmony').checked) ? 2 : 0;
+        
+        // 5. Final Multiplier (Item Grade + Special Upgrade)
+        const itemGrade = getVal('item-grade');
+        const specialUpgrade = getVal('special-upgrade');
+        const finalMultiplier = 1 + (itemGrade * 0.01) + (specialUpgrade * 0.01);
+
+        // --- RENDER RESULTS ---
+        const resultContainer = document.getElementById('result-container');
+        resultContainer.innerHTML = '';
+
+        songData.stats.forEach(stat => {
+            let specificBonus = 0;
+            if (stat.reforgeKey) {
+                specificBonus = getVal(stat.reforgeKey);
+            }
+            
+            // Base + Specific Reforge
+            const modifiedBase = stat.base + specificBonus;
+            
+            // Calculate components
+            const mainTerm = multiplierA * modifiedBase * multiplierB;
+            const harmonyTerm = (dragonHarmony * 0.01) * modifiedBase;
+            
+            // Sum and apply final multipliers
+            const total = (mainTerm + harmonyTerm) * finalMultiplier;
+            
+            const div = document.createElement('div');
+            div.className = 'res-row';
+            div.innerHTML = `
+                <span class="res-name">${stat.name}</span>
+                <span class="res-val">${total.toFixed(2)}${stat.suffix}</span>
+            `;
+            resultContainer.appendChild(div);
+        });
+
+        document.getElementById('res-buff-stat').innerText = buffBonusSum;
+        
+        saveData();
+    }
+
+    // --- DATA PERSISTENCE ---
+    function applyData(data) {
+        if(!data) return;
+        setVal('active-song', data.activeSong);
+        setVal('perf-type', data.perfType);
+        setVal('reforge-mk-norm', data.mkNorm);
+        setVal('reforge-mk-exc', data.mkExc);
+        setVal('reforge-mk-insp', data.mkInsp);
+        
+        if(data.reforges) {
+            pendingReforges = data.reforges;
+        }
+
+        setVal('rank-pi', data.rankPi);
+        setVal('rank-song', data.rankSong);
+        setCheck('gm-bard', data.gmBard);
+        setVal('ench-total', data.enchTotal);
+        setVal('upg-total', data.upgTotal);
+        setCheck('set-troubadour', data.setTroub);
+        setCheck('set-seraphic', data.setSeraph);
+        setVal('tiara-val', data.tiara);
+        setVal('reforge-pi', data.reforgePi);
+        setVal('title-1', data.title1);
+        setVal('title-2', data.title2);
+        setCheck('buff-pot', data.buffPot);
+        setCheck('link-bonus', data.linkBonus);
+        setVal('homestead-val', data.homestead);
+        setCheck('pet-sonic', data.petSonic);
+        setCheck('pet-harmony', data.petHarmony);
+        setVal('item-grade', data.itemGrade);
+        setVal('special-upgrade', data.specialUpgrade);
+        // Do not call updateUI here; Auth listener does it to avoid redundant calls or race conditions
+    }
+
+    function saveData() {
+        if(isLoading) return;
+        
+        // Capture active dynamic input values into cache object
+        const container = document.getElementById('specific-reforge-area');
+        if (container) {
+             const inputs = container.querySelectorAll('input');
+             inputs.forEach(inp => {
+                 pendingReforges[inp.id] = parseFloat(inp.value) || 0;
+             });
+        }
+
+        const data = {
+            activeSong: getValStr('active-song'),
+            perfType: getValStr('perf-type'),
+            mkNorm: getVal('reforge-mk-norm'),
+            mkExc: getVal('reforge-mk-exc'),
+            mkInsp: getVal('reforge-mk-insp'),
+            reforges: pendingReforges,
+            rankPi: getValStr('rank-pi'),
+            rankSong: getValStr('rank-song'),
+            gmBard: getCheck('gm-bard'),
+            enchTotal: getVal('ench-total'),
+            upgTotal: getVal('upg-total'),
+            setTroub: getCheck('set-troubadour'),
+            setSeraph: getCheck('set-seraphic'),
+            tiara: getVal('tiara-val'),
+            reforgePi: getVal('reforge-pi'),
+            title1: getVal('title-1'),
+            title2: getVal('title-2'),
+            buffPot: getCheck('buff-pot'),
+            linkBonus: getCheck('link-bonus'),
+            homestead: getVal('homestead-val'),
+            petSonic: getCheck('pet-sonic'),
+            petHarmony: getCheck('pet-harmony'),
+            itemGrade: getVal('item-grade'),
+            specialUpgrade: getVal('special-upgrade')
+        };
+        
+        localStorage.setItem('mabi_music_calc', JSON.stringify(data));
+        if(currentUser) {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                db.ref('users/' + currentUser.uid + '/music_calc').update(data);
+            }, 1000);
+        }
+    }
+    
+    function setVal(id, v) { if(v !== undefined && document.getElementById(id)) document.getElementById(id).value = v; }
+    function setCheck(id, v) { if(v !== undefined && document.getElementById(id)) document.getElementById(id).checked = v; }
+    function getValStr(id) { return document.getElementById(id) ? document.getElementById(id).value : ''; }
+    function getCheck(id) { return document.getElementById(id) ? document.getElementById(id).checked : false; }
+
+    // --- Mobile Nav ---
+    window.toggleSidebar = (side) => {
+        const left = document.getElementById('left-panel');
+        const right = document.getElementById('right-panel');
+        const backdrop = document.getElementById('mobile-backdrop');
+        
+        if (side === 'left') { 
+            const isActive = left.classList.contains('active');
+            closeSidebars(); 
+            if (!isActive) { left.classList.add('active'); backdrop.classList.add('active'); }
+        } 
+        if (side === 'right') { 
+            const isActive = right.classList.contains('active');
+            closeSidebars(); 
+            if (!isActive) { right.classList.add('active'); backdrop.classList.add('active'); }
+        } 
+    };
+    window.closeSidebars = () => {
+        document.getElementById('left-panel').classList.remove('active');
+        document.getElementById('right-panel').classList.remove('active');
+        document.getElementById('mobile-backdrop').classList.remove('active');
+    };
+    </script>
+</body>
+</html>
