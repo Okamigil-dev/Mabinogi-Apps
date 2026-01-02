@@ -286,6 +286,19 @@
                     <div id="specific-reforge-area" style="padding:10px 0; border-top:1px dashed var(--border);">
                          <!-- Populated by JS based on song -->
                     </div>
+
+                    <!-- SUCCESS RATES SECTION -->
+                    <div style="margin-top:20px;">
+                        <label class="panel-label">Success Rates</label>
+                        <div class="toggle-row">
+                            <span class="stat-name">Harmonic Saint Link 10</span>
+                            <label><input type="checkbox" id="link-saint-10" class="toggle-input" onchange="calc()"><div class="toggle-switch"></div></label>
+                        </div>
+                        <div class="stat-input-row">
+                            <span class="stat-name">Inspiring Success Reforge (Lvl)</span>
+                            <input type="number" id="reforge-insp-rate" class="input-dark stat-input" value="0" placeholder="Lvl" oninput="calc()">
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -302,6 +315,12 @@
                     <div id="result-container" style="display:flex; flex-direction:column; gap:0px; margin-top:10px;">
                         <!-- Results go here -->
                     </div>
+                </div>
+                
+                <!-- Inspiring Chance Box -->
+                <div class="stat-box" style="border-color:var(--success); margin-top:15px;">
+                    <div class="stat-sub" style="color:var(--success);">INSPIRING CHANCE</div>
+                    <div class="stat-val" id="res-insp-chance">0.00%</div>
                 </div>
             </div>
 
@@ -485,13 +504,13 @@
             stats: [
                 { name: 'Magic Attack', base: 20.00, suffix: '%' },
                 { name: 'Alchemic Damage', base: 20.00, suffix: '%' },
-                { name: 'Magic Cast Speed', base: 11.00, suffix: '%', reforgeKey: 'reforge-magic-spd' },
+                { name: 'Magic Cast Speed', base: 11.00, suffix: '%', reforgeKey: 'reforge-cast-spd' },
                 { name: 'Attack Speed', base: 11.00, suffix: '%', reforgeKey: 'reforge-atk-spd' },
                 { name: 'Alchemy Cast Speed', base: 11.00, suffix: '%', reforgeKey: 'reforge-alch-spd' }
             ],
             hasHarmony: true,
             reforges: [
-                { id: 'reforge-magic-spd', label: 'Magic Cast Spd Reforge (Lvl)' },
+                { id: 'reforge-cast-spd', label: 'Magic Cast Spd Reforge (Lvl)' },
                 { id: 'reforge-atk-spd', label: 'Attack Spd Reforge (Lvl)' },
                 { id: 'reforge-alch-spd', label: 'Alchemy Cast Spd Reforge (Lvl)' }
             ]
@@ -528,11 +547,17 @@
             hasHarmony: false
         }
     };
+    
+    // Exact Lookup Tables
+    const inspRatesNoLink = [5.07, 8.13, 11.00, 13.70, 16.24, 18.63, 20.89, 23.03, 25.05, 26.98, 28.80, 30.54, 32.19];
+    const inspRatesWithLink = [5.07, 28.80, 43.04, 52.53, 59.31, 64.00, 68.36, 71.52, 74.11, 76.27, 78.09, 79.66, 100.00];
 
     // --- Auth Listener ---
     auth.onAuthStateChanged(user => {
         const uInfo = document.getElementById('user-info');
         const status = document.getElementById('connection-status');
+        const uAvatar = document.getElementById('user-avatar');
+        
         if (user) {
             currentUser = user;
             status.innerText = "Online & Syncing";
@@ -541,8 +566,18 @@
             try {
                 const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
                 uInfo.innerText = cached.username || user.email;
+                if(cached.avatar) uAvatar.style.backgroundImage = `url('${cached.avatar}')`;
             } catch(e) {}
             
+            db.ref(`users/${user.uid}/profile`).on('value', snap => {
+                const profile = snap.val();
+                if(profile) {
+                    if(profile.username) uInfo.innerText = profile.username;
+                    if(profile.avatar) uAvatar.style.backgroundImage = `url('${profile.avatar}')`;
+                    localStorage.setItem('mabi_user_cache_' + user.uid, JSON.stringify(profile));
+                }
+            });
+
             db.ref('users/' + user.uid + '/music_calc').once('value', snap => {
                 if(snap.val()) applyData(snap.val());
                 isLoading = false;
@@ -606,6 +641,9 @@
             container.innerHTML = '<div style="font-size:11px;color:var(--text-dim);text-align:center;">No specific reforges for this skill</div>';
         }
         
+        // We don't hide the March Mounted toggle anymore as it was removed previously
+        // Checkboxes for Pet logic can stay static in calc()
+        
         calc();
     }
 
@@ -628,21 +666,18 @@
         const t1 = getVal('title-1');
         const t2 = getVal('title-2');
         
-        // Pet Logic
         const petType = document.getElementById('pet-select').value;
         let petSonicBonus = 0;
         let petHarmonyBonus = 0;
         let petStatusText = "";
-
+        
         if (petType !== 'none') {
             petSonicBonus = 3; 
             petStatusText = "+3 Sonic Wave";
         }
-
         if (petType === 'red' && songKey === 'bfo') petHarmonyBonus = 2;
         else if (petType === 'blue' && songKey === 'vivace') petHarmonyBonus = 2;
         else if (petType === 'green' && songKey === 'harvest') petHarmonyBonus = 2;
-
         if (petHarmonyBonus > 0) petStatusText += ", +2 Harmony";
         document.getElementById('pet-bonus-display').innerText = petStatusText;
         
@@ -673,11 +708,25 @@
         }
 
         const multiplierB = perfQuality + (reforgeMK * 0.01);
-        
-        // 5. Final Multiplier (Item Grade + Special Upgrade)
         const itemGrade = getVal('item-grade');
         const specialUpgrade = getVal('special-upgrade');
         const finalMultiplier = 1 + (itemGrade * 0.01) + (specialUpgrade * 0.01);
+        
+        // --- Inspiring Chance Calculation ---
+        const link10 = document.getElementById('link-saint-10').checked;
+        const inspRefLevel = Math.min(Math.max(Math.floor(getVal('reforge-insp-rate')), 0), 12);
+        
+        let chance = 0;
+        // Use lookup table based on link status
+        if (link10) {
+            // Safety check for index
+            chance = inspRatesWithLink[inspRefLevel] || 100.00;
+        } else {
+            chance = inspRatesNoLink[inspRefLevel] || 32.19;
+        }
+        
+        document.getElementById('res-insp-chance').innerText = chance.toFixed(2) + '%';
+
 
         // --- RENDER RESULTS ---
         const resultContainer = document.getElementById('result-container');
@@ -695,7 +744,7 @@
             // Calculate components
             const mainTerm = multiplierA * modifiedBase * multiplierB;
             
-            // Harmony is applied to Base
+            // Harmony is applied to Base (Modified Base)
             const harmonyTerm = (petHarmonyBonus * 0.01) * modifiedBase;
             
             // Sum and apply final multipliers
@@ -743,23 +792,21 @@
         setCheck('link-bonus', data.linkBonus);
         setVal('homestead-val', data.homestead);
         
-        // Pet Select
-        if(data.petSelect) {
-            setVal('pet-select', data.petSelect);
-        } else {
-            // Legacy Migration
-            if(data.petSonic) setVal('pet-select', 'fairy');
-        }
+        if(data.petSelect) setVal('pet-select', data.petSelect);
+        else if(data.petSonic) setVal('pet-select', 'fairy');
         
         setVal('item-grade', data.itemGrade);
         setVal('special-upgrade', data.specialUpgrade);
-        // Do not call updateUI here; Auth listener does it to avoid redundant calls or race conditions
+        
+        setCheck('link-saint-10', data.linkSaint10);
+        setVal('reforge-insp-rate', data.reforgeInspRate);
+        
+        updateUI(); 
     }
 
     function saveData() {
         if(isLoading) return;
         
-        // Capture active dynamic input values into cache object
         const container = document.getElementById('specific-reforge-area');
         if (container) {
              const inputs = container.querySelectorAll('input');
@@ -791,7 +838,9 @@
             homestead: getVal('homestead-val'),
             petSelect: getValStr('pet-select'),
             itemGrade: getVal('item-grade'),
-            specialUpgrade: getVal('special-upgrade')
+            specialUpgrade: getVal('special-upgrade'),
+            linkSaint10: getCheck('link-saint-10'),
+            reforgeInspRate: getVal('reforge-insp-rate')
         };
         
         localStorage.setItem('mabi_music_calc', JSON.stringify(data));
@@ -808,12 +857,10 @@
     function getValStr(id) { return document.getElementById(id) ? document.getElementById(id).value : ''; }
     function getCheck(id) { return document.getElementById(id) ? document.getElementById(id).checked : false; }
 
-    // --- Mobile Nav ---
     window.toggleSidebar = (side) => {
         const left = document.getElementById('left-panel');
         const right = document.getElementById('right-panel');
         const backdrop = document.getElementById('mobile-backdrop');
-        
         if (side === 'left') { 
             const isActive = left.classList.contains('active');
             closeSidebars(); 
