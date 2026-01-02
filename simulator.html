@@ -226,6 +226,8 @@
                         <div id="user-info" style="font-size:12px; font-weight:600; color:var(--text-main);">Guest</div>
                         <div id="connection-status" style="font-size:10px; color:var(--text-dim);">Local Mode</div>
                     </div>
+                    <!-- User Avatar Added -->
+                    <div id="user-avatar" style="width: 36px; height: 36px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; background-image: url('data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23a1a1aa\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E');"></div>
                 </div>
             </div>
         </div>
@@ -247,14 +249,6 @@
                         <option value="harvest">Harvest Song</option>
                         <option value="enduring">Enduring Melody</option>
                     </select>
-
-                    <!-- Mounted Toggle for March Song -->
-                    <div id="march-mounted-container" style="display:none; margin-top:8px;">
-                        <div class="toggle-row">
-                            <span class="stat-name">Mounted?</span>
-                            <label><input type="checkbox" id="march-mounted" class="toggle-input" onchange="calc()"><div class="toggle-switch"></div></label>
-                        </div>
-                    </div>
 
                     <label class="panel-label" style="margin-top:15px;">Skill Rank</label>
                     <select id="skill-rank" class="input-dark" disabled>
@@ -433,15 +427,17 @@
 
                     <!-- PETS -->
                     <details>
-                        <summary>Pets (Fairy Dragon)</summary>
-                        <div class="toggle-row">
-                            <span class="stat-name">Sonic Wave (+3)</span>
-                            <label><input type="checkbox" id="pet-sonic" class="toggle-input" onchange="calc()"><div class="toggle-switch"></div></label>
+                        <summary>Active Pet</summary>
+                        <div class="stat-input-row">
+                            <select id="pet-select" class="input-dark" onchange="calc()" style="width:100%;">
+                                <option value="none">None</option>
+                                <option value="fairy">Fairy Dragon (Sonic Only)</option>
+                                <option value="red">Red Fairy Dragon (BFO Harmony)</option>
+                                <option value="blue">Blue Fairy Dragon (Vivace Harmony)</option>
+                                <option value="green">Green Fairy Dragon (Harvest Harmony)</option>
+                            </select>
                         </div>
-                        <div class="toggle-row" id="harmony-container" style="display:none;">
-                            <span class="stat-name">Harmony (+2)</span>
-                            <label><input type="checkbox" id="pet-harmony" class="toggle-input" onchange="calc()"><div class="toggle-switch"></div></label>
-                        </div>
+                        <div id="pet-bonus-display" style="font-size:10px; color:var(--text-dim); text-align:right;"></div>
                     </details>
                 </div>
             </div>
@@ -489,13 +485,13 @@
             stats: [
                 { name: 'Magic Attack', base: 20.00, suffix: '%' },
                 { name: 'Alchemic Damage', base: 20.00, suffix: '%' },
-                { name: 'Magic Cast Speed', base: 11.00, suffix: '%', reforgeKey: 'reforge-cast-spd' },
+                { name: 'Magic Cast Speed', base: 11.00, suffix: '%', reforgeKey: 'reforge-magic-spd' },
                 { name: 'Attack Speed', base: 11.00, suffix: '%', reforgeKey: 'reforge-atk-spd' },
                 { name: 'Alchemy Cast Speed', base: 11.00, suffix: '%', reforgeKey: 'reforge-alch-spd' }
             ],
             hasHarmony: true,
             reforges: [
-                { id: 'reforge-cast-spd', label: 'Magic Cast Spd Reforge (Lvl)' },
+                { id: 'reforge-magic-spd', label: 'Magic Cast Spd Reforge (Lvl)' },
                 { id: 'reforge-atk-spd', label: 'Attack Spd Reforge (Lvl)' },
                 { id: 'reforge-alch-spd', label: 'Alchemy Cast Spd Reforge (Lvl)' }
             ]
@@ -550,7 +546,6 @@
             db.ref('users/' + user.uid + '/music_calc').once('value', snap => {
                 if(snap.val()) applyData(snap.val());
                 isLoading = false;
-                // Important: Call updateUI on load to populate inputs
                 updateUI();
             });
         } else {
@@ -611,9 +606,6 @@
             container.innerHTML = '<div style="font-size:11px;color:var(--text-dim);text-align:center;">No specific reforges for this skill</div>';
         }
         
-        document.getElementById('harmony-container').style.display = songData.hasHarmony ? 'flex' : 'none';
-        document.getElementById('march-mounted-container').style.display = 'none'; // Re-hide old toggle
-        
         calc();
     }
 
@@ -633,9 +625,26 @@
         const gm = document.getElementById('gm-bard').checked ? 5 : 0;
         const potion = document.getElementById('buff-pot').checked ? 2 : 0;
         const saint = document.getElementById('link-bonus').checked ? 3 : 0;
-        const dragonSonic = document.getElementById('pet-sonic').checked ? 3 : 0;
         const t1 = getVal('title-1');
         const t2 = getVal('title-2');
+        
+        // Pet Logic
+        const petType = document.getElementById('pet-select').value;
+        let petSonicBonus = 0;
+        let petHarmonyBonus = 0;
+        let petStatusText = "";
+
+        if (petType !== 'none') {
+            petSonicBonus = 3; 
+            petStatusText = "+3 Sonic Wave";
+        }
+
+        if (petType === 'red' && songKey === 'bfo') petHarmonyBonus = 2;
+        else if (petType === 'blue' && songKey === 'vivace') petHarmonyBonus = 2;
+        else if (petType === 'green' && songKey === 'harvest') petHarmonyBonus = 2;
+
+        if (petHarmonyBonus > 0) petStatusText += ", +2 Harmony";
+        document.getElementById('pet-bonus-display').innerText = petStatusText;
         
         // Sets
         const troubadour = document.getElementById('set-troubadour').checked ? 3 : 0;
@@ -645,7 +654,7 @@
         }
 
         const buffBonusSum = enchants + upgrades + troubadour + seraphic + tiara + homestead + 
-                             reforgePI + rankPI + rankSong + gm + potion + saint + dragonSonic + 
+                             reforgePI + rankPI + rankSong + gm + potion + saint + petSonicBonus + 
                              t1 + t2;
 
         const multiplierA = 1 + (buffBonusSum * 0.01);
@@ -664,9 +673,6 @@
         }
 
         const multiplierB = perfQuality + (reforgeMK * 0.01);
-        
-        // 4. Harmony
-        const dragonHarmony = (songData.hasHarmony && document.getElementById('pet-harmony').checked) ? 2 : 0;
         
         // 5. Final Multiplier (Item Grade + Special Upgrade)
         const itemGrade = getVal('item-grade');
@@ -688,7 +694,9 @@
             
             // Calculate components
             const mainTerm = multiplierA * modifiedBase * multiplierB;
-            const harmonyTerm = (dragonHarmony * 0.01) * modifiedBase;
+            
+            // Harmony is applied to Base
+            const harmonyTerm = (petHarmonyBonus * 0.01) * modifiedBase;
             
             // Sum and apply final multipliers
             const total = (mainTerm + harmonyTerm) * finalMultiplier;
@@ -734,8 +742,15 @@
         setCheck('buff-pot', data.buffPot);
         setCheck('link-bonus', data.linkBonus);
         setVal('homestead-val', data.homestead);
-        setCheck('pet-sonic', data.petSonic);
-        setCheck('pet-harmony', data.petHarmony);
+        
+        // Pet Select
+        if(data.petSelect) {
+            setVal('pet-select', data.petSelect);
+        } else {
+            // Legacy Migration
+            if(data.petSonic) setVal('pet-select', 'fairy');
+        }
+        
         setVal('item-grade', data.itemGrade);
         setVal('special-upgrade', data.specialUpgrade);
         // Do not call updateUI here; Auth listener does it to avoid redundant calls or race conditions
@@ -774,8 +789,7 @@
             buffPot: getCheck('buff-pot'),
             linkBonus: getCheck('link-bonus'),
             homestead: getVal('homestead-val'),
-            petSonic: getCheck('pet-sonic'),
-            petHarmony: getCheck('pet-harmony'),
+            petSelect: getValStr('pet-select'),
             itemGrade: getVal('item-grade'),
             specialUpgrade: getVal('special-upgrade')
         };
