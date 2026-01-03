@@ -298,7 +298,7 @@
                 
                 <div class="config-section" style="border-bottom:none;">
                     <label class="panel-label">Performance Details</label>
-                    
+
                     <details open>
                         <summary>Quality & MK Reforges</summary>
                          <label class="panel-label" style="margin-top:5px;">Performance Quality</label>
@@ -325,8 +325,8 @@
                             <input type="number" id="reforge-mk-insp-acc" class="input-dark stat-input" value="0" placeholder="Lvl" oninput="updateAcc(this.value)">
                         </div>
                     </details>
-
-                                        <!-- DYNAMIC SPECIFIC REFORGES (Moved Here) -->
+                    
+                    <!-- DYNAMIC SPECIFIC REFORGES (Moved Here) -->
                     <div id="specific-reforge-area" style="padding:10px 0; border-bottom:1px dashed var(--border); margin-bottom:10px;">
                          <!-- Populated by JS based on song -->
                     </div>
@@ -338,7 +338,7 @@
                             <input type="number" id="party-members" class="input-dark stat-input" value="1" min="1" max="16" oninput="calc()">
                         </div>
                     </div>
-                    
+
                     <details open>
                         <summary>Inspiring Rates</summary>
                         <div class="toggle-row">
@@ -691,8 +691,8 @@
         
         if (user) {
             currentUser = user;
-            status.innerText = "Online";
-            status.style.color = "var(--accent)";
+            status.innerText = "Online & Syncing";
+            status.style.color = "var(--success)";
             
             try {
                 const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
