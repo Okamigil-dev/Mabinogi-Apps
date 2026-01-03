@@ -299,19 +299,6 @@
                 <div class="config-section" style="border-bottom:none;">
                     <label class="panel-label">Performance Details</label>
                     
-                    <!-- DYNAMIC SPECIFIC REFORGES (Moved Here) -->
-                    <div id="specific-reforge-area" style="padding:10px 0; border-bottom:1px dashed var(--border); margin-bottom:10px;">
-                         <!-- Populated by JS based on song -->
-                    </div>
-
-                    <!-- Harvest Song Party (Moved Here) -->
-                    <div id="harvest-party-container" style="display:none; margin-bottom:10px;">
-                        <div class="stat-input-row">
-                            <span class="stat-name" style="color:var(--accent);">Party Members</span>
-                            <input type="number" id="party-members" class="input-dark stat-input" value="1" min="1" max="16" oninput="calc()">
-                        </div>
-                    </div>
-
                     <details open>
                         <summary>Quality & MK Reforges</summary>
                          <label class="panel-label" style="margin-top:5px;">Performance Quality</label>
@@ -339,6 +326,19 @@
                         </div>
                     </details>
 
+                                        <!-- DYNAMIC SPECIFIC REFORGES (Moved Here) -->
+                    <div id="specific-reforge-area" style="padding:10px 0; border-bottom:1px dashed var(--border); margin-bottom:10px;">
+                         <!-- Populated by JS based on song -->
+                    </div>
+
+                    <!-- Harvest Song Party (Moved Here) -->
+                    <div id="harvest-party-container" style="display:none; margin-bottom:10px;">
+                        <div class="stat-input-row">
+                            <span class="stat-name" style="color:var(--accent);">Party Members</span>
+                            <input type="number" id="party-members" class="input-dark stat-input" value="1" min="1" max="16" oninput="calc()">
+                        </div>
+                    </div>
+                    
                     <details open>
                         <summary>Inspiring Rates</summary>
                         <div class="toggle-row">
