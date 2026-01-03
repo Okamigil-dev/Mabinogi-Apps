@@ -691,8 +691,8 @@
         
         if (user) {
             currentUser = user;
-            status.innerText = "Online & Syncing";
-            status.style.color = "var(--success)";
+            status.innerText = "Online";
+            status.style.color = "var(--accent)";
             
             try {
                 const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
