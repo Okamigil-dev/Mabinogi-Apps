@@ -28,6 +28,8 @@
             --text-dim: #a1a1aa;
             --danger: #ef4444;
             --success: #00ff88;
+            --gold: #fbbf24; /* New Gold for Inspiring */
+            --gold-dim: rgba(251, 191, 36, 0.1);
         }
 
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
@@ -69,7 +71,7 @@
         .title-section { display: flex; justify-content: space-between; align-items: center; }
         .main-title { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 0.5px; }
 
-        .content-grid { display: grid; grid-template-columns: 300px 1fr 340px; flex-grow: 1; overflow: hidden; }
+        .content-grid { display: grid; grid-template-columns: 320px 1fr 340px; flex-grow: 1; overflow: hidden; }
         .panel { background: var(--bg); display: flex; flex-direction: column; border-right: 1px solid var(--border); overflow-y: auto; }
         .panel:last-child { border-right: none; }
         .center-panel { background: #0c0c0e; display: flex; flex-direction: column; padding: 20px; align-items: center; justify-content: center; }
@@ -91,24 +93,36 @@
         .hub-btn:hover { color: #fff; background: var(--border); }
         .hub-btn.active { color: var(--accent); background: var(--accent-dim); border-color: var(--accent); }
         
-        /* Stats Box */
-        .stat-box {
-            background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
-            padding: 20px; width: 100%; max-width: 500px; text-align: center;
-            margin-bottom: 15px;
+        /* Stats Box - UPDATED for better dashboard look */
+        .result-card {
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px;
+            padding: 25px; width: 100%; max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            position: relative; overflow: hidden;
         }
-        .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 32px; font-weight: 700; color: var(--accent); }
-        .stat-sub { font-size: 12px; color: var(--text-dim); margin-top: 5px; text-transform: uppercase; letter-spacing: 1px; }
+        .result-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--accent);
+        }
+        
+        .main-stat-display { text-align: center; margin-bottom: 25px; }
+        .stat-label-main { font-size: 12px; color: var(--text-dim); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }
+        .stat-val-main { font-family: 'JetBrains Mono', monospace; font-size: 42px; font-weight: 700; color: #fff; text-shadow: 0 0 20px var(--accent-dim); }
 
-        /* Result Row for Multi-Stat Songs */
+        .sub-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border); }
+        .sub-stat { text-align: center; }
+        .sub-val { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: var(--text-main); }
+        .sub-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; margin-top: 2px; }
+
+        /* Specific row for result listing */
+        .res-list { display: flex; flex-direction: column; gap: 8px; }
         .res-row {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 10px 0; border-bottom: 1px dashed var(--border); width: 100%;
+            padding: 10px 12px; background: rgba(255,255,255,0.03); border-radius: 6px;
         }
-        .res-name { font-size: 12px; color: var(--text-dim); text-transform: uppercase; }
-        .res-val { font-family: 'JetBrains Mono'; font-weight: 700; color: #fff; font-size: 14px; }
+        .res-name { font-size: 12px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; }
+        .res-val { font-family: 'JetBrains Mono'; font-weight: 700; color: var(--accent); font-size: 15px; }
 
-        /* Stat Row */
+        /* Stat Input Row */
         .stat-input-row {
             display: flex; align-items: center; justify-content: space-between;
             margin-bottom: 8px;
@@ -118,8 +132,13 @@
             width: 70px; text-align: right; font-family: 'JetBrains Mono'; font-size:12px;
         }
         
-        /* Toggles */
-        .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; cursor: pointer; }
+        /* Toggles - UPDATED SPACING */
+        .toggle-row { 
+            display: flex; align-items: center; justify-content: space-between; 
+            padding: 3px 0; /* Reduced padding */
+            margin-bottom: 4px; /* Reduced margin */
+            cursor: pointer; 
+        }
         .toggle-switch { width: 32px; height: 18px; background: var(--border); border-radius: 99px; position: relative; transition: 0.2s; flex-shrink: 0; }
         .toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: #fff; border-radius: 50%; transition: 0.2s; }
         input:checked + .toggle-switch { background: var(--accent); }
@@ -127,7 +146,8 @@
         .toggle-input { display: none; }
 
         /* Accordion */
-        details { width: 100%; margin-bottom: 10px; }
+        details { width: 100%; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px; }
+        details:last-child { border-bottom: none; }
         summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--text-main); margin-bottom: 10px; list-style: none; display: flex; align-items: center; gap: 6px; }
         summary::before { content: '▶'; font-size: 8px; transition: 0.2s; }
         details[open] summary::before { transform: rotate(90deg); color: var(--accent); }
@@ -250,93 +270,105 @@
                         <option value="enduring">Enduring Melody</option>
                     </select>
 
-                    <!-- Mounted Toggle for March Song -->
-                    <div id="march-mounted-container" style="display:none; margin-top:8px;">
-                        <div class="toggle-row">
-                            <span class="stat-name">Mounted?</span>
-                            <label><input type="checkbox" id="march-mounted" class="toggle-input" onchange="calc()"><div class="toggle-switch"></div></label>
-                        </div>
-                    </div>
-
                     <label class="panel-label" style="margin-top:15px;">Skill Rank</label>
-                    <select id="skill-rank" class="input-dark" disabled>
-                        <option value="1">Rank 1 (Max)</option>
-                    </select>
-
-                    <label class="panel-label" style="margin-top:15px;">Performance Quality</label>
-                    <select id="perf-type" class="input-dark" onchange="calc()">
-                        <option value="1.0">Ordinary (100%)</option>
-                        <option value="1.1">Excellent (110%)</option>
-                        <option value="1.3">Inspiring (130%)</option>
+                    <select id="skill-rank" class="input-dark" onchange="calc()">
+                        <option value="N">Rank N</option>
+                        <option value="F">Rank F</option>
+                        <option value="E">Rank E</option>
+                        <option value="D">Rank D</option>
+                        <option value="C">Rank C</option>
+                        <option value="B">Rank B</option>
+                        <option value="A">Rank A</option>
+                        <option value="9">Rank 9</option>
+                        <option value="8">Rank 8</option>
+                        <option value="7">Rank 7</option>
+                        <option value="6">Rank 6</option>
+                        <option value="5">Rank 5</option>
+                        <option value="4">Rank 4</option>
+                        <option value="3">Rank 3</option>
+                        <option value="2">Rank 2</option>
+                        <option value="1" selected>Rank 1</option>
                     </select>
                 </div>
-
+                
                 <div class="config-section" style="border-bottom:none;">
-                    <label class="panel-label">Additional Factors</label>
+                    <label class="panel-label">Performance Details</label>
                     
-                    <div class="stat-input-row">
-                        <span class="stat-name">MK Normal Reforge (Lvl)</span>
-                        <input type="number" id="reforge-mk-norm" class="input-dark stat-input" value="0" placeholder="Lvl" oninput="calc()">
-                    </div>
-                    <div class="stat-input-row">
-                        <span class="stat-name">MK Exc. Reforge (Lvl)</span>
-                        <input type="number" id="reforge-mk-exc" class="input-dark stat-input" value="0" placeholder="Lvl" oninput="calc()">
-                    </div>
-                    <div class="stat-input-row">
-                        <span class="stat-name">MK Insp. Reforge (Lvl)</span>
-                        <input type="number" id="reforge-mk-insp" class="input-dark stat-input" value="0" placeholder="Lvl" oninput="calc()">
-                    </div>
-                     <div style="font-size:10px; color:var(--text-dim); margin-bottom:10px;">
-                        Only the reforge matching the current Quality applies. (1 Lvl = 1%)
-                    </div>
+                    <details open>
+                        <summary>Quality & MK Reforges</summary>
+                         <label class="panel-label" style="margin-top:5px;">Performance Quality</label>
+                        <select id="perf-type" class="input-dark" onchange="calc()" style="margin-bottom:12px;">
+                            <option value="1.0">Ordinary (100%)</option>
+                            <option value="1.1">Excellent (110%)</option>
+                            <option value="1.3">Inspiring (130%)</option>
+                        </select>
+                        <div class="stat-input-row">
+                            <span class="stat-name">MK Normal Reforge (Lvl)</span>
+                            <input type="number" id="reforge-mk-norm" class="input-dark stat-input" value="0" placeholder="Lvl" oninput="calc()">
+                        </div>
+                        <div class="stat-input-row">
+                            <span class="stat-name">MK Exc. Reforge (Lvl)</span>
+                            <input type="number" id="reforge-mk-exc" class="input-dark stat-input" value="0" placeholder="Lvl" oninput="calc()">
+                        </div>
+                        <div class="stat-input-row">
+                            <span class="stat-name">MK Insp. Reforge (Lvl)</span>
+                            <input type="number" id="reforge-mk-insp" class="input-dark stat-input" value="0" placeholder="Lvl" oninput="calc()">
+                        </div>
+                         <!-- NEW INPUT: MK Inspiring (Accessory) -->
+                        <div class="stat-input-row" id="mk-insp-acc-row" style="display:flex;">
+                            <span class="stat-name" style="color:var(--accent);">MK Insp. (Acc) (Lvl)</span>
+                            <input type="number" id="reforge-mk-insp-acc" class="input-dark stat-input" value="0" placeholder="Lvl" oninput="updateAcc(this.value)">
+                        </div>
+                    </details>
                     
-                    <!-- DYNAMIC SPECIFIC REFORGES -->
-                    <div id="specific-reforge-area" style="padding:10px 0; border-top:1px dashed var(--border);">
+                    <!-- DYNAMIC SPECIFIC REFORGES (Moved Here) -->
+                    <div id="specific-reforge-area" style="padding:10px 0; border-bottom:1px dashed var(--border); margin-bottom:10px;">
                          <!-- Populated by JS based on song -->
                     </div>
 
-                    <!-- Harvest Song Party -->
-                    <div id="harvest-party-container" style="display:none; margin-top:8px;">
+                    <!-- Harvest Song Party (Moved Here) -->
+                    <div id="harvest-party-container" style="display:none; margin-bottom:10px;">
                         <div class="stat-input-row">
                             <span class="stat-name" style="color:var(--accent);">Party Members</span>
                             <input type="number" id="party-members" class="input-dark stat-input" value="1" min="1" max="16" oninput="calc()">
                         </div>
                     </div>
 
-                    <!-- SUCCESS RATES SECTION -->
-                    <div style="margin-top:20px;">
-                        <label class="panel-label">Success Rates</label>
+                    <details open>
+                        <summary>Inspiring Rates</summary>
                         <div class="toggle-row">
                             <span class="stat-name">Harmonic Saint Link 10</span>
                             <label><input type="checkbox" id="link-saint-10" class="toggle-input" onchange="calc()"><div class="toggle-switch"></div></label>
                         </div>
                         <div class="stat-input-row">
-                            <span class="stat-name">Inspiring Success Reforge (Lvl)</span>
+                            <span class="stat-name">Inspiring Rate Reforge (Lvl)</span>
                             <input type="number" id="reforge-insp-rate" class="input-dark stat-input" value="0" placeholder="Lvl" oninput="calc()">
                         </div>
-                    </div>
+                    </details>
                 </div>
             </div>
 
             <!-- CENTER PANEL: Output -->
             <div class="panel center-panel">
-                <div class="stat-box">
-                    <div class="stat-sub">TOTAL MUSIC BUFF EFFECT BONUSES</div>
-                    <div class="stat-val" id="res-buff-stat">0</div>
-                    <div style="font-size:11px; color:var(--text-dim); margin-top:5px;">(Sum of Enchants, Titles, Sets, etc.)</div>
-                </div>
-
-                <div class="stat-box" style="border-color:var(--accent);">
-                    <div class="stat-sub" style="color:var(--accent);" id="res-label">FINAL EFFECTS</div>
-                    <div id="result-container" style="display:flex; flex-direction:column; gap:0px; margin-top:10px;">
-                        <!-- Results go here -->
+                <!-- Result Card -->
+                <div class="result-card">
+                    <div class="main-stat-display">
+                        <div class="stat-label-main" id="res-label">FINAL EFFECTS</div>
+                        <div id="result-container" class="res-list">
+                            <!-- Results go here -->
+                        </div>
                     </div>
-                </div>
-                
-                <!-- Inspiring Chance Box -->
-                <div class="stat-box" style="border-color:var(--success); margin-top:15px;">
-                    <div class="stat-sub" style="color:var(--success);">INSPIRING CHANCE</div>
-                    <div class="stat-val" id="res-insp-chance">0.00%</div>
+                    
+                    <div class="sub-stat-grid">
+                        <div class="sub-stat">
+                            <div class="sub-val" id="res-buff-stat">0</div>
+                            <div class="sub-label">Buff Bonus Sum</div>
+                        </div>
+                        <div class="sub-stat">
+                            <div class="sub-val" id="res-insp-chance" style="color:var(--gold);">0.00%</div>
+                            <div class="sub-label" style="color:var(--gold);">Inspiring Chance</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -355,7 +387,7 @@
                         <summary>Ranks & Talents</summary>
                         <div class="stat-input-row">
                             <span class="stat-name">Playing Inst. Rank</span>
-                            <select id="rank-pi" class="input-dark stat-input" style="width:90px;" onchange="calc()">
+                            <select id="rank-pi" class="input-dark stat-input" style="width:140px;" onchange="calc()">
                                 <option value="0">Rank N</option>
                                 <option value="1">Rank F (+1)</option>
                                 <option value="2">Rank E (+2)</option>
@@ -376,7 +408,7 @@
                         </div>
                         <div class="stat-input-row">
                             <span class="stat-name">Song Rank</span>
-                            <select id="rank-song" class="input-dark stat-input" style="width:90px;" onchange="calc()">
+                            <select id="rank-song" class="input-dark stat-input" style="width:140px;" onchange="calc()">
                                 <option value="0">Rank N</option>
                                 <option value="1">Rank F (+1)</option>
                                 <option value="2">Rank E (+2)</option>
@@ -416,13 +448,21 @@
                             <span class="stat-name">Troubadour Set (+3)</span>
                             <label><input type="checkbox" id="set-troubadour" class="toggle-input" onchange="toggleSets('troub')"><div class="toggle-switch"></div></label>
                         </div>
-                        <div class="toggle-row">
+                        <div class="toggle-row" id="seraphic-set-container">
                             <span class="stat-name">Seraphic Cant. (+5 BFO)</span>
                             <label><input type="checkbox" id="set-seraphic" class="toggle-input" onchange="toggleSets('seraph')"><div class="toggle-switch"></div></label>
                         </div>
                          <div class="stat-input-row">
                             <span class="stat-name">Fleur's Tiara</span>
                             <input type="number" id="tiara-val" class="input-dark stat-input" value="0" oninput="calc()">
+                        </div>
+                         <div class="stat-input-row">
+                            <span class="stat-name" style="color:var(--text-dim);">Item Grade Effect %</span>
+                            <input type="number" id="item-grade" class="input-dark stat-input" value="0" placeholder="%" oninput="calc()">
+                        </div>
+                        <div class="stat-input-row">
+                            <span class="stat-name" style="color:var(--text-dim);">Special Upgrade Effect %</span>
+                            <input type="number" id="special-upgrade" class="input-dark stat-input" value="0" placeholder="%" oninput="calc()">
                         </div>
                     </details>
                     
@@ -476,18 +516,6 @@
                     </details>
                 </div>
             </div>
-            
-            <div class="config-section" style="border-bottom:none;">
-                <label class="panel-label">Multipliers</label>
-                <div class="stat-input-row">
-                    <span class="stat-name">Item Grade Effect %</span>
-                    <input type="number" id="item-grade" class="input-dark stat-input" value="0" placeholder="%" oninput="calc()">
-                </div>
-                <div class="stat-input-row">
-                    <span class="stat-name">Special Upgrade Effect %</span>
-                    <input type="number" id="special-upgrade" class="input-dark stat-input" value="0" placeholder="%" oninput="calc()">
-                </div>
-            </div>
         </div>
     </div>
 
@@ -503,26 +531,78 @@
     let saveTimeout = null;
     let isLoading = true;
     let pendingReforges = {}; 
+    let accReforgeCache = {}; 
+    let skillRanks = { bfo: '1', vivace: '1', march: '1', harvest: '1', enduring: '1' }; 
+    let setEffectCache = { bfo: {troub:false, seraph:false}, vivace: {troub:false, seraph:false}, march: {troub:false, seraph:false}, harvest: {troub:false, seraph:false}, enduring: {troub:false, seraph:false} };
 
     // --- Song Data ---
+    // Expanded data with all rank values for BFO and Vivace, and March
     const songs = {
         'bfo': { 
             name: 'Battlefield Overture', 
             stats: [
-                { name: 'Max Damage', base: 20.00, suffix: '%' },
-                { name: 'Min Damage', base: 20.00, suffix: '%' },
-                { name: 'Critical', base: 11.00, suffix: '%' }
+                { name: 'Max Damage', 
+                  base: { 
+                      'N': 10, 'F': 10, 'E': 11, 'D': 12, 'C': 12, 'B': 13, 'A': 13, '9': 14, 
+                      '8': 15, '7': 15, '6': 16, '5': 16, '4': 17, '3': 18, '2': 19, '1': 20 
+                  }, 
+                  suffix: '%' 
+                },
+                { name: 'Min Damage', 
+                  base: { 
+                      'N': 10, 'F': 10, 'E': 11, 'D': 11, 'C': 12, 'B': 12, 'A': 13, '9': 14, 
+                      '8': 14, '7': 15, '6': 15, '5': 16, '4': 17, '3': 18, '2': 19, '1': 20 
+                  }, 
+                  suffix: '%' 
+                },
+                { name: 'Critical', 
+                  base: { 
+                      'N': 0, 'F': 1, 'E': 1, 'D': 2, 'C': 2, 'B': 3, 'A': 3, '9': 4, 
+                      '8': 5, '7': 5, '6': 6, '5': 7, '4': 8, '3': 9, '2': 10, '1': 11 
+                  }, 
+                  suffix: '%' 
+                }
             ],
             hasHarmony: true
         },
         'vivace': { 
             name: 'Vivace', 
             stats: [
-                { name: 'Magic Attack', base: 20.00, suffix: '%' },
-                { name: 'Alchemic Damage', base: 20.00, suffix: '%' },
-                { name: 'Magic Cast Speed', base: 11.00, suffix: '%', reforgeKey: 'reforge-cast-spd' },
-                { name: 'Attack Speed', base: 11.00, suffix: '%', reforgeKey: 'reforge-atk-spd' },
-                { name: 'Alchemy Cast Speed', base: 11.00, suffix: '%', reforgeKey: 'reforge-alch-spd' }
+                { name: 'Magic Attack', 
+                  base: { 
+                      'N': 10, 'F': 10, 'E': 10, 'D': 12, 'C': 12, 'B': 13, 'A': 13, '9': 14, 
+                      '8': 15, '7': 15, '6': 16, '5': 16, '4': 17, '3': 18, '2': 19, '1': 20 
+                  },
+                  suffix: '%' 
+                },
+                { name: 'Alchemic Damage', 
+                  base: { 
+                      'N': 10, 'F': 10, 'E': 10, 'D': 12, 'C': 12, 'B': 13, 'A': 13, '9': 14, 
+                      '8': 15, '7': 15, '6': 16, '5': 16, '4': 17, '3': 18, '2': 19, '1': 20 
+                  },
+                  suffix: '%' 
+                },
+                { name: 'Magic Cast Speed', 
+                  base: { 
+                      'N': 1, 'F': 2, 'E': 2, 'D': 3, 'C': 3, 'B': 4, 'A': 4, '9': 5, 
+                      '8': 6, '7': 6, '6': 7, '5': 7, '4': 8, '3': 9, '2': 10, '1': 11 
+                  },
+                  suffix: '%', reforgeKey: 'reforge-cast-spd' 
+                },
+                { name: 'Attack Speed', 
+                  base: { 
+                      'N': 1, 'F': 1, 'E': 1, 'D': 2, 'C': 2, 'B': 3, 'A': 3, '9': 4, 
+                      '8': 4, '7': 5, '6': 6, '5': 7, '4': 8, '3': 9, '2': 10, '1': 11 
+                  },
+                  suffix: '%', reforgeKey: 'reforge-atk-spd' 
+                },
+                { name: 'Alchemy Cast Speed', 
+                  base: { 
+                      'N': 1, 'F': 1, 'E': 2, 'D': 2, 'C': 3, 'B': 3, 'A': 4, '9': 5, 
+                      '8': 5, '7': 6, '6': 6, '5': 7, '4': 8, '3': 9, '2': 10, '1': 11 
+                  },
+                  suffix: '%', reforgeKey: 'reforge-alch-spd' 
+                }
             ],
             hasHarmony: true,
             reforges: [
@@ -534,8 +614,20 @@
         'march': { 
             name: 'March Song', 
             stats: [
-                { name: 'Walk Speed', base: 12.00, suffix: '%', reforgeKey: 'reforge-walk-spd' },
-                { name: 'Mount Speed', base: 9.00, suffix: '%', reforgeKey: 'reforge-mount-spd' }
+                { name: 'Walk Speed', 
+                  base: { 
+                      'N': 1, 'F': 1, 'E': 1, 'D': 2, 'C': 2, 'B': 3, 'A': 3, '9': 5, 
+                      '8': 6, '7': 6, '6': 7, '5': 7, '4': 8, '3': 8, '2': 10, '1': 12 
+                  },
+                  suffix: '%', reforgeKey: 'reforge-walk-spd' 
+                },
+                { name: 'Mount Speed', 
+                  base: { 
+                      'N': 1, 'F': 1, 'E': 2, 'D': 2, 'C': 3, 'B': 3, 'A': 4, '9': 5, 
+                      '8': 5, '7': 6, '6': 6, '5': 7, '4': 7, '3': 8, '2': 8, '1': 9 
+                  },
+                  suffix: '%', reforgeKey: 'reforge-mount-spd' 
+                }
             ],
             hasHarmony: false,
             reforges: [
@@ -546,7 +638,13 @@
         'harvest': { 
             name: 'Harvest Song', 
             stats: [
-                { name: 'Gathering Speed', base: 25.00, suffix: '%', reforgeKey: 'reforge-gather-spd' }
+                { name: 'Gathering Speed', 
+                  base: {
+                      'N': 0, 'F': 5, 'E': 6, 'D': 7, 'C': 8, 'B': 9, 'A': 10, '9': 11,
+                      '8': 12, '7': 13, '6': 14, '5': 16, '4': 18, '3': 20, '2': 22, '1': 25
+                  },
+                  suffix: '%', reforgeKey: 'reforge-gather-spd' 
+                }
             ],
             hasHarmony: true,
             reforges: [
@@ -556,9 +654,21 @@
         'enduring': { 
             name: 'Enduring Melody', 
             stats: [
-                { name: 'Def/M.Def', base: 11.00, suffix: '' },
-                { name: 'Prot/M.Prot', base: 5.00, suffix: '' },
-                { name: 'Recovery', base: 410.00, suffix: '%' }
+                { name: 'Def/M.Def', base: { 
+                      'N': 1, 'F': 1, 'E': 1, 'D': 2, 'C': 2, 'B': 3, 'A': 4, '9': 5, 
+                      '8': 6, '7': 7, '6': 7, '5': 8, '4': 9, '3': 9, '2': 10, '1': 11 
+                  }, suffix: '' 
+                },
+                { name: 'Prot/M.Prot', base: { 
+                      'N': 1, 'F': 1, 'E': 1, 'D': 1, 'C': 1, 'B': 1, 'A': 1, '9': 2, 
+                      '8': 2, '7': 2, '6': 3, '5': 3, '4': 3, '3': 4, '2': 4, '1': 5 
+                  }, suffix: '' 
+                },
+                { name: 'Recovery', base: {
+                      'N': 100, 'F': 200, 'E': 230, 'D': 230, 'C': 260, 'B': 260, 'A': 275, '9': 290, 
+                      '8': 305, '7': 320, '6': 335, '5': 350, '4': 365, '3': 380, '2': 395, '1': 410
+                  }, suffix: '%' 
+                }
             ],
             hasHarmony: false
         }
@@ -576,8 +686,8 @@
         
         if (user) {
             currentUser = user;
-            status.innerText = "Online & Syncing";
-            status.style.color = "var(--success)";
+            status.innerText = "Online";
+            status.style.color = "var(--accent)";
             
             try {
                 const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
@@ -597,6 +707,7 @@
             db.ref('users/' + user.uid + '/music_calc').once('value', snap => {
                 if(snap.val()) applyData(snap.val());
                 isLoading = false;
+                // Important: Call updateUI on load to populate inputs
                 updateUI();
             });
         } else {
@@ -618,11 +729,29 @@
     }
 
     function toggleSets(set) {
+        const songKey = document.getElementById('active-song').value;
+        const currentSets = setEffectCache[songKey] || { troub: false, seraph: false };
+
         if(set === 'troub') {
-            if(document.getElementById('set-troubadour').checked) document.getElementById('set-seraphic').checked = false;
+            currentSets.troub = document.getElementById('set-troubadour').checked;
+            if(currentSets.troub) {
+                 currentSets.seraph = false;
+                 document.getElementById('set-seraphic').checked = false;
+            }
         } else {
-            if(document.getElementById('set-seraphic').checked) document.getElementById('set-troubadour').checked = false;
+            currentSets.seraph = document.getElementById('set-seraphic').checked;
+            if(currentSets.seraph) {
+                 currentSets.troub = false;
+                 document.getElementById('set-troubadour').checked = false;
+            }
         }
+        setEffectCache[songKey] = currentSets;
+        calc();
+    }
+    
+    function updateAcc(val) {
+        const songKey = document.getElementById('active-song').value;
+        accReforgeCache[songKey] = parseFloat(val) || 0;
         calc();
     }
 
@@ -657,6 +786,41 @@
             container.innerHTML = '<div style="font-size:11px;color:var(--text-dim);text-align:center;">No specific reforges for this skill</div>';
         }
         
+        // Toggle MK Insp (Acc) Input
+        const mkAccRow = document.getElementById('mk-insp-acc-row');
+        if (['bfo', 'vivace'].includes(songKey)) {
+             mkAccRow.style.display = 'flex';
+        } else {
+             mkAccRow.style.display = 'none';
+        }
+        
+        // Toggle Seraphic Set Visibility
+        const seraphicContainer = document.getElementById('seraphic-set-container');
+        if (songKey === 'bfo') {
+            seraphicContainer.style.display = 'flex';
+        } else {
+            seraphicContainer.style.display = 'none';
+        }
+        
+        // Update Accessory Input from Cache
+        const accInp = document.getElementById('reforge-mk-insp-acc');
+        if (accInp) {
+             accInp.value = accReforgeCache[songKey] || 0;
+        }
+        
+        // Restore Skill Rank per Song
+        const skillDropdown = document.getElementById('skill-rank');
+        if(skillRanks[songKey]) {
+            skillDropdown.value = skillRanks[songKey];
+        } else {
+            skillDropdown.value = "1"; // Default
+        }
+        
+        // Restore Set Effects per Song
+        const currentSets = setEffectCache[songKey] || { troub: false, seraph: false };
+        document.getElementById('set-troubadour').checked = currentSets.troub;
+        document.getElementById('set-seraphic').checked = currentSets.seraph;
+        
         // Toggle Harvest Party Input
         const partyContainer = document.getElementById('harvest-party-container');
         if(songKey === 'harvest') {
@@ -671,6 +835,10 @@
     function calc() {
         const songKey = document.getElementById('active-song').value;
         const songData = songs[songKey];
+        
+        // Save current rank to cache
+        const currentRank = document.getElementById('skill-rank').value;
+        skillRanks[songKey] = currentRank;
 
         // 2. Sum of Music Buff Effect Bonuses
         const enchants = getVal('ench-total');
@@ -703,14 +871,26 @@
         if (petHarmonyBonus > 0) petStatusText += ", +2 Harmony";
         document.getElementById('pet-bonus-display').innerText = petStatusText;
         
-        // Sets
-        const troubadour = document.getElementById('set-troubadour').checked ? 3 : 0;
-        let seraphic = 0;
-        if (songKey === 'bfo' && document.getElementById('set-seraphic').checked) {
-            seraphic = 5;
+        // Sets (Now read from DOM since updateUI sets them)
+        const troubadourCheck = document.getElementById('set-troubadour').checked;
+        const seraphicCheck = document.getElementById('set-seraphic').checked;
+        
+        // "Max Rule": Seraphic is +5, Troubadour is +3. If BFO and both somehow active (UI prevents this usually), take max.
+        // But since Seraphic only applies to BFO, logic simplifies:
+        // Troubadour applies to ALL. Seraphic only BFO.
+        // If BFO: Max(Troub ? 3 : 0, Seraph ? 5 : 0).
+        // If Other: Troub ? 3 : 0.
+        
+        let setBonusVal = 0;
+        if (songKey === 'bfo') {
+            const tVal = troubadourCheck ? 3 : 0;
+            const sVal = seraphicCheck ? 5 : 0;
+            setBonusVal = Math.max(tVal, sVal);
+        } else {
+            setBonusVal = troubadourCheck ? 3 : 0;
         }
 
-        const buffBonusSum = enchants + upgrades + troubadour + seraphic + tiara + homestead + 
+        const buffBonusSum = enchants + upgrades + setBonusVal + tiara + homestead + 
                              reforgePI + rankPI + rankSong + gm + potion + saint + petSonicBonus + 
                              t1 + t2;
 
@@ -726,7 +906,11 @@
         } else if (perfSelect === '1.1') {
             perfQuality = 1.1; reforgeMK = getVal('reforge-mk-exc');
         } else if (perfSelect === '1.3') {
-            perfQuality = 1.3; reforgeMK = getVal('reforge-mk-insp');
+            perfQuality = 1.3; 
+            reforgeMK = getVal('reforge-mk-insp');
+            
+            // Add Accessory Bonus for current song
+            reforgeMK += (accReforgeCache[songKey] || 0);
         }
 
         const multiplierB = perfQuality + (reforgeMK * 0.01);
@@ -757,8 +941,18 @@
                 specificBonus = getVal(stat.reforgeKey);
             }
             
+            // --- UPDATED BASE LOOKUP ---
+            // Try to find the base for the specific rank. Fallback to '1' if not defined yet for this song.
+            let rawBase = 0;
+            if (typeof stat.base === 'object') {
+                rawBase = stat.base[currentRank] !== undefined ? stat.base[currentRank] : stat.base['1'];
+            } else {
+                // Legacy support just in case
+                rawBase = stat.base;
+            }
+
             // Base + Specific Reforge
-            const modifiedBase = stat.base + specificBonus;
+            const modifiedBase = rawBase + specificBonus;
             
             // Calculate components
             const mainTerm = multiplierA * modifiedBase * multiplierB;
@@ -769,7 +963,7 @@
             // Sum and apply final multipliers
             let total = (mainTerm + harmonyTerm) * finalMultiplier;
             
-            // NEW: Harvest Song Party Bonus (Added at the very end)
+            // Harvest Song Party Bonus (Added at the very end)
             if (songKey === 'harvest' && stat.name === 'Gathering Speed') {
                 const partySize = Math.max(1, parseInt(document.getElementById('party-members').value) || 1);
                 // 3% per party member after the first one
@@ -799,9 +993,22 @@
         setVal('reforge-mk-norm', data.mkNorm);
         setVal('reforge-mk-exc', data.mkExc);
         setVal('reforge-mk-insp', data.mkInsp);
+        setVal('reforge-mk-insp-acc', data.mkInspAcc); 
         
         if(data.reforges) {
             pendingReforges = data.reforges;
+        }
+        
+        if(data.accReforges) {
+             accReforgeCache = data.accReforges;
+        }
+        
+        if(data.skillRanks) {
+             skillRanks = data.skillRanks;
+        }
+        
+        if(data.setEffects) {
+             setEffectCache = data.setEffects;
         }
 
         setVal('rank-pi', data.rankPi);
@@ -809,8 +1016,8 @@
         setCheck('gm-bard', data.gmBard);
         setVal('ench-total', data.enchTotal);
         setVal('upg-total', data.upgTotal);
-        setCheck('set-troubadour', data.setTroub);
-        setCheck('set-seraphic', data.setSeraph);
+        // Set Checkboxes handled in updateUI via setEffectCache
+        
         setVal('tiara-val', data.tiara);
         setVal('reforge-pi', data.reforgePi);
         setVal('title-1', data.title1);
@@ -835,6 +1042,7 @@
     function saveData() {
         if(isLoading) return;
         
+        // Capture active dynamic input values into cache object
         const container = document.getElementById('specific-reforge-area');
         if (container) {
              const inputs = container.querySelectorAll('input');
@@ -849,14 +1057,17 @@
             mkNorm: getVal('reforge-mk-norm'),
             mkExc: getVal('reforge-mk-exc'),
             mkInsp: getVal('reforge-mk-insp'),
+            mkInspAcc: getVal('reforge-mk-insp-acc'), 
             reforges: pendingReforges,
+            accReforges: accReforgeCache, 
+            skillRanks: skillRanks,
+            setEffects: setEffectCache,
             rankPi: getValStr('rank-pi'),
             rankSong: getValStr('rank-song'),
             gmBard: getCheck('gm-bard'),
             enchTotal: getVal('ench-total'),
             upgTotal: getVal('upg-total'),
-            setTroub: getCheck('set-troubadour'),
-            setSeraph: getCheck('set-seraphic'),
+            // Set Troub/Seraph checks are dynamic now, saving cache instead
             tiara: getVal('tiara-val'),
             reforgePi: getVal('reforge-pi'),
             title1: getVal('title-1'),
