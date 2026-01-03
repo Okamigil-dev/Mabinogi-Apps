@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mabi-tools-v3'; // Bump version (v4, v5...) to force updates
+const CACHE_NAME = 'mabi-tools-v4'; // Bumped version to force icon cache
 
 // List of all files to cache. If a file is missing here, it won't work offline.
 const ASSETS_TO_CACHE = [
@@ -11,8 +11,10 @@ const ASSETS_TO_CACHE = [
   './calculators.html',
   './simulator.html',
   './settings.html', 
-  './manifest.json'
-  // Add specific image paths here if you want them offline (e.g., './images/icon-192.png')
+  './manifest.json',
+  // Icons are now enabled since you created them
+  './images/icon-192.png',
+  './images/icon-512.png'
 ];
 
 // Install Event: Cache files
