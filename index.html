@@ -4,6 +4,11 @@
     <!-- PWA Manifest & Settings -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#050506">
+    
+    <!-- Standard PWA (Android/Chrome) - Silences the warning -->
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- iOS PWA Settings -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
@@ -69,7 +74,7 @@
             margin: 0;
             font-size: 13px;
             overflow: hidden;
-            height: 100dvh;
+            height: 100dvh; /* Dynamic Viewport Height */
             display: flex;
             flex-direction: column;
             opacity: 0;
@@ -102,15 +107,17 @@
         }
         .global-nav a:hover .nav-icon, .global-nav a.active .nav-icon { opacity: 1; }
 
-        /* Layout */
+        /* --- Layout Containers --- */
         .interface-container { 
             display: flex; 
             flex-direction: column; 
-            height: 100%; 
+            /* Flex Grow ensures it fills space below nav/header */
+            flex-grow: 1;
             width: 100%; 
             border-left: 1px solid var(--border); 
             border-right: 1px solid var(--border); 
             overflow: hidden;
+            position: relative;
         }
 
         .header-bar { 
@@ -120,7 +127,7 @@
         .title-section { display: flex; justify-content: space-between; align-items: center; }
         .main-title { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 0.5px; }
 
-        .content-grid { display: grid; grid-template-columns: 280px 1fr 280px; flex-grow: 1; overflow: hidden; }
+        .content-grid { display: grid; grid-template-columns: 280px 1fr 280px; flex-grow: 1; overflow: hidden; height: 100%; }
         
         .panel { 
             background: var(--bg); display: flex; flex-direction: column; 
@@ -268,17 +275,18 @@
 
         @media (max-width: 1000px) {
             .mobile-only { display: block; }
-            .content-grid { display: block; height: 100%; /* Changed from fixed calc to 100% to fill flex */ }
+            .content-grid { display: block; height: 100%; /* Fill available space */ } 
             .header-bar { display: none; }
             .global-nav { display: none; }
 
             .mobile-nav { 
                 display: flex; justify-content: space-between; align-items: center; 
                 padding: 10px 15px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border); 
-                /* IMPORTANT: Safe Area Padding & Min Height */
-                padding-top: max(10px, env(safe-area-inset-top));
+                /* IMPORTANT: Safe Area Padding & Min Height for Notch */
+                padding-top: max(12px, env(safe-area-inset-top));
                 min-height: calc(50px + env(safe-area-inset-top));
                 flex-shrink: 0; z-index: 50;
+                position: relative; /* Ensure it stays in flow */
             }
             .nav-trigger { background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 14px; cursor: pointer; }
             
@@ -299,7 +307,7 @@
             
             /* -- CENTER PANEL FIX -- */
             .center-panel { 
-                position: relative; /* Changed from fixed/default */
+                position: relative; /* IMPORTANT: Allows it to flow below header */
                 visibility: visible; 
                 transform: none; 
                 width: 100%; 
