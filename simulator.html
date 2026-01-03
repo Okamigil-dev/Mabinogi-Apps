@@ -250,6 +250,14 @@
                         <option value="enduring">Enduring Melody</option>
                     </select>
 
+                    <!-- Mounted Toggle for March Song -->
+                    <div id="march-mounted-container" style="display:none; margin-top:8px;">
+                        <div class="toggle-row">
+                            <span class="stat-name">Mounted?</span>
+                            <label><input type="checkbox" id="march-mounted" class="toggle-input" onchange="calc()"><div class="toggle-switch"></div></label>
+                        </div>
+                    </div>
+
                     <label class="panel-label" style="margin-top:15px;">Skill Rank</label>
                     <select id="skill-rank" class="input-dark" disabled>
                         <option value="1">Rank 1 (Max)</option>
@@ -285,6 +293,14 @@
                     <!-- DYNAMIC SPECIFIC REFORGES -->
                     <div id="specific-reforge-area" style="padding:10px 0; border-top:1px dashed var(--border);">
                          <!-- Populated by JS based on song -->
+                    </div>
+
+                    <!-- Harvest Song Party -->
+                    <div id="harvest-party-container" style="display:none; margin-top:8px;">
+                        <div class="stat-input-row">
+                            <span class="stat-name" style="color:var(--accent);">Party Members</span>
+                            <input type="number" id="party-members" class="input-dark stat-input" value="1" min="1" max="16" oninput="calc()">
+                        </div>
                     </div>
 
                     <!-- SUCCESS RATES SECTION -->
@@ -560,7 +576,7 @@
         
         if (user) {
             currentUser = user;
-            status.innerText = "Online";
+            status.innerText = "Online & Syncing";
             status.style.color = "var(--success)";
             
             try {
@@ -641,8 +657,13 @@
             container.innerHTML = '<div style="font-size:11px;color:var(--text-dim);text-align:center;">No specific reforges for this skill</div>';
         }
         
-        // We don't hide the March Mounted toggle anymore as it was removed previously
-        // Checkboxes for Pet logic can stay static in calc()
+        // Toggle Harvest Party Input
+        const partyContainer = document.getElementById('harvest-party-container');
+        if(songKey === 'harvest') {
+            partyContainer.style.display = 'block';
+        } else {
+            partyContainer.style.display = 'none';
+        }
         
         calc();
     }
@@ -678,6 +699,7 @@
         if (petType === 'red' && songKey === 'bfo') petHarmonyBonus = 2;
         else if (petType === 'blue' && songKey === 'vivace') petHarmonyBonus = 2;
         else if (petType === 'green' && songKey === 'harvest') petHarmonyBonus = 2;
+
         if (petHarmonyBonus > 0) petStatusText += ", +2 Harmony";
         document.getElementById('pet-bonus-display').innerText = petStatusText;
         
@@ -717,16 +739,13 @@
         const inspRefLevel = Math.min(Math.max(Math.floor(getVal('reforge-insp-rate')), 0), 12);
         
         let chance = 0;
-        // Use lookup table based on link status
         if (link10) {
-            // Safety check for index
             chance = inspRatesWithLink[inspRefLevel] || 100.00;
         } else {
             chance = inspRatesNoLink[inspRefLevel] || 32.19;
         }
         
         document.getElementById('res-insp-chance').innerText = chance.toFixed(2) + '%';
-
 
         // --- RENDER RESULTS ---
         const resultContainer = document.getElementById('result-container');
@@ -748,7 +767,15 @@
             const harmonyTerm = (petHarmonyBonus * 0.01) * modifiedBase;
             
             // Sum and apply final multipliers
-            const total = (mainTerm + harmonyTerm) * finalMultiplier;
+            let total = (mainTerm + harmonyTerm) * finalMultiplier;
+            
+            // NEW: Harvest Song Party Bonus (Added at the very end)
+            if (songKey === 'harvest' && stat.name === 'Gathering Speed') {
+                const partySize = Math.max(1, parseInt(document.getElementById('party-members').value) || 1);
+                // 3% per party member after the first one
+                const partyBonus = (partySize - 1) * 3;
+                total += partyBonus;
+            }
             
             const div = document.createElement('div');
             div.className = 'res-row';
@@ -800,6 +827,7 @@
         
         setCheck('link-saint-10', data.linkSaint10);
         setVal('reforge-insp-rate', data.reforgeInspRate);
+        setVal('party-members', data.partyMembers); 
         
         updateUI(); 
     }
@@ -840,7 +868,8 @@
             itemGrade: getVal('item-grade'),
             specialUpgrade: getVal('special-upgrade'),
             linkSaint10: getCheck('link-saint-10'),
-            reforgeInspRate: getVal('reforge-insp-rate')
+            reforgeInspRate: getVal('reforge-insp-rate'),
+            partyMembers: getVal('party-members') 
         };
         
         localStorage.setItem('mabi_music_calc', JSON.stringify(data));
