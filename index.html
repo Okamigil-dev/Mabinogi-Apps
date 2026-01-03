@@ -19,7 +19,7 @@
     </script>
 
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Mabinogi Apps</title>
     
     <!-- Firebase SDKs (RTDB Compat) -->
@@ -69,7 +69,7 @@
             margin: 0;
             font-size: 13px;
             overflow: hidden;
-            height: 100dvh; /* Dynamic Viewport Height */
+            height: 100dvh;
             display: flex;
             flex-direction: column;
             opacity: 0;
@@ -102,11 +102,11 @@
         }
         .global-nav a:hover .nav-icon, .global-nav a.active .nav-icon { opacity: 1; }
 
-        /* --- Layout Containers --- */
+        /* Layout */
         .interface-container { 
             display: flex; 
             flex-direction: column; 
-            flex-grow: 1; 
+            height: 100%; 
             width: 100%; 
             border-left: 1px solid var(--border); 
             border-right: 1px solid var(--border); 
@@ -268,14 +268,14 @@
 
         @media (max-width: 1000px) {
             .mobile-only { display: block; }
-            .content-grid { display: block; height: 100%; } /* Fill flex space */
+            .content-grid { display: block; height: 100%; /* Changed from fixed calc to 100% to fill flex */ }
             .header-bar { display: none; }
             .global-nav { display: none; }
 
             .mobile-nav { 
                 display: flex; justify-content: space-between; align-items: center; 
                 padding: 10px 15px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border); 
-                /* IMPORTANT: FIXED PADDING FOR NOTCH */
+                /* IMPORTANT: Safe Area Padding & Min Height */
                 padding-top: max(10px, env(safe-area-inset-top));
                 min-height: calc(50px + env(safe-area-inset-top));
                 flex-shrink: 0; z-index: 50;
@@ -284,20 +284,22 @@
             
             /* -- PANEL STYLES FOR MOBILE -- */
             .panel { 
-                position: fixed; top: 0; bottom: 0; width: 300px; max-width: 85%; z-index: 1001; 
+                position: fixed; top: 0; bottom: 0; width: 300px; max-width: 100%; z-index: 1001; 
                 transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s; 
                 visibility: hidden; 
                 padding-top: env(safe-area-inset-top); /* Push drawer content down */
             }
             
-            .left-panel { left: 0; transform: translateX(-100%); border-right: 1px solid var(--border); }
-            .right-panel { right: 0; transform: translateX(100%); border-left: 1px solid var(--border); }
+            /* Restored 85% max-width for sidebars to allow closing via tap-outside */
+            .left-panel { left: 0; transform: translateX(-100%); border-right: 1px solid var(--border); max-width: 85%; }
+            .right-panel { right: 0; transform: translateX(100%); border-left: 1px solid var(--border); max-width: 85%; }
             
+            /* Show side panels when active */
             .left-panel.active, .right-panel.active { transform: translateX(0); visibility: visible; }
             
             /* -- CENTER PANEL FIX -- */
             .center-panel { 
-                position: relative; 
+                position: relative; /* Changed from fixed/default */
                 visibility: visible; 
                 transform: none; 
                 width: 100%; 
@@ -306,7 +308,7 @@
                 z-index: 1; 
                 padding: 20px;
                 max-width: 100%; 
-                display: flex; 
+                display: flex; /* Flexbox for grid centering */
                 overflow-y: auto;
             }
 
