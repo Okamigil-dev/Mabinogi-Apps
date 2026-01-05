@@ -1,20 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    
-    <!-- PWA Manifest & Settings -->
-    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#050506">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <!-- Service Worker Registration -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('Service Worker registered'))
-                    .catch(err => console.log('Service Worker failed', err));
+                // Uncomment if you have sw.js
+                // navigator.serviceWorker.register('sw.js')
+                //     .then(reg => console.log('Service Worker registered'))
+                //     .catch(err => console.log('Service Worker failed', err));
             });
         }
     </script>
@@ -23,7 +20,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Barter Material Tracker</title>
     
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -32,7 +28,6 @@
     
     <style>
         :root {
-            /* V2.7 Theme */
             --bg: #09090b;
             --sidebar-bg: #121214;
             --card-bg: #18181b;
@@ -62,7 +57,6 @@
             flex-direction: column;
         }
 
-        /* Scrollbars */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
@@ -123,7 +117,7 @@
         .panel:last-child { border-right: none; }
         .center-panel { background: #0c0c0e; }
 
-        /* Mobile Components - Hidden on Desktop */
+        /* Mobile Components */
         .mobile-nav { display: none; }
         .mobile-backdrop { display: none; }
         .drawer-header { display: none; }
@@ -134,10 +128,6 @@
         .hub-btn:hover { color: #fff; background: var(--border); }
         .hub-btn.active { color: var(--accent); background: var(--accent-dim); border-color: var(--accent); }
 
-        .input-dark { background: var(--card-bg); border: 1px solid var(--border); color: #fff; font-family: 'Inter', sans-serif; font-size: 13px; padding: 8px; border-radius: 6px; width: 100%; transition: border-color 0.2s; }
-        .input-dark:focus { border-color: var(--accent); }
-
-        /* Catalog Styling */
         .item-list { flex-grow: 1; overflow-y: auto; }
         .item-entry {
             display: flex; gap: 12px; padding: 12px 15px; border-bottom: 1px solid var(--border);
@@ -160,21 +150,24 @@
         .q-btn:hover { background: #27272a; }
         .q-val { width: 24px; text-align: center; font-family: 'JetBrains Mono'; font-size: 11px; }
 
-        /* Materials Table Alignment & Symmetry */
+        /* Materials Table */
         .table-container { padding: 20px; height: 100%; display: flex; flex-direction: column; overflow: hidden; width: 100%; }
         .materials-dual-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex-grow: 1; min-height: 0; overflow: hidden; }
         .material-column { display: flex; flex-direction: column; height: 100%; overflow: hidden; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; }
         .scroll-area { overflow-y: auto; flex-grow: 1; }
+        
+        /* Hide Raw Resources Logic */
+        .materials-dual-layout.config-hide-raw { grid-template-columns: 1fr; }
+        .materials-dual-layout.config-hide-raw #raw-resources-col { display: none; }
 
         .data-table { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed; }
         .data-table th { 
             text-align: left; color: var(--text-dim); font-size: 10px; font-weight: 600; 
             padding: 10px 5px; border-bottom: 1px solid var(--border); 
-            position: sticky; top: 0; background: #121214; z-index: 10; 
+            position: sticky; top: 0; background: #121214; z-index: 10;
             cursor: pointer; user-select: none;
         }
         .data-table th:hover { color: #fff; background: #1a1a1d; }
-
         .sort-indicator { margin-left: 4px; font-size: 8px; color: var(--accent); }
 
         .data-table th:first-child, .data-table td:first-child { padding-left: 15px !important; }
@@ -202,14 +195,14 @@
             background-color: rgba(255, 255, 255, 0.03);
         }
 
-        /* Toggles Styling */
+        /* Toggles */
         .toggle-switch { width: 34px; height: 18px; background: var(--border); border-radius: 99px; position: relative; transition: 0.2s; flex-shrink: 0; }
         .toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: #fff; border-radius: 50%; transition: 0.2s; }
         input:checked + .toggle-switch { background: var(--accent); }
         input:checked + .toggle-switch::after { transform: translateX(16px); }
         .toggle-input { display: none; }
 
-        /* Sidebar Tabs / Picker Buttons */
+        /* Picker Buttons */
         .tab-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 8px; margin-bottom: 0px; }
         .picker-btn { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 4px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: 0.15s; }
         .picker-btn.active { background: var(--accent-dim); border-color: var(--accent); }
@@ -220,7 +213,7 @@
         }
         .picker-label { font-size: 9px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; text-align: center; }
 
-        /* Drawer Styling */
+        /* Drawer */
         .drawer-wrap { border-bottom: 1px solid var(--border); }
         summary { 
             list-style: none; cursor: pointer; padding: 12px 20px; 
@@ -230,13 +223,9 @@
         }
         summary::before { content: '▶'; font-size: 8px; transition: 0.2s; }
         details[open] summary::before { transform: rotate(90deg); color: var(--accent); }
-        
-        /* Drawer Content Padding */
-        .drawer-content {
-            padding: 0 20px 15px 20px;
-        }
+        .drawer-content { padding: 0 20px 15px 20px; }
 
-        /* Transport Slots */
+        /* Slots */
         .slot {
             width: var(--slot-size); height: var(--slot-size); background-color: rgba(255, 255, 255, 0.03); 
             border: 1px solid var(--border); border-radius: 4px; position: relative; 
@@ -249,8 +238,6 @@
             .mobile-only { display: block; }
             .content-grid { display: block; height: calc(100dvh - 50px); }
             .header-bar { display: none; }
-            
-            /* Hide Global Nav on Mobile */
             .global-nav { display: none; }
 
             .mobile-nav {
@@ -278,13 +265,14 @@
             
             .center-panel { height: 100%; width: 100%; border: none; z-index: 1 !important; position: relative; }
             
-            /* -- HIDE RAW RESOURCES COLUMN ON MOBILE -- */
+            /* FIXED: Use grid toggle instead of display:none to allow "Hide Raw" toggle to work */
             .materials-dual-layout { 
-                grid-template-columns: 1fr; /* Force Single Column */
+                grid-template-columns: 1fr; /* Stack columns */
                 gap: 10px; 
                 padding: 0 10px; 
             }
-            #raw-resources-col { display: none; } /* Hide Raw Resources */
+            /* REMOVED: #raw-resources-col { display: none; } */ 
+            /* Now handled by JS toggling .config-hide-raw class */
 
             .mobile-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1500; }
             .mobile-backdrop.active { display: block; }
@@ -295,12 +283,6 @@
             }
             .drawer-title { font-weight: 700; color: #fff; }
             .drawer-close { background: none; border: none; color: var(--text-dim); font-size: 20px; padding: 0 5px; cursor: pointer; }
-            
-            /* Mobile User Profile */
-            .user-profile-box { display: flex; align-items: center; gap: 12px; padding: 15px; border-bottom: 1px solid var(--border); }
-            .user-avatar-mobile { width: 80px; height: 80px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; flex-shrink: 0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"); }
-            .user-info-text-mobile { font-size: 13px; font-weight: 600; color: var(--text-main); word-break: break-all; line-height: 1.2; }
-            .user-status-mobile { font-size: 10px; color: var(--text-dim); }
         }
 
         #item-tooltip { position: fixed; z-index: 10000; background: rgba(18, 18, 20, 0.98); border: 1px solid var(--border); padding: 12px; border-radius: 6px; pointer-events: none; display: none; min-width: 180px; }
@@ -322,7 +304,6 @@
     <div class="mobile-backdrop" id="mobile-backdrop" onclick="closeSidebars()"></div>
 
     <div class="interface-container">
-        <!-- GLOBAL NAVIGATION BAR -->
         <nav class="global-nav">
             <a href="index.html">
                 <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></polyline></svg>
@@ -359,7 +340,6 @@
                 <div style="display:flex; align-items:center;">
                     <span class="main-title">BARTER TRACKER</span>
                 </div>
-                <!-- User Profile Section -->
                 <div style="display:flex; gap:12px; align-items:center;">
                     <div style="text-align:right;">
                         <div id="user-info" style="font-size:12px; font-weight:600; color:var(--text-main);">Guest</div>
@@ -372,13 +352,11 @@
 
         <div class="content-grid">
             <div class="panel left-panel" id="left-panel">
-                <!-- Mobile Only: Sidebar Header -->
                 <div class="drawer-header mobile-only">
                     <span class="drawer-title">Catalog</span>
                     <button class="drawer-close" onclick="closeSidebars()">×</button>
                 </div>
 
-                <!-- TRADE POST DRAWER -->
                 <details class="drawer-wrap" open>
                     <summary>Trade Post</summary>
                     <div class="drawer-content">
@@ -435,13 +413,11 @@
             </div>
 
             <div class="panel right-panel" id="right-panel">
-                <!-- Mobile Only: Sidebar Header -->
                 <div class="drawer-header mobile-only">
                     <span class="drawer-title">Cargo</span>
                     <button class="drawer-close" onclick="closeSidebars()">×</button>
                 </div>
 
-                <!-- CONFIGURATION DRAWER (NEW) -->
                 <details class="drawer-wrap" open>
                     <summary>Configuration</summary>
                     <div class="drawer-content">
@@ -450,10 +426,14 @@
                             <input type="checkbox" id="toggle-hide-completed" class="toggle-input">
                             <div class="toggle-switch"></div>
                         </label>
+                        <label style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; margin-top:8px;">
+                            <span style="font-size:12px;">Hide Raw Resources</span>
+                            <input type="checkbox" id="toggle-hide-raw" class="toggle-input">
+                            <div class="toggle-switch"></div>
+                        </label>
                     </div>
                 </details>
 
-                <!-- BUFFS DRAWER -->
                 <details class="drawer-wrap" open>
                     <summary>Buffs</summary>
                     <div class="drawer-content">
@@ -465,7 +445,6 @@
                     </div>
                 </details>
 
-                <!-- TRANSPORT A DRAWER -->
                 <details class="drawer-wrap" open>
                     <summary>
                         <div style="display:flex; flex-direction:column; width:100%; align-items:flex-start;">
@@ -473,7 +452,6 @@
                                 <span>Transport A</span>
                                 <span id="transport-stats-1" style="font-size:10px; color:var(--text-dim); font-family:'JetBrains Mono';">0 / 0 KG</span>
                             </div>
-                            <!-- PROFIT DISPLAY A -->
                             <div id="transport-profit-1" style="display:flex; justify-content:space-between; width:100%; font-size:10px; color:var(--success); font-family:'JetBrains Mono'; margin-top:2px;">
                                 <span>Best: -</span>
                                 <div style="text-align:right;">
@@ -489,7 +467,6 @@
                     </div>
                 </details>
 
-                <!-- TRANSPORT B DRAWER -->
                 <details class="drawer-wrap" open>
                     <summary>
                         <div style="display:flex; flex-direction:column; width:100%; align-items:flex-start;">
@@ -497,7 +474,6 @@
                                 <span>Transport B</span>
                                 <span id="transport-stats-2" style="font-size:10px; color:var(--text-dim); font-family:'JetBrains Mono';">0 / 0 KG</span>
                             </div>
-                            <!-- PROFIT DISPLAY B -->
                             <div id="transport-profit-2" style="display:flex; justify-content:space-between; width:100%; font-size:10px; color:var(--success); font-family:'JetBrains Mono'; margin-top:2px;">
                                 <span>Best: -</span>
                                 <div style="text-align:right;">
@@ -519,8 +495,7 @@
     <div id="item-tooltip">
         <div id="tt-name" style="color:#fff; font-weight:700; font-size:12px; margin-bottom:5px; border-bottom:1px solid var(--border);"></div>
         <div style="font-family:'JetBrains Mono'; font-size:10px; color:var(--text-dim);">Weight: <b id="tt-weight"></b></div>
-        <div id="tt-mats"></div> <!-- Added for Materials -->
-        <div id="tt-profit" class="tt-profit"></div>
+        <div id="tt-mats"></div> <div id="tt-profit" class="tt-profit"></div>
     </div>
 
     <script>
@@ -549,6 +524,10 @@
         // Unified State for Barter UI (Synced with Shared Settings)
         let activeBuffs={gm:false,william:false,alpaca:false};
         let hideCompleted = false; // New State for Visibility
+        let hideRaw = false; // NEW state for raw resources visibility
+        
+        // --- ADDED SORTING STATE ---
+        let sortState = { col: 'name', dir: 1 }; // 1: asc, -1: desc
 
         const barterDb = [
             { town: "Pera Volcano", item: "Volcanic Mud Pack", weight: 15, stack: 10, limit: 25, img: "tradeposts/barter/pera/Volcanic_Mud_Pack_Icon.png", mats: { "Copper Plate": 2, "Mysterious Herb Powder": 3 } },
@@ -613,6 +592,7 @@
              {item:"Mutant",mats:{"Mutant Rabbit Foot":10,"Mutant Plant Mucilage":5,"Sasquatch Heart":3}},
              {item:"Mysterious Herb Powder",mats:{"Bloody Herb":1,"Mana Herb":1,"Poison Herb":1}},
              {item:"Purified Rabbit Foot",mats:{"Mutant Rabbit Foot":1,Shyllien:1}},
+             {item:"Hillwen",mats:{"Hillwen Ore Fragment":5}},
              {item:"Shyllien",mats:{"Shyllien Crystal":5}},
              {item:"Sundew",mats:{"Mutant Plant Mucilage":1,Shyllien:1}},
              {item:"Glittering Paper",mats:{Paper:10,"Small Silver Gem":1,"Small Red Gem":1,"Small Blue Gem":1,"Small Green Gem":1}},
@@ -740,7 +720,7 @@
         }
 
         function saveData(){
-            const payload={cargo:JSON.stringify(currentCargo),inventory:ownedInventory,buffs:activeBuffs,town:selectedTown,transport1:transportA,transport2:transportB,hideCompleted};
+            const payload={cargo:JSON.stringify(currentCargo),inventory:ownedInventory,buffs:activeBuffs,town:selectedTown,transport1:transportA,transport2:transportB,hideCompleted,hideRaw};
             localStorage.setItem('barter_save_data',JSON.stringify(payload));
             if(currentUser.isGuest) return;
             isSaving=true; firebase.database().ref(`users/${currentUser.uid}/barter_data`).set(payload).then(()=>isSaving=false);
@@ -752,6 +732,7 @@
             if(data.inventory) ownedInventory=data.inventory;
             if(data.town) selectedTown=data.town;
             if(data.hideCompleted !== undefined) hideCompleted = data.hideCompleted;
+            if(data.hideRaw !== undefined) hideRaw = data.hideRaw;
             
             // Buffs are now handled by the 'settings' listener for logged in users
             // But we keep this for initial load or guest mode backup
@@ -765,6 +746,10 @@
             if(data.transport2) transportB=data.transport2;
             
             document.getElementById('toggle-hide-completed').checked = hideCompleted;
+            document.getElementById('toggle-hide-raw').checked = hideRaw;
+            
+            // Ensure functions are ready before calling
+            updateLayout(); 
             renderTownTabs(); renderTransportTabs(1); renderTransportTabs(2); calculateLoadout();
         }
 
@@ -1025,11 +1010,10 @@
             
             tt.style.top=r.top+'px'; 
         }
+        
+        // --- ADDED MISSING FUNCTIONS FOR SORTING AND LAYOUT ---
 
-        // --- SORTING LOGIC ---
-        // Ensure sortState is declared only ONCE here
-        let sortState = { col: 'name', dir: 1 }; // Default sort by name ascending
-
+        // Function to toggle sorting direction and re-render
         function toggleSort(col) {
             if (sortState.col === col) {
                 sortState.dir *= -1; // Toggle direction
@@ -1038,12 +1022,11 @@
                 sortState.dir = 1; // Default to ascending for new column
             }
             
-            // Update UI indicators
+            // Update UI indicators (clear all, then set current)
             document.querySelectorAll('.sort-indicator').forEach(el => el.innerText = '');
             const indicator = sortState.dir === 1 ? '▲' : '▼';
             
-            // Update all matching sort icons (since we have two tables)
-            // Or specific ones based on col name
+            // Update all matching sort icons
             const ids = {
                 'name': ['sort-icon-name', 'sort-icon-name-2'],
                 'have': ['sort-icon-have', 'sort-icon-have-2'],
@@ -1058,13 +1041,28 @@
                 });
             }
 
-            calculateMaterials(); // Re-render tables
+            calculateMaterials(); // Re-render tables with new sort order
+        }
+
+        // Function to handle layout visibility for Raw Resources
+        function updateLayout() {
+            const layout = document.querySelector('.materials-dual-layout');
+            if (hideRaw) {
+                layout.classList.add('config-hide-raw');
+            } else {
+                layout.classList.remove('config-hide-raw');
+            }
         }
 
         function calculateMaterials(){
             const need={}; currentCargo.forEach(c=>{ if(c.mats) Object.entries(c.mats).forEach(([m,q])=>need[m]=(need[m]||0)+q); });
             const raw={}; 
-            function resolve(n,q){ const r=recipeDb.find(x => x.item === n); if(!r){raw[n]=(raw[n]||0)+q;return;} Object.entries(r.mats).forEach(([m,a])=>resolve(m,a*q)); }
+            function resolve(n,q){ 
+                const r=recipeDb.find(x => x.item === n); 
+                // SAFETY: Add epsilon to prevent 0.99999 rounding issues with 1/3 math
+                if(!r){raw[n]=(raw[n]||0)+q;return;} 
+                Object.entries(r.mats).forEach(([m,a])=>resolve(m, (a*q) + 0.0000001)); 
+            }
             
             Object.entries(need).forEach(([n,c])=>{ 
                 // Check if n is a raw resource (no recipe) or crafted
@@ -1127,12 +1125,11 @@
 
             // Re-populate in sorted order
             currentKeys.forEach(item => {
-                // If hide enabled, check if deficit > 0. If hide disabled, show all.
-                // Note: 'data' contains NEEDED amount. If data[item] - owned <= 0, it is complete.
                 const needed = data[item];
                 const owned = ownedInventory[item] || 0;
                 const isComplete = (needed - owned) <= 0;
 
+                // Hide if toggled on AND item is complete (status <= 0)
                 if (!shouldHide || !isComplete) {
                      let row = rowMap.get(item);
                      if (row) {
@@ -1170,7 +1167,7 @@
                 const weeks = Math.floor(h / needed);
                 statusCell.innerHTML = (weeks > 1 && isFinite(weeks)) ? `<span>${weeks} WEEKS</span>` : "<span>READY</span>";
             } else {
-                statusCell.innerHTML = `<span>${def}</span>`;
+                statusCell.innerHTML = `<span>${Math.ceil(def)}</span>`;
             }
         }
 
@@ -1188,7 +1185,7 @@
                 const weeks = Math.floor(h / needed);
                 statusHtml = (weeks > 1 && isFinite(weeks)) ? `<span>${weeks} WEEKS</span>` : "<span>READY</span>";
             } else {
-                statusHtml = `<span>${def}</span>`;
+                statusHtml = `<span>${Math.ceil(def)}</span>`;
             }
 
             tr.innerHTML = `
@@ -1241,6 +1238,13 @@
                 }
                 
                 // Logic to uncheck conflicting partners
+                if(id === 'toggle-hide-raw') {
+                    hideRaw = e.target.checked;
+                    updateLayout();
+                    saveData();
+                    return;
+                }
+                
                 if(id==='william'&&e.target.checked) document.getElementById('buff-alpaca').checked=false; 
                 if(id==='alpaca'&&e.target.checked) document.getElementById('buff-william').checked=false; 
                 
