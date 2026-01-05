@@ -103,7 +103,6 @@
             flex-direction: column; 
             height: 100%; 
             width: 100%; 
-            /* Full Width Layout (No Max Width) */
             border-left: 1px solid var(--border); 
             border-right: 1px solid var(--border); 
         }
@@ -168,7 +167,15 @@
         .scroll-area { overflow-y: auto; flex-grow: 1; }
 
         .data-table { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed; }
-        .data-table th { text-align: left; color: var(--text-dim); font-size: 10px; font-weight: 600; padding: 10px 5px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: #121214; z-index: 10; }
+        .data-table th { 
+            text-align: left; color: var(--text-dim); font-size: 10px; font-weight: 600; 
+            padding: 10px 5px; border-bottom: 1px solid var(--border); 
+            position: sticky; top: 0; background: #121214; z-index: 10; 
+            cursor: pointer; user-select: none;
+        }
+        .data-table th:hover { color: #fff; background: #1a1a1d; }
+
+        .sort-indicator { margin-left: 4px; font-size: 8px; color: var(--accent); }
 
         .data-table th:first-child, .data-table td:first-child { padding-left: 15px !important; }
         .data-table th:last-child, .data-table td:last-child { padding-right: 15px !important; }
@@ -394,7 +401,14 @@
                             <div style="padding:10px 15px; border-bottom:1px solid var(--border); font-weight:700; font-size:11px; background:var(--sidebar-bg);">Raw Resources</div>
                             <div class="scroll-area">
                                 <table class="data-table">
-                                    <thead><tr><th style="width: 40%;">RESOURCE</th><th style="width: 25%; text-align:center;">HAVE</th><th style="width: 15%; text-align:center;">NEED</th><th style="width: 20%; text-align:right;">STATUS</th></tr></thead>
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 40%;" onclick="toggleSort('name')">RESOURCE <span id="sort-icon-name" class="sort-indicator"></span></th>
+                                            <th style="width: 25%; text-align:center;" onclick="toggleSort('have')">HAVE <span id="sort-icon-have" class="sort-indicator"></span></th>
+                                            <th style="width: 15%; text-align:center;" onclick="toggleSort('need')">NEED <span id="sort-icon-need" class="sort-indicator"></span></th>
+                                            <th style="width: 20%; text-align:right;" onclick="toggleSort('status')">STATUS <span id="sort-icon-status" class="sort-indicator"></span></th>
+                                        </tr>
+                                    </thead>
                                     <tbody id="raw-tbody"></tbody>
                                 </table>
                             </div>
@@ -404,7 +418,14 @@
                             <div style="padding:10px 15px; border-bottom:1px solid var(--border); font-weight:700; font-size:11px; background:var(--sidebar-bg);">Crafted Components</div>
                             <div class="scroll-area">
                                 <table class="data-table">
-                                    <thead><tr><th style="width: 40%;">COMPONENT</th><th style="width: 25%; text-align:center;">HAVE</th><th style="width: 15%; text-align:center;">NEED</th><th style="width: 20%; text-align:right;">STATUS</th></tr></thead>
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 40%;" onclick="toggleSort('name')">COMPONENT <span id="sort-icon-name-2" class="sort-indicator"></span></th>
+                                            <th style="width: 25%; text-align:center;" onclick="toggleSort('have')">HAVE <span id="sort-icon-have-2" class="sort-indicator"></span></th>
+                                            <th style="width: 15%; text-align:center;" onclick="toggleSort('need')">NEED <span id="sort-icon-need-2" class="sort-indicator"></span></th>
+                                            <th style="width: 20%; text-align:right;" onclick="toggleSort('status')">STATUS <span id="sort-icon-status-2" class="sort-indicator"></span></th>
+                                        </tr>
+                                    </thead>
                                     <tbody id="crafted-tbody"></tbody>
                                 </table>
                             </div>
@@ -592,7 +613,6 @@
              {item:"Mutant",mats:{"Mutant Rabbit Foot":10,"Mutant Plant Mucilage":5,"Sasquatch Heart":3}},
              {item:"Mysterious Herb Powder",mats:{"Bloody Herb":1,"Mana Herb":1,"Poison Herb":1}},
              {item:"Purified Rabbit Foot",mats:{"Mutant Rabbit Foot":1,Shyllien:1}},
-             {item:"Hillwen",mats:{"Hillwen Ore Fragment":5}},
              {item:"Shyllien",mats:{"Shyllien Crystal":5}},
              {item:"Sundew",mats:{"Mutant Plant Mucilage":1,Shyllien:1}},
              {item:"Glittering Paper",mats:{Paper:10,"Small Silver Gem":1,"Small Red Gem":1,"Small Blue Gem":1,"Small Green Gem":1}},
@@ -1006,6 +1026,41 @@
             tt.style.top=r.top+'px'; 
         }
 
+        // --- SORTING LOGIC ---
+        // Ensure sortState is declared only ONCE here
+        let sortState = { col: 'name', dir: 1 }; // Default sort by name ascending
+
+        function toggleSort(col) {
+            if (sortState.col === col) {
+                sortState.dir *= -1; // Toggle direction
+            } else {
+                sortState.col = col;
+                sortState.dir = 1; // Default to ascending for new column
+            }
+            
+            // Update UI indicators
+            document.querySelectorAll('.sort-indicator').forEach(el => el.innerText = '');
+            const indicator = sortState.dir === 1 ? '▲' : '▼';
+            
+            // Update all matching sort icons (since we have two tables)
+            // Or specific ones based on col name
+            const ids = {
+                'name': ['sort-icon-name', 'sort-icon-name-2'],
+                'have': ['sort-icon-have', 'sort-icon-have-2'],
+                'need': ['sort-icon-need', 'sort-icon-need-2'],
+                'status': ['sort-icon-status', 'sort-icon-status-2']
+            };
+            
+            if (ids[col]) {
+                ids[col].forEach(id => {
+                     const el = document.getElementById(id);
+                     if(el) el.innerText = indicator;
+                });
+            }
+
+            calculateMaterials(); // Re-render tables
+        }
+
         function calculateMaterials(){
             const need={}; currentCargo.forEach(c=>{ if(c.mats) Object.entries(c.mats).forEach(([m,q])=>need[m]=(need[m]||0)+q); });
             const raw={}; 
@@ -1030,31 +1085,67 @@
 
         function renderTable(tbodyId, data) {
             const tbody = document.getElementById(tbodyId);
-            const currentKeys = Object.keys(data).sort();
-            const existingRows = new Set();
             
-            // Logic change: Only hide if global toggle is ON AND we are rendering the 'raw-tbody'
-            const shouldHide = hideCompleted && tbodyId === 'raw-tbody';
-
-            // First pass: update existing rows, mark as seen
-            Array.from(tbody.children).forEach(row => {
-                const item = row.dataset.item;
-                if(data[item] !== undefined && (!shouldHide || (data[item] - (ownedInventory[item]||0)) > 0)) {
-                    existingRows.add(item);
-                    updateRow(row, item, data[item]);
-                } else {
-                    row.remove(); // Remove items no longer needed or if hidden
+            // --- APPLY SORT ---
+            let currentKeys = Object.keys(data);
+            
+            currentKeys.sort((a, b) => {
+                let valA, valB;
+                
+                switch(sortState.col) {
+                    case 'name':
+                        return a.localeCompare(b) * sortState.dir;
+                    case 'have':
+                        valA = ownedInventory[a] || 0;
+                        valB = ownedInventory[b] || 0;
+                        return (valA - valB) * sortState.dir;
+                    case 'need':
+                        valA = data[a];
+                        valB = data[b];
+                        return (valA - valB) * sortState.dir;
+                    case 'status':
+                        // Status is Deficit (Need - Have)
+                        valA = data[a] - (ownedInventory[a] || 0);
+                        valB = data[b] - (ownedInventory[b] || 0);
+                        return (valA - valB) * sortState.dir;
+                    default:
+                        return 0;
                 }
             });
 
-            // Second pass: create new rows
+            // Map existing rows for reuse to preserve input focus
+            const rowMap = new Map();
+            Array.from(tbody.children).forEach(r => rowMap.set(r.dataset.item, r));
+            
+            // Clear current tbody (elements still in memory via rowMap)
+            tbody.textContent = ''; 
+
+            // Logic change: Only hide if global toggle is ON. Applies to BOTH tables now.
+            const shouldHide = hideCompleted;
+
+            let hasItems = false;
+
+            // Re-populate in sorted order
             currentKeys.forEach(item => {
-                if(!existingRows.has(item) && (!shouldHide || (data[item] - (ownedInventory[item]||0)) > 0)) {
-                    createRow(tbody, item, data[item]);
+                // If hide enabled, check if deficit > 0. If hide disabled, show all.
+                // Note: 'data' contains NEEDED amount. If data[item] - owned <= 0, it is complete.
+                const needed = data[item];
+                const owned = ownedInventory[item] || 0;
+                const isComplete = (needed - owned) <= 0;
+
+                if (!shouldHide || !isComplete) {
+                     let row = rowMap.get(item);
+                     if (row) {
+                         updateRow(row, item, needed);
+                     } else {
+                         row = createRow(item, needed);
+                     }
+                     tbody.appendChild(row);
+                     hasItems = true;
                 }
             });
 
-            if(currentKeys.length === 0) {
+            if(!hasItems) {
                 tbody.innerHTML = '<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text-dim);">No materials needed</td></tr>';
             }
         }
@@ -1083,7 +1174,8 @@
             }
         }
 
-        function createRow(tbody, item, needed) {
+        // Split createRow to return element instead of appending directly
+        function createRow(item, needed) {
             const h = ownedInventory[item] || 0;
             const def = needed - h;
             const tr = document.createElement('tr');
@@ -1122,7 +1214,7 @@
                 saveData(); 
             };
             
-            tbody.appendChild(tr);
+            return tr;
         }
 
         function completeTrip() {
