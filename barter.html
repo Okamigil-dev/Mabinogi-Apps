@@ -1087,9 +1087,8 @@
             const raw={}; 
             function resolve(n,q){ 
                 const r=recipeDb.find(x => x.item === n); 
-                // SAFETY: Add epsilon to prevent 0.99999 rounding issues with 1/3 math
                 if(!r){raw[n]=(raw[n]||0)+q;return;} 
-                Object.entries(r.mats).forEach(([m,a])=>resolve(m, (a*q) + 0.0000001)); 
+                Object.entries(r.mats).forEach(([m,a])=>resolve(m, a*q)); 
             }
             
             Object.entries(need).forEach(([n,c])=>{ 
@@ -1106,6 +1105,15 @@
                     resolve(n,c); 
                 }
             });
+
+            // ROUNDING PASS: Fix floating point precision issues (e.g. 0.9999 -> 1, 1.0001 -> 1)
+            // This ensures Math.ceil in renderTable behaves correctly for sorting
+            [need, raw].forEach(obj => {
+                Object.keys(obj).forEach(k => {
+                    obj[k] = Math.round(obj[k] * 10000) / 10000;
+                });
+            });
+
             renderTable('crafted-tbody',need); renderTable('raw-tbody',raw);
         }
 
@@ -1132,11 +1140,22 @@
                         valA = data[a];
                         valB = data[b];
                         return (valA - valB) * sortState.dir;
-                    case 'status':
-                        // Status is Deficit (Need - Have)
-                        valA = data[a] - (ownedInventory[a] || 0);
-                        valB = data[b] - (ownedInventory[b] || 0);
-                        return (valA - valB) * sortState.dir;
+                    case 'status': {
+                        // Sort by Fulfillment Ratio (Have / Need)
+                        // Ascending: 0% (Empty) -> 50% -> 100% (Ready) -> 200% (2 Weeks)
+                        const ratioA = (ownedInventory[a] || 0) / data[a];
+                        const ratioB = (ownedInventory[b] || 0) / data[b];
+                        
+                        if (Math.abs(ratioA - ratioB) > 0.0001) {
+                            return (ratioA - ratioB) * sortState.dir;
+                        }
+                        
+                        // Tie-breaker: Larger deficits appear "lower" (worse) in health
+                        // Ascending (Worst to Best): Large Deficit -> Small Deficit
+                        const defA = data[a] - (ownedInventory[a] || 0);
+                        const defB = data[b] - (ownedInventory[b] || 0);
+                        return (defB - defA) * sortState.dir;
+                    }
                     default:
                         return 0;
                 }
