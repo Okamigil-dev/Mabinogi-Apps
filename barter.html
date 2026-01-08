@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- PWA Settings (Uncomment if you have these files) -->
+    <!-- <link rel="manifest" href="manifest.json"> -->
     <meta name="theme-color" content="#050506">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
+    <!-- Service Worker Registration -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -20,6 +23,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Barter Material Tracker</title>
     
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -304,6 +308,7 @@
     <div class="mobile-backdrop" id="mobile-backdrop" onclick="closeSidebars()"></div>
 
     <div class="interface-container">
+        <!-- GLOBAL NAVIGATION BAR -->
         <nav class="global-nav">
             <a href="index.html">
                 <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></polyline></svg>
@@ -340,6 +345,7 @@
                 <div style="display:flex; align-items:center;">
                     <span class="main-title">BARTER TRACKER</span>
                 </div>
+                <!-- User Profile Section -->
                 <div style="display:flex; gap:12px; align-items:center;">
                     <div style="text-align:right;">
                         <div id="user-info" style="font-size:12px; font-weight:600; color:var(--text-main);">Guest</div>
@@ -352,11 +358,13 @@
 
         <div class="content-grid">
             <div class="panel left-panel" id="left-panel">
+                <!-- Mobile Only: Sidebar Header -->
                 <div class="drawer-header mobile-only">
                     <span class="drawer-title">Catalog</span>
                     <button class="drawer-close" onclick="closeSidebars()">×</button>
                 </div>
 
+                <!-- TRADE POST DRAWER -->
                 <details class="drawer-wrap" open>
                     <summary>Trade Post</summary>
                     <div class="drawer-content">
@@ -413,11 +421,13 @@
             </div>
 
             <div class="panel right-panel" id="right-panel">
+                <!-- Mobile Only: Sidebar Header -->
                 <div class="drawer-header mobile-only">
                     <span class="drawer-title">Cargo</span>
                     <button class="drawer-close" onclick="closeSidebars()">×</button>
                 </div>
 
+                <!-- CONFIGURATION DRAWER (NEW) -->
                 <details class="drawer-wrap" open>
                     <summary>Configuration</summary>
                     <div class="drawer-content">
@@ -434,6 +444,7 @@
                     </div>
                 </details>
 
+                <!-- BUFFS DRAWER -->
                 <details class="drawer-wrap" open>
                     <summary>Buffs</summary>
                     <div class="drawer-content">
@@ -445,6 +456,7 @@
                     </div>
                 </details>
 
+                <!-- TRANSPORT A DRAWER -->
                 <details class="drawer-wrap" open>
                     <summary>
                         <div style="display:flex; flex-direction:column; width:100%; align-items:flex-start;">
@@ -452,6 +464,7 @@
                                 <span>Transport A</span>
                                 <span id="transport-stats-1" style="font-size:10px; color:var(--text-dim); font-family:'JetBrains Mono';">0 / 0 KG</span>
                             </div>
+                            <!-- PROFIT DISPLAY A -->
                             <div id="transport-profit-1" style="display:flex; justify-content:space-between; width:100%; font-size:10px; color:var(--success); font-family:'JetBrains Mono'; margin-top:2px;">
                                 <span>Best: -</span>
                                 <div style="text-align:right;">
@@ -467,6 +480,7 @@
                     </div>
                 </details>
 
+                <!-- TRANSPORT B DRAWER -->
                 <details class="drawer-wrap" open>
                     <summary>
                         <div style="display:flex; flex-direction:column; width:100%; align-items:flex-start;">
@@ -474,6 +488,7 @@
                                 <span>Transport B</span>
                                 <span id="transport-stats-2" style="font-size:10px; color:var(--text-dim); font-family:'JetBrains Mono';">0 / 0 KG</span>
                             </div>
+                            <!-- PROFIT DISPLAY B -->
                             <div id="transport-profit-2" style="display:flex; justify-content:space-between; width:100%; font-size:10px; color:var(--success); font-family:'JetBrains Mono'; margin-top:2px;">
                                 <span>Best: -</span>
                                 <div style="text-align:right;">
@@ -495,7 +510,8 @@
     <div id="item-tooltip">
         <div id="tt-name" style="color:#fff; font-weight:700; font-size:12px; margin-bottom:5px; border-bottom:1px solid var(--border);"></div>
         <div style="font-family:'JetBrains Mono'; font-size:10px; color:var(--text-dim);">Weight: <b id="tt-weight"></b></div>
-        <div id="tt-mats"></div> <div id="tt-profit" class="tt-profit"></div>
+        <div id="tt-mats"></div> <!-- Added for Materials -->
+        <div id="tt-profit" class="tt-profit"></div>
     </div>
 
     <script>
@@ -527,7 +543,7 @@
         let hideRaw = false; // NEW state for raw resources visibility
         
         // --- ADDED SORTING STATE ---
-        let sortState = { col: 'name', dir: 1 }; // 1: asc, -1: desc
+        let sortState = { col: 'name', dir: 0 }; // 0: Default, 1: Asc, -1: Desc
 
         const barterDb = [
             { town: "Pera Volcano", item: "Volcanic Mud Pack", weight: 15, stack: 10, limit: 25, img: "tradeposts/barter/pera/Volcanic_Mud_Pack_Icon.png", mats: { "Copper Plate": 2, "Mysterious Herb Powder": 3 } },
@@ -1016,15 +1032,27 @@
         // Function to toggle sorting direction and re-render
         function toggleSort(col) {
             if (sortState.col === col) {
-                sortState.dir *= -1; // Toggle direction
+                // Cycle: 1 (Asc) -> -1 (Desc) -> 0 (Unsorted) -> 1 (Asc)
+                if (sortState.dir === 1) {
+                    sortState.dir = -1;
+                } else if (sortState.dir === -1) {
+                    sortState.dir = 0;
+                } else {
+                    sortState.dir = 1;
+                }
             } else {
+                // New column selected, start ascending
                 sortState.col = col;
-                sortState.dir = 1; // Default to ascending for new column
+                sortState.dir = 1; 
             }
             
             // Update UI indicators (clear all, then set current)
             document.querySelectorAll('.sort-indicator').forEach(el => el.innerText = '');
-            const indicator = sortState.dir === 1 ? '▲' : '▼';
+            
+            let indicator = '';
+            if (sortState.dir === 1) indicator = '▲';
+            else if (sortState.dir === -1) indicator = '▼';
+            // If 0, indicator remains empty string
             
             // Update all matching sort icons
             const ids = {
@@ -1034,7 +1062,7 @@
                 'status': ['sort-icon-status', 'sort-icon-status-2']
             };
             
-            if (ids[col]) {
+            if (ids[col] && sortState.dir !== 0) {
                 ids[col].forEach(id => {
                      const el = document.getElementById(id);
                      if(el) el.innerText = indicator;
@@ -1088,6 +1116,9 @@
             let currentKeys = Object.keys(data);
             
             currentKeys.sort((a, b) => {
+                // If sort direction is 0 (Unsorted), return 0 immediately to preserve insertion order
+                if (sortState.dir === 0) return 0;
+
                 let valA, valB;
                 
                 switch(sortState.col) {
@@ -1112,16 +1143,17 @@
             });
 
             // Map existing rows for reuse to preserve input focus
-            const rowMap = new Map();
-            Array.from(tbody.children).forEach(r => rowMap.set(r.dataset.item, r));
+            const existingRows = new Map();
+            Array.from(tbody.children).forEach(r => {
+                if(r.dataset.item) existingRows.set(r.dataset.item, r);
+                else r.remove(); // Remove non-item rows (like "No materials") upfront
+            });
             
-            // Clear current tbody (elements still in memory via rowMap)
-            tbody.textContent = ''; 
-
             // Logic change: Only hide if global toggle is ON. Applies to BOTH tables now.
             const shouldHide = hideCompleted;
 
             let hasItems = false;
+            let writeIndex = 0; // Tracks where we are inserting in the DOM
 
             // Re-populate in sorted order
             currentKeys.forEach(item => {
@@ -1131,19 +1163,37 @@
 
                 // Hide if toggled on AND item is complete (status <= 0)
                 if (!shouldHide || !isComplete) {
-                     let row = rowMap.get(item);
+                     let row = existingRows.get(item);
                      if (row) {
                          updateRow(row, item, needed);
+                         existingRows.delete(item); // Remove from delete-queue
                      } else {
                          row = createRow(item, needed);
                      }
-                     tbody.appendChild(row);
+                     
+                     // DOM Management: Ensure row is at writeIndex
+                     const currentRowAtPos = tbody.children[writeIndex];
+                     if (currentRowAtPos !== row) {
+                         if (currentRowAtPos) {
+                             tbody.insertBefore(row, currentRowAtPos);
+                         } else {
+                             tbody.appendChild(row);
+                         }
+                     }
+                     
+                     writeIndex++;
                      hasItems = true;
                 }
             });
 
+            // Remove any remaining rows that weren't reused
+            existingRows.forEach(row => row.remove());
+
             if(!hasItems) {
-                tbody.innerHTML = '<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text-dim);">No materials needed</td></tr>';
+                // Only add message if empty
+                if(tbody.children.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text-dim);">No materials needed</td></tr>';
+                }
             }
         }
 
