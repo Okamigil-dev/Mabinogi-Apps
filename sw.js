@@ -3,6 +3,7 @@ const CACHE_NAME = 'mabi-tools-v5-swr'; // You can keep this static mostly now
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
+  './nav.js',
   './tracker.html',
   './commerce.html',
   './barter.html',
