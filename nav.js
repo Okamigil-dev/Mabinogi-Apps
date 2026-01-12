@@ -1,6 +1,42 @@
 class GlobalNav extends HTMLElement {
     connectedCallback() {
         this.innerHTML = `
+        <style>
+            /* Navigation Styles */
+            .global-nav {
+                display: flex;
+                align-items: center;
+                gap: 20px;
+                padding: 0 20px;
+                height: 40px;
+                background: #050506;
+                border-bottom: 1px solid var(--border);
+                flex-shrink: 0;
+            }
+            .global-nav a {
+                font-size: 11px;
+                font-weight: 700;
+                color: var(--text-dim);
+                text-decoration: none;
+                letter-spacing: 0.5px;
+                transition: color 0.2s;
+                display: flex; align-items: center; gap: 6px;
+            }
+            .global-nav a:hover { color: #fff; }
+            .global-nav a.active { color: var(--accent); }
+
+            .nav-icon { 
+                width: 14px; height: 14px; stroke-width: 2.5; stroke: currentColor; fill: none; 
+                stroke-linecap: round; stroke-linejoin: round; opacity: 0.8; 
+            }
+            .global-nav a:hover .nav-icon, .global-nav a.active .nav-icon { opacity: 1; }
+            
+            /* Hide on mobile if the parent page has a media query hiding .global-nav */
+            @media (max-width: 1000px) {
+                .global-nav { display: none; }
+            }
+        </style>
+
         <nav class="global-nav">
             <a href="index.html" class="${this.isActive('index.html')}">
                 <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -30,16 +66,11 @@ class GlobalNav extends HTMLElement {
                 <svg class="nav-icon" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
                 SIMULATOR
             </a>
-            <a href="simulator.html" class="${this.isActive('simulator.html')}">
-                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-                TEST PAGE
-            </a>
         </nav>
         `;
     }
 
     isActive(page) {
-        // Simple logic to check if current URL contains the page name
         return window.location.href.includes(page) ? 'active' : '';
     }
 }
