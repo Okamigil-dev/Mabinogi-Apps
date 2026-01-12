@@ -590,10 +590,6 @@
 
             if (user) {
                 currentUser = user;
-
-                // 2. Try instant load from local settings cache
-                const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
-
                 // 3. Real-time sync with database profile
                 rtdb.ref(`users/${user.uid}/profile`).on('value', (snap) => {
                     const profile = snap.val();
