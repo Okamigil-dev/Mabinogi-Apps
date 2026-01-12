@@ -76,3 +76,94 @@ class GlobalNav extends HTMLElement {
 }
 
 customElements.define('global-nav', GlobalNav);
+
+// ... existing GlobalNav code ...
+
+class UserHeader extends HTMLElement {
+    connectedCallback() {
+        this.innerHTML = `
+            <style>
+                .user-header-container {
+                    display: flex;
+                    gap: 12px;
+                    align-items: center;
+                }
+                .user-text-group {
+                    text-align: right;
+                }
+                .user-name-display {
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: var(--text-main, #e4e4e7);
+                }
+                .user-status-display {
+                    font-size: 10px;
+                    color: var(--text-dim, #a1a1aa);
+                }
+                .user-avatar-display {
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 50%;
+                    background-color: var(--card-bg, #18181b);
+                    border: 1px solid var(--border, #27272a);
+                    background-size: cover;
+                    background-position: center;
+                    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E");
+                }
+            </style>
+            <div class="user-header-container">
+                <div class="user-text-group">
+                    <div id="header-username" class="user-name-display">Guest</div>
+                    <div id="header-status" class="user-status-display">Local Mode</div>
+                </div>
+                <div id="header-avatar" class="user-avatar-display"></div>
+            </div>
+        `;
+
+        // Listen for Firebase Auth changes to update THIS specific UI
+        // We check for 'firebase' to prevent errors if the SDK isn't loaded yet
+        if (typeof firebase !== 'undefined') {
+            firebase.auth().onAuthStateChanged(user => {
+                this.updateUI(user);
+            });
+        }
+    }
+
+    updateUI(user) {
+        const nameEl = this.querySelector('#header-username');
+        const statusEl = this.querySelector('#header-status');
+        const avatarEl = this.querySelector('#header-avatar');
+
+        // Default Avatar SVG (Grey generic user)
+        const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+
+        if (user) {
+            statusEl.innerText = "Online";
+            statusEl.style.color = "var(--accent, #38bdf8)";
+            
+            // Try to get cached profile data (username/avatar) from localStorage
+            try {
+                const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
+                nameEl.innerText = cached.username || user.email;
+                if(cached.avatar) {
+                    avatarEl.style.backgroundImage = `url('${cached.avatar}')`;
+                } else {
+                    avatarEl.style.backgroundImage = `url('${defaultAvatar}')`;
+                }
+            } catch(e) {
+                // Fallback if cache fails
+                nameEl.innerText = user.email;
+                avatarEl.style.backgroundImage = `url('${defaultAvatar}')`;
+            }
+        } else {
+            // Guest State
+            nameEl.innerText = "Guest";
+            statusEl.innerText = "Local Mode";
+            statusEl.style.color = "var(--text-dim, #a1a1aa)";
+            avatarEl.style.backgroundImage = `url('${defaultAvatar}')`;
+        }
+    }
+}
+
+// Register the new component
+customElements.define('user-header', UserHeader);
