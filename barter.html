@@ -288,13 +288,8 @@
                     <span class="main-title">BARTER TRACKER</span>
                 </div>
                 <!-- User Profile Section -->
-                <div style="display:flex; gap:12px; align-items:center;">
-                    <div style="text-align:right;">
-                        <div id="user-info" style="font-size:12px; font-weight:600; color:var(--text-main);">Guest</div>
-                        <div id="connection-status" style="font-size:10px; color:var(--text-dim);">Local Mode</div>
-                    </div>
-                    <div id="user-avatar" style="width: 36px; height: 36px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; background-image: url('data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23a1a1aa\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E');"></div>
-                </div>
+                <user-header></user-header>
+                <!-- end of Profile Section -->
             </div>
         </div>
 
@@ -592,38 +587,17 @@
         
         // --- AUTHENTICATION LISTENER ---
         auth.onAuthStateChanged(user => {
-            const uInfo = document.getElementById('user-info');
-            const uAvatar = document.getElementById('user-avatar');
-            const status = document.getElementById('connection-status');
-            const mobileUser = document.getElementById('user-display'); // For mobile header
 
             if (user) {
                 currentUser = user;
-                status.innerText = "Online";
-                status.style.color = "var(--accent)";
-                
-                // 1. Initial fallback using email prefix
-                const name = user.email.split('@')[0];
-                uInfo.textContent = name;
-                if(mobileUser) mobileUser.textContent = name;
 
                 // 2. Try instant load from local settings cache
                 const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
-                if (cached.username) {
-                    uInfo.textContent = cached.username;
-                    if(mobileUser) mobileUser.textContent = cached.username;
-                }
-                if(cached.avatar) uAvatar.style.backgroundImage = `url('${cached.avatar}')`;
 
                 // 3. Real-time sync with database profile
                 rtdb.ref(`users/${user.uid}/profile`).on('value', (snap) => {
                     const profile = snap.val();
                     if (profile) {
-                        if(profile.username) {
-                            uInfo.textContent = profile.username;
-                            if(mobileUser) mobileUser.textContent = profile.username;
-                        }
-                        if(profile.avatar) uAvatar.style.backgroundImage = `url('${profile.avatar}')`;
                         localStorage.setItem('mabi_user_cache_' + user.uid, JSON.stringify(profile));
                     }
                 });
@@ -664,10 +638,6 @@
                 startSync();
             } else {
                 currentUser = { uid: 'local_guest', isGuest: true };
-                uInfo.textContent = "Guest";
-                if(mobileUser) mobileUser.textContent = "GUEST";
-                status.innerText = "Local Mode";
-                status.style.color = "var(--text-dim)";
                 startSync();
             }
         });
