@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mabi-tools-v6-swr'; // You can keep this static mostly now
+const CACHE_NAME = 'mabi-tools-v6.1-swr'; // You can keep this static mostly now
 
 const ASSETS_TO_CACHE = [
   './',
