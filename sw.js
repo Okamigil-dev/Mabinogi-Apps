@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mabi-tools-v6.1-swr'; // You can keep this static mostly now
+const CACHE_NAME = 'mabi-tools-v7-force-net'; // Bump this one last time to apply the fix
 
 const ASSETS_TO_CACHE = [
   './',
@@ -14,17 +14,25 @@ const ASSETS_TO_CACHE = [
   './manifest.json',
   './images/icon-192.png',
   './images/icon-512.png'
-  // Add other images here if you want them offline
 ];
 
-// Install Event: Cache files immediately
+// Install Event: FORCE NETWORK LOAD
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
+      // We cannot use cache.addAll() because it respects the browser's HTTP cache.
+      // We must manually fetch with { cache: 'reload' } to ensure we get the server version.
+      const stack = ASSETS_TO_CACHE.map(url => {
+        const request = new Request(url, { cache: 'reload' });
+        return fetch(request).then(response => {
+           if (!response.ok) throw Error('File not found ' + url);
+           return cache.put(url, response);
+        });
+      });
+      return Promise.all(stack);
     })
   );
-  self.skipWaiting(); // Forces this SW to become active immediately
+  self.skipWaiting();
 });
 
 // Activate Event: Clean up old caches
@@ -38,34 +46,25 @@ self.addEventListener('activate', (e) => {
       }));
     })
   );
-  self.clients.claim(); // Take control of all open clients immediately
+  self.clients.claim();
 });
 
-// Fetch Event: Stale-While-Revalidate Strategy
+// Fetch Event: Stale-While-Revalidate
 self.addEventListener('fetch', (e) => {
-  // Only handle http/https requests (ignore chrome-extension:// etc)
   if (!e.request.url.startsWith('http')) return;
 
   e.respondWith(
     caches.open(CACHE_NAME).then(async (cache) => {
-      // 1. Try to find the response in the cache
       const cachedResponse = await cache.match(e.request);
 
-      // 2. Define the network fetch (to update the cache)
+      // We perform a background fetch to update the cache for NEXT time
       const networkFetch = fetch(e.request).then((networkResponse) => {
-        // Clone the response because it can only be consumed once
-        // Only cache valid responses (status 200, basic type)
         if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
             cache.put(e.request, networkResponse.clone());
         }
         return networkResponse;
-      }).catch(() => {
-        // Network failed (Offline mode)
-        // This catch block prevents the whole promise from rejecting if offline
-      });
+      }).catch(() => {});
 
-      // 3. Return cached response immediately if available (Fast/Offline)
-      //    Otherwise wait for network (First load/uncached resource)
       return cachedResponse || networkFetch;
     })
   );
