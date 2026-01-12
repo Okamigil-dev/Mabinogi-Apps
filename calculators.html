@@ -12,9 +12,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('Service Worker registered'))
-                    .catch(err => console.log('Service Worker failed', err));
+                // navigator.serviceWorker.register('sw.js').catch(err => console.log('Service Worker failed', err));
             });
         }
     </script>
@@ -158,6 +156,7 @@
         input:checked + .toggle-switch::after { transform: translateX(16px); }
         .toggle-input { display: none; }
         
+        /* Small Buttons */
         .btn-mini { width: 24px; height: 24px; border: none; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
         .btn-mini:hover { background: var(--border); color: #fff; }
         .btn-mini.del:hover { background: rgba(239,68,68,0.2); color: var(--danger); }
@@ -170,16 +169,23 @@
             font-size: 10px; color: var(--text-dim); font-weight: 700; uppercase; margin-bottom: 4px;
         }
 
-        /* Modal */
-        .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000;
-            display: none; align-items: center; justify-content: center; padding: 20px;
-            backdrop-filter: blur(4px);
+        /* Move Speed Specific */
+        .group-result { margin-top: 10px; font-family: 'JetBrains Mono'; font-size: 11px; text-align: right; color: var(--text-dim); }
+        .group-result.winner { color: var(--success); font-weight: 700; }
+        .section-note { font-size: 11px; color: var(--text-dim); font-weight: 400; display: block; margin-top: 2px; }
+        .input-group-x { display: flex; align-items: center; gap: 5px; }
+        .btn-x { 
+            width: 30px; height: 35px; background: var(--card-bg); border: 1px solid var(--border); 
+            color: var(--text-dim); border-radius: 6px; cursor: pointer; display: flex; 
+            align-items: center; justify-content: center; transition: 0.2s; flex-shrink: 0;
         }
-        .modal-card {
-            background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
-            padding: 20px; width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 15px;
+        .btn-x:hover { color: var(--danger); border-color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+        .toggle-row {
+            display: flex; align-items: center; justify-content: space-between;
+            background: var(--bg); padding: 8px 10px; border-radius: 6px;
+            border: 1px solid var(--border); height: 35px;
         }
+        .form-group-disabled { opacity: 0.3; pointer-events: none; }
 
         /* Mobile */
         .mobile-nav { display: none; }
@@ -248,7 +254,7 @@
     <div class="mobile-backdrop" id="mobile-backdrop" onclick="closeSidebars()"></div>
 
     <div class="interface-container">
-<!-- GLOBAL NAVIGATION BAR -->
+        <!-- GLOBAL NAVIGATION BAR -->
         <nav class="global-nav">
             <a href="index.html">
                 <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -320,6 +326,11 @@
                         <div class="tool-icon">Ex</div> Exploration EXP
                     </button>
                     
+                    <label class="panel-label" style="margin-top:20px;">Stats</label>
+                    <button id="btn-move-speed" class="hub-btn" onclick="setTool('move-speed')">
+                        <div class="tool-icon">Ms</div> Move Speed
+                    </button>
+
                     <label class="panel-label" style="margin-top:20px;">Growth</label>
                     <button class="hub-btn" onclick="setTool('ego-feed')" style="opacity:0.5;">
                         <div class="tool-icon">Eg</div> Spirit Weapon (WIP)
@@ -339,7 +350,6 @@
                     
                     <div class="calc-group" style="margin-bottom:20px;">
                         <label class="calc-label">Current Total Accumulated EXP</label>
-                        <!-- Added onchange for format, oninput for calc -->
                         <input type="text" id="cur-total-exp" class="input-dark" placeholder="e.g. 10,000,000" oninput="calculateExp()" onchange="formatInput(this)" style="font-size:14px; font-family:'JetBrains Mono';">
                     </div>
 
@@ -354,7 +364,7 @@
                         </div>
                     </div>
                     
-                    <!-- NEW: Exploration Settings (Hidden by default) -->
+                    <!-- Exploration Settings (Hidden by default) -->
                     <div id="expl-settings" class="calc-row" style="display:none; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:15px; margin-bottom:20px;">
                         <div class="calc-group">
                             <label class="calc-label" style="opacity:0.7;">Exploration Mastery</label>
@@ -400,60 +410,291 @@
                     </div>
                 </div>
 
+                <!-- MOVE SPEED CALCULATOR -->
+                <div id="tool-move-speed" class="calc-box" style="display:none; max-width:800px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:15px;">
+                        <span style="font-size:20px; font-weight:700; color:#fff;">Move Speed</span>
+                        <div style="text-align:right;">
+                            <span class="calc-label">Total</span>
+                            <div id="ms-final-speed" style="font-family:'JetBrains Mono'; font-size:20px; color:var(--accent); font-weight:700;">116.0%</div>
+                        </div>
+                    </div>
+
+                    <div class="calc-row">
+                        <!-- Group 1 -->
+                        <div class="calc-group">
+                            <label class="calc-label">Group 1 (Status) <span class="section-note" style="display:inline;">Highest Only</span></label>
+                            <div style="background:rgba(0,0,0,0.2); border:1px dashed var(--border); border-radius:8px; padding:15px;">
+                                <div class="calc-group" style="margin-bottom:8px;">
+                                    <label class="calc-label" style="text-transform:none;opacity:0.8;">Wave Sweeper</label>
+                                    <div class="input-group-x">
+                                        <select id="ms-totem" class="input-dark ms-trigger"><option value="0">None</option></select>
+                                        <button class="btn-x" onclick="resetMsInput('ms-totem')">×</button>
+                                    </div>
+                                </div>
+                                <div class="calc-group" style="margin-bottom:8px;">
+                                    <label class="calc-label" style="text-transform:none;opacity:0.8;">Shoe Reforge</label>
+                                    <div class="input-group-x">
+                                        <select id="ms-reforge" class="input-dark ms-trigger"><option value="0">None</option></select>
+                                        <button class="btn-x" onclick="resetMsInput('ms-reforge')">×</button>
+                                    </div>
+                                </div>
+                                <div class="calc-group" style="margin-bottom:8px;">
+                                    <label class="calc-label" style="text-transform:none;opacity:0.8;">Demi-God (40%)</label>
+                                    <label class="toggle-row">
+                                        <span id="lbl-ms-demigod">Inactive</span>
+                                        <input type="checkbox" id="ms-demigod" class="toggle-input ms-trigger">
+                                        <div class="toggle-switch"></div>
+                                    </label>
+                                </div>
+                                <div class="calc-group" style="margin-bottom:8px;">
+                                    <label class="calc-label" style="text-transform:none;opacity:0.8;">Title (%)</label>
+                                    <div class="input-group-x">
+                                        <input type="number" id="ms-title" class="input-dark ms-trigger" placeholder="0" value="0">
+                                        <button class="btn-x" onclick="resetMsInput('ms-title')">×</button>
+                                    </div>
+                                </div>
+                                <div class="calc-group">
+                                    <label class="calc-label" style="text-transform:none;opacity:0.8;">March Song (%)</label>
+                                    <div class="input-group-x">
+                                        <input type="number" id="ms-march" class="input-dark ms-trigger" placeholder="0" value="0">
+                                        <button class="btn-x" onclick="resetMsInput('ms-march')">×</button>
+                                    </div>
+                                </div>
+                                <div id="ms-g1-max" class="group-result">Max: 0%</div>
+                            </div>
+                        </div>
+
+                        <!-- Group 2 -->
+                        <div class="calc-group">
+                            <label class="calc-label">Group 2 (Active) <span class="section-note" style="display:inline;">Highest Only</span></label>
+                            <div style="background:rgba(0,0,0,0.2); border:1px dashed var(--border); border-radius:8px; padding:15px;">
+                                <div class="calc-group" style="margin-bottom:8px;">
+                                    <label class="calc-label" style="text-transform:none;opacity:0.8;">Pet/Partner (55%)</label>
+                                    <label class="toggle-row">
+                                        <span id="lbl-ms-pet-buff">Inactive</span>
+                                        <input type="checkbox" id="ms-pet-buff" class="toggle-input ms-trigger">
+                                        <div class="toggle-switch"></div>
+                                    </label>
+                                </div>
+                                <div class="calc-group" style="margin-bottom:8px;">
+                                    <label class="calc-label" style="text-transform:none;opacity:0.8;">Potion</label>
+                                    <div class="input-group-x">
+                                        <select id="ms-potion" class="input-dark ms-trigger">
+                                            <option value="0">None</option>
+                                            <option value="30">30%</option>
+                                            <option value="40">40%</option>
+                                        </select>
+                                        <button class="btn-x" onclick="resetMsInput('ms-potion')">×</button>
+                                    </div>
+                                </div>
+                                <div class="calc-group" style="margin-bottom:8px;">
+                                    <label class="calc-label" style="text-transform:none;opacity:0.8;">Shadow Cloak (100%)</label>
+                                    <label class="toggle-row">
+                                        <span id="lbl-ms-cloak">Inactive</span>
+                                        <input type="checkbox" id="ms-cloak" class="toggle-input ms-trigger">
+                                        <div class="toggle-switch"></div>
+                                    </label>
+                                </div>
+                                <div class="calc-group" style="margin-bottom:8px;">
+                                    <label class="calc-label" style="text-transform:none;opacity:0.8;">Shylock's Step (100%)</label>
+                                    <label class="toggle-row">
+                                        <span id="lbl-ms-shylock">Inactive</span>
+                                        <input type="checkbox" id="ms-shylock" class="toggle-input ms-trigger">
+                                        <div class="toggle-switch"></div>
+                                    </label>
+                                </div>
+                                <div class="calc-group form-group-disabled" id="ms-alpaca-wrap" style="margin-bottom:8px;">
+                                    <label class="calc-label" style="text-transform:none;opacity:0.8;">Alpaca Robe (20%)</label>
+                                    <label class="toggle-row">
+                                        <span id="lbl-ms-alpaca">Unequipped</span>
+                                        <input type="checkbox" id="ms-alpaca" class="toggle-input ms-trigger">
+                                        <div class="toggle-switch"></div>
+                                    </label>
+                                </div>
+                                <div class="calc-group form-group-disabled" id="ms-comm-reforge-wrap">
+                                    <label class="calc-label" style="text-transform:none;opacity:0.8;">Commerce Reforge</label>
+                                    <div class="input-group-x">
+                                        <select id="ms-commerce-reforge" class="input-dark ms-trigger"><option value="0">None</option></select>
+                                        <button class="btn-x" onclick="resetMsInput('ms-commerce-reforge')">×</button>
+                                    </div>
+                                </div>
+                                <div id="ms-g2-max" class="group-result">Max: 0%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Extra Additives -->
+                    <div class="calc-group">
+                        <label class="calc-label">Extra Additives (Stacks)</label>
+                        <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:15px;">
+                            <div class="calc-group" style="margin-bottom:8px;">
+                                <label class="calc-label" style="text-transform:none;opacity:0.8;">Shield of Trust (Footsteps)</label>
+                                <div class="input-group-x">
+                                    <select id="ms-shield" class="input-dark ms-trigger"><option value="0">None</option></select>
+                                    <button class="btn-x" onclick="resetMsInput('ms-shield')">×</button>
+                                </div>
+                            </div>
+                            <div class="calc-group" style="margin-bottom:8px;">
+                                <label class="calc-label" style="text-transform:none;opacity:0.8;">Shoe Set Effect</label>
+                                <div class="input-group-x">
+                                    <select id="ms-shoe-set" class="input-dark ms-trigger">
+                                        <option value="0">None</option>
+                                        <option value="10">Eweca (10%)</option>
+                                        <option value="12">Ladeca (12%)</option>
+                                    </select>
+                                    <button class="btn-x" onclick="resetMsInput('ms-shoe-set')">×</button>
+                                </div>
+                            </div>
+                            <div class="calc-group" style="margin-bottom:8px;">
+                                <label class="calc-label" style="text-transform:none;opacity:0.8;">Breath of Ladeca (15%)</label>
+                                <label class="toggle-row">
+                                    <span id="lbl-ms-ladeca-breath">Inactive</span>
+                                    <input type="checkbox" id="ms-ladeca-breath" class="toggle-input ms-trigger">
+                                    <div class="toggle-switch"></div>
+                                </label>
+                            </div>
+                            <div class="calc-group">
+                                <label class="calc-label" style="text-transform:none;opacity:0.8;">Ultimate Spirit (60%)</label>
+                                <label class="toggle-row">
+                                    <span id="lbl-ms-spirit">Inactive</span>
+                                    <input type="checkbox" id="ms-spirit" class="toggle-input ms-trigger">
+                                    <div class="toggle-switch"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
-            <!-- RIGHT PANEL: Multipliers -->
+            <!-- RIGHT PANEL -->
             <div class="panel right-panel" id="right-panel">
                 <div class="drawer-header">
                     <span class="drawer-title">Multipliers</span>
                     <button class="drawer-close" onclick="closeSidebars()">×</button>
                 </div>
                 
-                <!-- REMOVED DATA SOURCE SECTION -->
-
-                <div class="config-section">
-                    <label class="panel-label" style="color:var(--accent);">ACTIVE BUFFS</label>
-                    <div id="multiplier-list"></div>
-                </div>
-
-                <div class="config-section" style="border-bottom:none;">
-                    <label class="panel-label">Add Custom Buff</label>
-                    <div style="display:flex; gap:8px; margin-bottom:8px;">
-                        <input type="text" id="new-mult-name" class="input-dark" placeholder="Name (e.g. GM Event)" style="flex:1;">
-                        <input type="number" id="new-mult-val" class="input-dark" style="width:70px;" placeholder="%" step="0.1">
+                <!-- EXP Multipliers (Shown when leveling) -->
+                <div id="panel-exp-mults">
+                    <div class="config-section">
+                        <label class="panel-label" style="color:var(--accent);">ACTIVE BUFFS</label>
+                        <div id="multiplier-list"></div>
                     </div>
-                    <div style="display:flex; gap:8px; margin-bottom:12px;">
-                        <select id="new-mult-type" class="input-dark">
-                            <option value="mult">Multiplier (x)</option>
-                            <option value="bonus">Bonus (%)</option>
-                        </select>
-                        <button onclick="addMultiplier()" class="hub-btn" style="background:var(--card-bg); border-color:var(--text-dim); justify-content:center; flex:1;">+ Add</button>
-                    </div>
-                </div>
 
-                <!-- SECTION: KILLS (CHAR EXP) -->
-                <div class="config-section" id="section-kills" style="border-top:1px solid var(--border);">
-                    <label class="panel-label">Estimated Kills</label>
-                    <div style="background:var(--card-bg); border-radius:8px; padding:10px; font-size:12px;">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                            <span style="color:var(--text-dim);">Baltane (Zombies)</span>
-                            <span id="run-zombie" style="color:#fff;">0</span>
+                    <div class="config-section" style="border-bottom:none;">
+                        <label class="panel-label">Add Custom Buff</label>
+                        <div style="display:flex; gap:8px; margin-bottom:8px;">
+                            <input type="text" id="new-mult-name" class="input-dark" placeholder="Name (e.g. GM Event)" style="flex:1;">
+                            <input type="number" id="new-mult-val" class="input-dark" style="width:70px;" placeholder="%" step="0.1">
                         </div>
-                        <div style="display:flex; justify-content:space-between;">
-                            <span style="color:var(--text-dim);">Tech Duinn Mobs</span>
-                            <span id="run-tech" style="color:#fff;">0</span>
+                        <div style="display:flex; gap:8px; margin-bottom:12px;">
+                            <select id="new-mult-type" class="input-dark">
+                                <option value="mult">Multiplier (x)</option>
+                                <option value="bonus">Bonus (%)</option>
+                            </select>
+                            <button onclick="addMultiplier()" class="hub-btn" style="background:var(--card-bg); border-color:var(--text-dim); justify-content:center; flex:1;">+ Add</button>
                         </div>
-                         <div style="margin-top:4px; font-size:9px; color:var(--text-dim); text-align:right;">(Turtle/Crab/Millipede)</div>
+                    </div>
+
+                    <!-- SECTION: KILLS (CHAR EXP) -->
+                    <div class="config-section" id="section-kills" style="border-top:1px solid var(--border);">
+                        <label class="panel-label">Estimated Kills</label>
+                        <div style="background:var(--card-bg); border-radius:8px; padding:10px; font-size:12px;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                                <span style="color:var(--text-dim);">Baltane (Zombies)</span>
+                                <span id="run-zombie" style="color:#fff;">0</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between;">
+                                <span style="color:var(--text-dim);">Tech Duinn Mobs</span>
+                                <span id="run-tech" style="color:#fff;">0</span>
+                            </div>
+                             <div style="margin-top:4px; font-size:9px; color:var(--text-dim); text-align:right;">(Turtle/Crab/Millipede)</div>
+                        </div>
+                    </div>
+
+                     <!-- SECTION: ARTIFACTS (EXPL EXP) -->
+                     <div class="config-section" id="section-artifacts" style="display:none; border-top:1px solid var(--border);">
+                        <label class="panel-label">Estimated Sources</label>
+                        <div id="artifact-list" style="background:var(--card-bg); border-radius:8px; padding:10px;">
+                            <!-- JS populated -->
+                        </div>
+                        <div style="margin-top:4px; font-size:9px; color:var(--text-dim); text-align:right;" id="art-note">*Uses specific formulas for Gems vs Items</div>
                     </div>
                 </div>
+                
+                <!-- MS CONFIG PANEL (Shown when Move Speed) -->
+                <div id="panel-ms-config" style="display:none;">
+                    <div class="config-section">
+                        <label class="panel-label">Base Settings</label>
+                        <div style="background:var(--card-bg); border:1px solid var(--border); border-radius:8px; padding:15px; margin-bottom:20px;">
+                            <div class="calc-group" style="margin-bottom:10px;">
+                                <label class="calc-label" style="text-transform:none;opacity:0.8;">Race</label>
+                                <select id="ms-race" class="input-dark ms-trigger">
+                                    <option value="116">Human (116%)</option>
+                                    <option value="133">Elf (133%)</option>
+                                    <option value="116">Giant (116%)</option>
+                                </select>
+                            </div>
+                            <div class="calc-group">
+                                <label class="calc-label" style="text-transform:none;opacity:0.8;">Commerce Mode</label>
+                                <label class="toggle-row">
+                                    <span id="lbl-ms-commerce-mode">Inactive</span>
+                                    <input type="checkbox" id="ms-commerce-mode" class="toggle-input ms-trigger">
+                                    <div class="toggle-switch"></div>
+                                </label>
+                            </div>
+                        </div>
 
-                 <!-- SECTION: ARTIFACTS (EXPL EXP) -->
-                 <div class="config-section" id="section-artifacts" style="display:none; border-top:1px solid var(--border);">
-                    <label class="panel-label">Estimated Sources</label>
-                    <div id="artifact-list" style="background:var(--card-bg); border-radius:8px; padding:10px;">
-                        <!-- JS populated -->
+                        <label class="panel-label">Multipliers</label>
+                        <div style="background:var(--card-bg); border:1px solid var(--border); border-radius:8px; padding:15px;">
+                            <div class="calc-group" style="margin-bottom:10px;">
+                                <label class="calc-label" style="text-transform:none;opacity:0.8;">Blannid's Blessing</label>
+                                <div class="input-group-x">
+                                    <select id="ms-blannid" class="input-dark ms-trigger">
+                                        <option value="0">None</option>
+                                        <option value="0.02">Lvl 1 (2%)</option>
+                                        <option value="0.04">Lvl 2 (4%)</option>
+                                        <option value="0.06">Lvl 3 (6%)</option>
+                                        <option value="0.08">Lvl 4 (8%)</option>
+                                    </select>
+                                    <button class="btn-x" onclick="resetMsInput('ms-blannid')">×</button>
+                                </div>
+                            </div>
+                            <div class="calc-group" style="margin-bottom:10px;">
+                                <label class="calc-label" style="text-transform:none;opacity:0.8;">Speed Totem</label>
+                                <div class="input-group-x">
+                                    <select id="ms-speed-totem" class="input-dark ms-trigger">
+                                        <option value="0">None</option>
+                                        <option value="0.01">1%</option>
+                                        <option value="0.02">2%</option>
+                                        <option value="0.03">3%</option>
+                                    </select>
+                                    <button class="btn-x" onclick="resetMsInput('ms-speed-totem')">×</button>
+                                </div>
+                            </div>
+                            <div class="calc-group" style="margin-bottom:10px;">
+                                <label class="calc-label" style="text-transform:none;opacity:0.8;">Ladeca Boost (Buff)</label>
+                                <div class="input-group-x">
+                                    <select id="ms-ladeca-buff" class="input-dark ms-trigger">
+                                        <option value="0">None</option>
+                                        <option value="0.01">1%</option>
+                                        <option value="0.02">2%</option>
+                                        <option value="0.03">3%</option>
+                                    </select>
+                                    <button class="btn-x" onclick="resetMsInput('ms-ladeca-buff')">×</button>
+                                </div>
+                            </div>
+                            <div class="calc-group">
+                                <label class="calc-label" style="text-transform:none;opacity:0.8;">Floral Fairy (10%)</label>
+                                <label class="toggle-row">
+                                    <span id="lbl-ms-floral-fairy">Inactive</span>
+                                    <input type="checkbox" id="ms-floral-fairy" class="toggle-input ms-trigger">
+                                    <div class="toggle-switch"></div>
+                                </label>
+                            </div>
+                        </div>
                     </div>
-                    <div style="margin-top:4px; font-size:9px; color:var(--text-dim); text-align:right;" id="art-note">*Uses specific formulas for Gems vs Items</div>
                 </div>
             </div>
         </div>
@@ -561,9 +802,19 @@
         totalExp: 0,
         tgt: 50,
         multipliers: [],
-        mastery: 'N', // UPDATED: Default is now N (0%)
+        mastery: 'N',
         bell: 0,
         customBase: 0
+    };
+
+    // Move Speed State
+    let msState = {
+        race: 116,
+        commerce: false,
+        shield: 0, shoeSet: 0, spirit: false, ladecaBreath: false, // Extras
+        totem: 0, reforge: 0, demigod: false, title: 0, march: 0, // G1
+        petBuff: false, potion: 0, cloak: false, shylock: false, alpaca: false, commReforge: 0, // G2
+        blannid: 0, speedTotem: 0, ladecaBuff: 0, floral: false // Multipliers
     };
 
     // --- DEFAULT BUFFS ---
@@ -613,33 +864,50 @@
         }
     });
 
-    // Removed Sync Listeners and updateDataStatus function
-
     // --- SWITCH TOOLS ---
     function setTool(mode) {
         if(mode === 'ego-feed' || mode === 'erg-break') { alert('Work in Progress!'); return; }
         
         if(currentMode === 'char-exp') saveInputsToState(charState);
         else if(currentMode === 'explore-exp') saveInputsToState(explState);
+        // msState saves automatically on input, but force a save here to be safe
+        if(currentMode === 'move-speed') saveFullState();
         
         currentMode = mode;
         
         document.getElementById('btn-char-exp').classList.toggle('active', mode === 'char-exp');
         document.getElementById('btn-explore-exp').classList.toggle('active', mode === 'explore-exp');
-        document.getElementById('calc-title').innerText = mode === 'char-exp' ? "Character Level" : "Exploration Level";
+        document.getElementById('btn-move-speed').classList.toggle('active', mode === 'move-speed');
         
-        // Visibility Toggles
-        document.getElementById('section-kills').style.display = (mode === 'char-exp') ? 'block' : 'none';
-        document.getElementById('section-artifacts').style.display = (mode === 'explore-exp') ? 'block' : 'none';
-        document.getElementById('expl-settings').style.display = (mode === 'explore-exp') ? 'grid' : 'none';
+        // Panels
+        document.getElementById('tool-char-exp').style.display = (mode === 'char-exp' || mode === 'explore-exp') ? 'block' : 'none';
+        document.getElementById('tool-move-speed').style.display = (mode === 'move-speed') ? 'block' : 'none';
+        
+        // Right Panel Sections
+        const isMs = (mode === 'move-speed');
+        const msConfig = document.getElementById('panel-ms-config');
+        const expMults = document.getElementById('panel-exp-mults');
+        
+        if (msConfig) msConfig.style.display = isMs ? 'block' : 'none';
+        if (expMults) expMults.style.display = !isMs ? 'block' : 'none';
 
-        const TABLE = mode === 'char-exp' ? CHAR_EXP_TABLE : EXPL_EXP_TABLE;
-        
-        const newState = mode === 'char-exp' ? charState : explState;
-        loadInputsFromState(newState);
-        
-        renderMultipliers();
-        calculateExp();
+        if (isMs) {
+            document.getElementById('calc-title').innerText = "Move Speed";
+            loadMsInputs();
+            calcMoveSpeed();
+        } else {
+            document.getElementById('calc-title').innerText = mode === 'char-exp' ? "Character Level" : "Exploration Level";
+            
+            // Visibility Toggles
+            document.getElementById('section-kills').style.display = (mode === 'char-exp') ? 'block' : 'none';
+            document.getElementById('section-artifacts').style.display = (mode === 'explore-exp') ? 'block' : 'none';
+            document.getElementById('expl-settings').style.display = (mode === 'explore-exp') ? 'grid' : 'none';
+
+            const newState = mode === 'char-exp' ? charState : explState;
+            loadInputsFromState(newState);
+            renderMultipliers();
+            calculateExp();
+        }
         
         if(window.innerWidth <= 1000) closeSidebars();
         saveFullState();
@@ -668,12 +936,19 @@
     // --- PERSISTENCE ---
     function saveFullState() {
         if(currentMode === 'char-exp') saveInputsToState(charState);
-        else saveInputsToState(explState);
-
-        const fullData = { char: charState, expl: explState, lastMode: currentMode };
+        else if(currentMode === 'explore-exp') saveInputsToState(explState);
+        
+        const fullData = { char: charState, expl: explState, ms: msState, lastMode: currentMode };
         
         if(currentUser && !currentUser.isGuest) db.ref(`users/${currentUser.uid}/calc_state_v2`).set(fullData);
         else localStorage.setItem('mabi_calc_state_v2', JSON.stringify(fullData));
+    }
+
+    // Debounce wrapper to prevent spamming DB on input
+    let saveDebounceTimer;
+    function saveFullStateDebounced() {
+        clearTimeout(saveDebounceTimer);
+        saveDebounceTimer = setTimeout(saveFullState, 1000);
     }
 
     function loadState(data) {
@@ -692,7 +967,13 @@
             explState.bell = data.expl.bell || 0;
             explState.customBase = data.expl.customBase || "";
         }
+        if(data.ms) {
+            msState = { ...msState, ...data.ms }; // Merge saved with defaults
+        }
         
+        // Populate MS Dropdowns once
+        populateMsDropdowns();
+
         if(data.lastMode) setTool(data.lastMode);
         else {
              renderMultipliers();
@@ -702,7 +983,7 @@
     
     function mergeSavedMults(defaults, saved) {
         let merged = JSON.parse(JSON.stringify(defaults));
-        if(!saved) return merged; // Handle empty saved
+        if(!saved) return merged;
         const savedMap = {};
         saved.forEach(m => savedMap[m.id] = m);
         
@@ -722,7 +1003,7 @@
         return merged;
     }
 
-    // --- CALCULATION CORE ---
+    // --- EXP CALCULATION CORE ---
     function formatInput(input) {
         let val = input.value.replace(/,/g, '').replace(/\D/g, '');
         if(val) input.value = parseInt(val).toLocaleString();
@@ -787,13 +1068,9 @@
                 }
             });
 
-            // const wizExp = 250000 * generalMult; // Removed
-            // const baltaneExp = 1500000 * baltaneMult; // Removed
             const techMobExp = 18457 * generalMult;
             const zombieExp = 9000 * baltaneMult;
 
-            // document.getElementById('run-wiz').innerText = Math.ceil(diff / wizExp).toLocaleString(); // Removed
-            // document.getElementById('run-baltane').innerText = Math.ceil(diff / baltaneExp).toLocaleString(); // Removed
             document.getElementById('run-zombie').innerText = Math.ceil(diff / zombieExp).toLocaleString();
             document.getElementById('run-tech').innerText = Math.ceil(diff / techMobExp).toLocaleString();
         } else {
@@ -803,11 +1080,9 @@
              const bellPct = parseFloat(document.getElementById('fynn-bell').value) || 0;
              const bellEfficiency = bellPct / 100;
              
-             // UPDATED: Fixed "Dot" issue by stripping both dots and commas for Custom Base EXP input
              const customBaseRaw = document.getElementById('custom-base-exp').value.replace(/[,.]/g, '');
              const customBase = parseFloat(customBaseRaw) || 0;
 
-             // Extract Buffs
              let robeBonus = 0;
              let gmBonus = 0;
              let eventMult = 1.0;
@@ -828,7 +1103,7 @@
                  let finalExp = 0;
                  if (item.type === 'fynni') {
                      // Fynni Formula: Base * (1 + (Robe * 5/9) + (GM * 5/9)) * Event
-                     const efficiency = 5/9; // 0.55555...
+                     const efficiency = 5/9;
                      const effBonus = (robeBonus * efficiency) + (gmBonus * efficiency);
                      finalExp = item.exp * (1 + effBonus) * eventMult;
                  } else {
@@ -843,9 +1118,8 @@
                  artList.appendChild(div);
              });
 
-             // 2. Fynn Crafting (Renamed from Custom Craft)
+             // 2. Fynn Crafting
              if (customBase > 0) {
-                 // Formula: (Base * BellFactor) * (1 + Mastery + Robe + GM) * Event
                  let customFinal = 0;
                  let impossible = false;
                  
@@ -994,6 +1268,239 @@
         calculateExp();
     }
 
+    // --- MOVE SPEED CALCULATOR LOGIC ---
+    function populateMsDropdowns() {
+        // Wave Sweeper (Specific Ranks)
+        const totemSel = document.getElementById('ms-totem');
+        if(totemSel && totemSel.children.length === 1) {
+            const ranks = [
+                { val: 2, label: "Rank C (2%)" },
+                { val: 6, label: "Rank B (6%)" },
+                { val: 10, label: "Rank A (10%)" },
+                { val: 16, label: "Rank S (16%)" },
+                { val: 18, label: "Exquisite (18%)" }
+            ];
+            ranks.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r.val;
+                opt.innerText = r.label;
+                totemSel.appendChild(opt);
+            });
+        }
+        // Shoe Reforge (1-5)
+        const reforgeSel = document.getElementById('ms-reforge');
+        if(reforgeSel && reforgeSel.children.length === 1) {
+            for(let i=1; i<=5; i++) {
+                const opt = document.createElement('option'); opt.value = i*3; opt.innerText = `Level ${i} (${i*3}%)`; reforgeSel.appendChild(opt);
+            }
+        }
+        // Commerce Reforge (1-20)
+        const commSel = document.getElementById('ms-commerce-reforge');
+        if(commSel && commSel.children.length === 1) {
+            for(let i=1; i<=20; i++) {
+                const opt = document.createElement('option'); opt.value = i*3; opt.innerText = `Level ${i} (${i*3}%)`; commSel.appendChild(opt);
+            }
+        }
+        // Shield (1-15)
+        const shieldSel = document.getElementById('ms-shield');
+        if(shieldSel && shieldSel.children.length === 1) {
+            for(let i=1; i<=15; i++) {
+                const val = 10 + ((i-1)*2);
+                const opt = document.createElement('option'); opt.value = val; opt.innerText = `Level ${i} (${val}%)`; shieldSel.appendChild(opt);
+            }
+        }
+    }
+
+    function loadMsInputs() {
+        if(!msState) return;
+        document.getElementById('ms-race').value = msState.race || 116;
+        document.getElementById('ms-commerce-mode').checked = msState.commerce || false;
+        
+        // G1
+        document.getElementById('ms-totem').value = msState.totem || 0;
+        document.getElementById('ms-reforge').value = msState.reforge || 0;
+        document.getElementById('ms-demigod').checked = msState.demigod || false;
+        document.getElementById('ms-title').value = msState.title || 0;
+        document.getElementById('ms-march').value = msState.march || 0;
+        
+        // G2
+        document.getElementById('ms-pet-buff').checked = msState.petBuff || false;
+        document.getElementById('ms-potion').value = msState.potion || 0;
+        document.getElementById('ms-cloak').checked = msState.cloak || false;
+        document.getElementById('ms-shylock').checked = msState.shylock || false;
+        document.getElementById('ms-alpaca').checked = msState.alpaca || false;
+        document.getElementById('ms-commerce-reforge').value = msState.commReforge || 0;
+        
+        // Extras
+        document.getElementById('ms-shield').value = msState.shield || 0;
+        document.getElementById('ms-shoe-set').value = msState.shoeSet || 0;
+        document.getElementById('ms-spirit').checked = msState.spirit || false;
+        document.getElementById('ms-ladeca-breath').checked = msState.ladecaBreath || false;
+        
+        // Multipliers
+        document.getElementById('ms-blannid').value = msState.blannid || 0;
+        document.getElementById('ms-speed-totem').value = msState.speedTotem || 0;
+        document.getElementById('ms-ladeca-buff').value = msState.ladecaBuff || 0;
+        document.getElementById('ms-floral-fairy').checked = msState.floral || false;
+    }
+
+    function updateToggleLabel(id, textActive, textInactive) {
+        const el = document.getElementById(id);
+        const lbl = document.getElementById('lbl-' + id);
+        if (el && lbl) {
+            lbl.innerText = el.checked ? textActive : textInactive;
+            lbl.style.color = el.checked ? '#fff' : 'var(--text-dim)';
+        }
+    }
+
+    function calcMoveSpeed() {
+        // Update State from DOM
+        msState.race = document.getElementById('ms-race').value;
+        msState.commerce = document.getElementById('ms-commerce-mode').checked;
+        msState.totem = document.getElementById('ms-totem').value;
+        msState.reforge = document.getElementById('ms-reforge').value;
+        msState.demigod = document.getElementById('ms-demigod').checked;
+        msState.title = document.getElementById('ms-title').value;
+        msState.march = document.getElementById('ms-march').value;
+        
+        msState.petBuff = document.getElementById('ms-pet-buff').checked;
+        msState.potion = document.getElementById('ms-potion').value;
+        msState.cloak = document.getElementById('ms-cloak').checked;
+        msState.shylock = document.getElementById('ms-shylock').checked;
+        msState.alpaca = document.getElementById('ms-alpaca').checked;
+        msState.commReforge = document.getElementById('ms-commerce-reforge').value;
+        
+        msState.shield = document.getElementById('ms-shield').value;
+        msState.shoeSet = document.getElementById('ms-shoe-set').value;
+        msState.spirit = document.getElementById('ms-spirit').checked;
+        msState.ladecaBreath = document.getElementById('ms-ladeca-breath').checked;
+        
+        msState.blannid = document.getElementById('ms-blannid').value;
+        msState.speedTotem = document.getElementById('ms-speed-totem').value;
+        msState.ladecaBuff = document.getElementById('ms-ladeca-buff').value;
+        msState.floral = document.getElementById('ms-floral-fairy').checked;
+
+        saveFullStateDebounced(); // Persist
+
+        // Reactive Labels Update
+        updateToggleLabel('ms-commerce-mode', 'Active', 'Inactive');
+        updateToggleLabel('ms-demigod', 'Active (40%)', 'Inactive');
+        updateToggleLabel('ms-pet-buff', 'Active (55%)', 'Inactive');
+        updateToggleLabel('ms-cloak', 'Active (100%)', 'Inactive');
+        updateToggleLabel('ms-shylock', 'Active (100%)', 'Inactive');
+        updateToggleLabel('ms-alpaca', 'Equipped (20%)', 'Unequipped');
+        updateToggleLabel('ms-ladeca-breath', 'Active (15%)', 'Inactive');
+        updateToggleLabel('ms-spirit', 'Active (60%)', 'Inactive');
+        updateToggleLabel('ms-floral-fairy', 'Active (10%)', 'Inactive');
+
+        // UI Toggle Logic
+        const isCommerce = msState.commerce;
+        const alpacaWrap = document.getElementById('ms-alpaca-wrap');
+        const commRefWrap = document.getElementById('ms-comm-reforge-wrap');
+        
+        if(isCommerce) {
+            alpacaWrap.classList.remove('form-group-disabled');
+            commRefWrap.classList.remove('form-group-disabled');
+        } else {
+            alpacaWrap.classList.add('form-group-disabled');
+            commRefWrap.classList.add('form-group-disabled');
+            // Reset state to avoid confusion
+            document.getElementById('ms-alpaca').checked = false;
+            updateToggleLabel('ms-alpaca', 'Equipped (20%)', 'Unequipped'); // Force update label
+            document.getElementById('ms-commerce-reforge').value = 0;
+        }
+
+        // Calculation
+        let base = parseFloat(msState.race);
+
+        // Group 1 Sources
+        const g1Sources = [
+            parseInt(msState.totem),
+            parseInt(msState.reforge),
+            msState.demigod ? 40 : 0,
+            parseFloat(msState.title) || 0,
+            parseFloat(msState.march) || 0
+        ];
+        
+        // Group 2 Sources
+        const g2Sources = [
+            msState.petBuff ? 55 : 0,
+            parseInt(msState.potion),
+            msState.cloak ? 100 : 0,
+            msState.shylock ? 100 : 0,
+            document.getElementById('ms-alpaca').checked ? 20 : 0, // Read from DOM to catch reset
+            parseInt(document.getElementById('ms-commerce-reforge').value)
+        ];
+
+        const g1Max = Math.max(...g1Sources);
+        const g2Max = Math.max(...g2Sources);
+
+        document.getElementById('ms-g1-max').innerText = `Max: ${g1Max}%`;
+        document.getElementById('ms-g2-max').innerText = `Max: ${g2Max}%`;
+
+        // Comparison
+        const g1El = document.getElementById('ms-g1-max');
+        const g2El = document.getElementById('ms-g2-max');
+        g1El.classList.remove('winner');
+        g2El.classList.remove('winner');
+
+        let mainBonus = 0;
+        if (g1Max >= g2Max) {
+            mainBonus = g1Max;
+            g1El.classList.add('winner');
+        } else {
+            mainBonus = g2Max;
+            g2El.classList.add('winner');
+        }
+
+        // Stackable Extras
+        let additive = 0;
+        additive += parseInt(msState.shield);
+        additive += parseInt(msState.shoeSet);
+        if(msState.ladecaBreath) additive += 15;
+        if(msState.spirit) additive += 60;
+
+        // Multipliers
+        let multipliers = [];
+        
+        const blannidVal = parseFloat(msState.blannid);
+        if(blannidVal > 0) multipliers.push(1 + blannidVal);
+
+        const totemVal = parseFloat(msState.speedTotem);
+        if(totemVal > 0) multipliers.push(1 + totemVal);
+
+        const ladecaVal = parseFloat(msState.ladecaBuff);
+        if(ladecaVal > 0) multipliers.push(1 + ladecaVal);
+
+        if(msState.floral) multipliers.push(1.10);
+
+        // Calculation Step
+        // Base + Additive %
+        let currentSpeed = base + mainBonus + additive;
+
+        // Apply Multipliers
+        multipliers.forEach(m => {
+            currentSpeed *= m;
+        });
+
+        document.getElementById('ms-final-speed').innerText = currentSpeed.toFixed(1) + '%';
+    }
+
+    // Helper for 'X' button
+    window.resetMsInput = (id) => {
+        const el = document.getElementById(id);
+        if(!el) return;
+        if(el.type === 'number' || el.tagName === 'SELECT') el.value = 0;
+        else if (el.type === 'text') el.value = "";
+        calcMoveSpeed();
+    }
+
+    // Move Speed Event Listeners
+    document.querySelectorAll('.ms-trigger').forEach(el => {
+        el.addEventListener('change', calcMoveSpeed);
+        el.addEventListener('input', calcMoveSpeed);
+    });
+
     // UI Helpers
     window.toggleSidebar = (side) => {
         const left = document.getElementById('left-panel');
@@ -1009,7 +1516,7 @@
         document.getElementById('mobile-backdrop').classList.remove('active');
     };
     
-    // Init with calc
+    // Init
     calculateExp();
     </script>
 </body>
