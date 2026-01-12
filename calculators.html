@@ -1404,10 +1404,7 @@
         } else {
             alpacaWrap.classList.add('form-group-disabled');
             commRefWrap.classList.add('form-group-disabled');
-            // Reset state to avoid confusion
-            document.getElementById('ms-alpaca').checked = false;
-            updateToggleLabel('ms-alpaca', 'Equipped (20%)', 'Unequipped'); // Force update label
-            document.getElementById('ms-commerce-reforge').value = 0;
+            // Removed reset logic so settings are preserved
         }
 
         // Calculation
@@ -1428,8 +1425,9 @@
             parseInt(msState.potion),
             msState.cloak ? 100 : 0,
             msState.shylock ? 100 : 0,
-            document.getElementById('ms-alpaca').checked ? 20 : 0, // Read from DOM to catch reset
-            parseInt(document.getElementById('ms-commerce-reforge').value)
+            // Only apply Alpaca/Commerce Reforge if Commerce Mode is ON
+            (isCommerce && document.getElementById('ms-alpaca').checked) ? 20 : 0, 
+            isCommerce ? parseInt(document.getElementById('ms-commerce-reforge').value) : 0
         ];
 
         const g1Max = Math.max(...g1Sources);
