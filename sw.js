@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mabi-tools-v4.2.4'; // Bumped version to force icon cache
+const CACHE_NAME = 'mabi-tools-v4.2.5'; // Bumped version to force icon cache
 
 // List of all files to cache. If a file is missing here, it won't work offline.
 const ASSETS_TO_CACHE = [
