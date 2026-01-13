@@ -1528,26 +1528,36 @@
             rtdb.ref('public_commerce/stocks').on('value', (s) => { if (!skipRender) { publicStocks = s.val() || {}; refreshUI(); } skipRender = false; });
             rtdb.ref('public_commerce/base_prices').on('value', (s) => { if (!skipRender) { publicBasePrices = s.val() || {}; refreshUI(); } skipRender = false; });
             
-            auth.onAuthStateChanged(user => {
-                
-                if (user) {
-                    currentUser = user;
-                    firebase.database().ref(`users/${user.uid}/profile`).on('value', (snap) => {
-                        const profile = snap.val();
-                        if (profile) {
-                            localStorage.setItem('mabi_user_cache_' + user.uid, JSON.stringify(profile));
-                        }
-                    });
+            // --- AUTHENTICATION LISTENER ---
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUser = user;
 
-                    firebase.database().ref(`users/${user.uid}/settings`).once('value', (snap) => {
-                        const cloudPrefs = snap.val();
-                        if(cloudPrefs) applySettings(cloudPrefs);
-                    });
+                // 1. Sync Profile & Force Header Update
+                firebase.database().ref(`users/${user.uid}/profile`).on('value', (snap) => {
+                    const profile = snap.val();
+                    if (profile) {
+                        // Keep this: Saves data so nav.js can find it
+                        localStorage.setItem('mabi_user_cache_' + user.uid, JSON.stringify(profile));
+                        
+                        // ADD THIS: Tells the header components to refresh immediately
+                        const headers = document.querySelectorAll('user-header');
+                        headers.forEach(h => {
+                            if (h.updateUI) h.updateUI(user);
+                        });
+                    }
+                });
 
-                } else {
-                    currentUser = { uid: 'local_guest', isGuest: true };
-                }
-            });
+                // 2. Sync Settings (Required for Commerce.html to load Grandmaster/Alpaca/etc)
+                firebase.database().ref(`users/${user.uid}/settings`).once('value', (snap) => {
+                    const cloudPrefs = snap.val();
+                    if(cloudPrefs) applySettings(cloudPrefs);
+                });
+
+            } else {
+                currentUser = { uid: 'local_guest', isGuest: true };
+            }
+        });
         });
     </script>
 </body>
