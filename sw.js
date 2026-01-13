@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mabi-tools-v7-force-net'; // Bump this one last time to apply the fix
+const CACHE_NAME = 'mabi-tools-v8-force-net'; // Bump this one last time to apply the fix
 
 const ASSETS_TO_CACHE = [
   './',
@@ -10,6 +10,7 @@ const ASSETS_TO_CACHE = [
   './wishlist.html',
   './calculators.html',
   './simulator.html',
+  './journals.html',
   './settings.html', 
   './manifest.json',
   './images/icon-192.png',
