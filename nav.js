@@ -77,8 +77,6 @@ class GlobalNav extends HTMLElement {
 
 customElements.define('global-nav', GlobalNav);
 
-// ... existing GlobalNav code ...
-
 class UserHeader extends HTMLElement {
     connectedCallback() {
         this.innerHTML = `
@@ -90,6 +88,14 @@ class UserHeader extends HTMLElement {
                 }
                 .user-text-group {
                     text-align: right;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-end;
+                }
+                .user-top-row {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
                 }
                 .user-name-display {
                     font-size: 12px;
@@ -113,13 +119,13 @@ class UserHeader extends HTMLElement {
             </style>
             <div class="user-header-container">
                 <div class="user-text-group">
-                    
-                    <!-- Settings Gear -->
-                    <a href="settings.html" id="header-settings-btn" style="display:none; color:var(--text-dim); transition:color 0.2s; align-items:center;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-dim)'">
-                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                    </a>
-                    
-                    <div id="header-username" class="user-name-display">Guest</div>
+                    <div class="user-top-row">
+                        <!-- Settings Gear -->
+                        <a href="settings.html" id="header-settings-btn" style="display:none; color:var(--text-dim); transition:color 0.2s; align-items:center;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-dim)'">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </a>
+                        <div id="header-username" class="user-name-display">Guest</div>
+                    </div>
                     <div id="header-status" class="user-status-display">Local Mode</div>
                 </div>
                 <div id="header-avatar" class="user-avatar-display"></div>
@@ -139,13 +145,15 @@ class UserHeader extends HTMLElement {
         const nameEl = this.querySelector('#header-username');
         const statusEl = this.querySelector('#header-status');
         const avatarEl = this.querySelector('#header-avatar');
+        const settingsBtn = this.querySelector('#header-settings-btn');
 
         // Default Avatar SVG (Grey generic user)
         const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
 
         if (user) {
-            statusEl.innerText = "Online test";
+            statusEl.innerText = "Online";
             statusEl.style.color = "var(--accent, #38bdf8)";
+            if(settingsBtn) settingsBtn.style.display = "flex";
             
             // Try to get cached profile data (username/avatar) from localStorage
             try {
@@ -167,6 +175,7 @@ class UserHeader extends HTMLElement {
             statusEl.innerText = "Local Mode";
             statusEl.style.color = "var(--text-dim, #a1a1aa)";
             avatarEl.style.backgroundImage = `url('${defaultAvatar}')`;
+            if(settingsBtn) settingsBtn.style.display = "none";
         }
     }
 }
