@@ -215,8 +215,8 @@
             .drawer-title { font-weight: 700; color: #fff; }
             .drawer-close { background: none; border: none; color: var(--text-dim); font-size: 20px; padding: 0 5px; cursor: pointer; }
 
+            /* Mobile User Profile */
             .user-profile-box { display: flex; align-items: center; gap: 12px; padding: 15px; border-bottom: 1px solid var(--border); }
-            .user-avatar-mobile { width: 40px; height: 40px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; flex-shrink: 0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"); }
         }
     </style>
 </head>
@@ -249,13 +249,8 @@
                 <div style="display:flex; align-items:center;">
                     <span class="main-title">MARKET WISHLIST</span>
                 </div>
-                <div style="display:flex; gap:12px; align-items:center;">
-                    <div style="text-align:right;">
-                        <div id="user-info" style="font-size:12px; font-weight:600; color:var(--text-main);">Guest</div>
-                        <div id="connection-status" style="font-size:10px; color:var(--text-dim);">Local Mode</div>
-                    </div>
-                    <div id="user-avatar" style="width: 36px; height: 36px; border-radius: 50%; background-color: var(--card-bg); border: 1px solid var(--border); background-size: cover; background-position: center; background-image: url('data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23a1a1aa\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E');"></div>
-                </div>
+                <!-- User Profile Section -->
+                <user-header></user-header>
             </div>
         </div>
 
@@ -268,11 +263,7 @@
                 </div>
                 
                 <div class="user-profile-box mobile-only">
-                    <div id="mobile-user-avatar" class="user-avatar-mobile"></div>
-                    <div style="flex-grow:1; min-width:0;">
-                        <div id="mobile-user-info" class="user-info-text-mobile">Guest</div>
-                        <div id="mobile-connection-status" class="user-status-mobile">Local Mode</div>
-                    </div>
+                    <user-header></user-header>
                 </div>
                 
                 <div class="config-section">
@@ -391,10 +382,24 @@
     let editingId = null;
 
     auth.onAuthStateChanged(user => {
-
         if (user) { 
             currentUser = user;
+
+            // 1. Sync Profile & Force Header Update
+            db.ref(`users/${user.uid}/profile`).on('value', snap => {
+                const profile = snap.val();
+                if(profile) {
+                    localStorage.setItem('mabi_user_cache_' + user.uid, JSON.stringify(profile));
+                    
+                    // Force the header to refresh immediately
+                    const headers = document.querySelectorAll('user-header');
+                    headers.forEach(h => {
+                        if (h.updateUI) h.updateUI(user);
+                    });
+                }
+            });
             
+            // 2. Load Wishlist Data
             db.ref(`users/${user.uid}/wishlist`).on('value', (snap) => {
                 const data = snap.val() || {};
                 if (Array.isArray(data)) {
@@ -405,8 +410,11 @@
                 }
                 renderList();
             });
+
         } else { 
             currentUser = { uid: 'local_guest', isGuest: true };
+            
+            // 3. Load Guest Data
             const localRaw = localStorage.getItem('mabi_wishlist_data');
             if (localRaw) {
                 const parsed = JSON.parse(localRaw);
