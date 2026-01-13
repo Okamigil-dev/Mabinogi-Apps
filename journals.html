@@ -122,7 +122,7 @@
         input:checked + .toggle-switch::after { transform: translateX(16px); }
         .toggle-input { display: none; }
         
-        /* Import Modal */
+        /* Import Modal - COMMENTED OUT
         #import-modal {
             position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000;
             display: none; align-items: center; justify-content: center; padding: 20px;
@@ -139,6 +139,7 @@
         }
         .modal-body { padding: 20px; }
         .modal-footer { padding: 15px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+        */
 
         /* Mobile */
         .mobile-nav { display: none; }
@@ -186,7 +187,7 @@
 
     <div class="mobile-backdrop" id="mobile-backdrop" onclick="closeSidebars()"></div>
     
-    <!-- IMPORT MODAL (Kept for future updates) -->
+    <!-- IMPORT MODAL COMMENTED OUT
     <div id="import-modal">
         <div class="modal-card">
             <div class="modal-header">
@@ -212,6 +213,7 @@
             </div>
         </div>
     </div>
+    -->
 
     <div class="interface-container">
         <!-- Global Navigation Bar -->
@@ -249,10 +251,12 @@
 
                 <!-- COOKING SPECIFIC FILTERS -->
                 <div id="ctrl-cooking" style="display:block;">
+                    <!-- 
                     <div class="config-section" style="border-top:1px solid var(--border);">
                         <label class="panel-label">Admin</label>
                         <button class="hub-btn" onclick="toggleImport(true)">📂 Update Public List</button>
                     </div>
+                    -->
 
                     <div class="config-section">
                         <label class="panel-label">Search</label>
@@ -773,10 +777,10 @@
     let userStars = {}; 
     let currentUser = null;
     let activeMethod = 'All';
-    let currentSort = 'default';
+    let currentSort = 'default'; // Default is now Journal Order
     let currentJournal = 'cooking';
 
-    // --- AUTHENTICATION ---
+    // ... existing auth ...
     auth.onAuthStateChanged(user => {
         if (user) {
             currentUser = user;
@@ -788,7 +792,6 @@
                 }
             });
 
-            // Load User Progress (Stars) Only
             db.ref(`users/${user.uid}/cooking_stars`).on('value', snap => {
                 userStars = snap.val() || {};
                 renderRecipes();
@@ -796,7 +799,6 @@
             });
         } else {
             currentUser = { uid: 'local_guest', isGuest: true };
-            // Load Local Guest Progress
             const localStars = localStorage.getItem('mabi_cooking_journal');
             userStars = localStars ? JSON.parse(localStars) : {};
             renderRecipes();
@@ -804,51 +806,19 @@
         }
     });
 
-    // --- JOURNAL SWITCHER LOGIC ---
-    function setJournal(mode) {
-        currentJournal = mode;
-        
-        // Update Buttons
-        document.getElementById('btn-j-cooking').classList.toggle('active', mode === 'cooking');
-        document.getElementById('btn-j-fishing').classList.toggle('active', mode === 'fishing');
-        document.getElementById('btn-j-taming').classList.toggle('active', mode === 'taming');
-        
-        // Toggle Panels
-        ['cooking', 'fishing', 'taming'].forEach(m => {
-            const display = (m === mode) ? 'block' : 'none';
-            const ctrl = document.getElementById(`ctrl-${m}`);
-            if(ctrl) ctrl.style.display = display;
-            
-            const view = document.getElementById(`view-${m}`);
-            if(view) {
-                if(display === 'block' && m === 'cooking') view.style.display = 'flex';
-                else if(display === 'block') view.style.display = 'flex';
-                else view.style.display = 'none';
-            }
-            
-            const stats = document.getElementById(`stats-${m}`);
-            if(stats) stats.style.display = display;
-        });
+    // ... existing setJournal / toggleImport ...
 
-        if (window.innerWidth <= 1000) closeSidebars();
-    }
-
-    // --- IMPORT LOGIC (ADMIN/PUBLIC WRITE) ---
     function toggleImport(show) {
         document.getElementById('import-modal').style.display = show ? 'flex' : 'none';
     }
 
     function processImport() {
-        // ... (Import logic kept for manual overrides if needed) ...
-        const text = document.getElementById('import-text').value;
-        // ...
         alert("This feature is now mainly for custom updates since the list is hardcoded!");
         toggleImport(false);
     }
 
     function saveStars() {
         if (currentUser && !currentUser.isGuest) {
-            // Save ONLY the stars, not the recipes
             db.ref(`users/${currentUser.uid}/cooking_stars`).set(userStars);
         } else {
             localStorage.setItem('mabi_cooking_journal', JSON.stringify(userStars));
@@ -866,7 +836,7 @@
         currentSort = type;
         document.querySelectorAll('.hub-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`sort-${type}`).classList.add('active');
-        document.getElementById(`btn-j-${currentJournal}`).classList.add('active');
+        document.getElementById(`btn-j-${currentJournal}`).classList.add('active'); // Keep journal btn active
         renderRecipes();
     }
 
@@ -901,7 +871,7 @@
         });
 
         filtered.sort((a, b) => {
-            if (currentSort === 'default') return 0; // Maintain original array order
+            if (currentSort === 'default') return 0; // Maintain original array order (Journal Order)
             
             const starsA = userStars[a.name] || 0;
             const starsB = userStars[b.name] || 0;
