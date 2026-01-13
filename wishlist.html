@@ -391,26 +391,9 @@
     let editingId = null;
 
     auth.onAuthStateChanged(user => {
-        const uInfo = document.getElementById('user-info');
-        const uAvatar = document.getElementById('user-avatar');
-        const status = document.getElementById('connection-status');
-        const mobileUser = document.getElementById('mobile-user-info');
-        const mobileAvatar = document.getElementById('mobile-user-avatar');
-        const mobileStatus = document.getElementById('mobile-connection-status');
 
         if (user) { 
             currentUser = user;
-            status.innerText = "Online";
-            status.style.color = "var(--accent)";
-            if(mobileStatus) { mobileStatus.innerText = "Online"; mobileStatus.style.color = "var(--accent)"; }
-            
-            try {
-                const cached = JSON.parse(localStorage.getItem('mabi_user_cache_' + user.uid) || '{}');
-                const name = cached.username || user.email;
-                uInfo.innerText = name;
-                if(mobileUser) mobileUser.innerText = name;
-                if(cached.avatar) { uAvatar.style.backgroundImage = `url('${cached.avatar}')`; if(mobileAvatar) mobileAvatar.style.backgroundImage = `url('${cached.avatar}')`; }
-            } catch(e) {}
             
             db.ref(`users/${user.uid}/wishlist`).on('value', (snap) => {
                 const data = snap.val() || {};
@@ -424,12 +407,6 @@
             });
         } else { 
             currentUser = { uid: 'local_guest', isGuest: true };
-            uInfo.innerText = "Guest";
-            if(mobileUser) mobileUser.innerText = "Guest";
-            status.innerText = "Local Mode";
-            status.style.color = "var(--text-dim)";
-            if(mobileStatus) { mobileStatus.innerText = "Local Mode"; mobileStatus.style.color = "var(--text-dim)"; }
-            
             const localRaw = localStorage.getItem('mabi_wishlist_data');
             if (localRaw) {
                 const parsed = JSON.parse(localRaw);
