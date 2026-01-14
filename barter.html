@@ -1314,9 +1314,9 @@ function updateRow(row, item, needed) {
             const weeks = remainingWeeksAfterYear % 4;
 
             let timeParts = [];
-            if (years > 0) timeParts.push(`${years} Years`);
-            if (months > 0) timeParts.push(`${months} Months`);
-            if (weeks > 0) timeParts.push(`${weeks} Weeks`);
+            if (years > 0) timeParts.push(`${years}Years`);
+            if (months > 0) timeParts.push(`${months}Months`);
+            if (weeks > 0) timeParts.push(`${weeks}Weeks`);
 
             // Join the parts (e.g., "1Y 2M 1W")
             statusCell.innerHTML = `<span>${timeParts.join(' ')}</span>`;
@@ -1350,9 +1350,9 @@ function updateRow(row, item, needed) {
             const weeks = remainingWeeksAfterYear % 4;
 
             let timeParts = [];
-            if (years > 0) timeParts.push(`${years} Years`);
-            if (months > 0) timeParts.push(`${months} Months`);
-            if (weeks > 0) timeParts.push(`${weeks} Weeks`);
+            if (years > 0) timeParts.push(`${years}Years`);
+            if (months > 0) timeParts.push(`${months}Months`);
+            if (weeks > 0) timeParts.push(`${weeks}Weeks`);
 
             statusHtml = `<span>${timeParts.join(' ')}</span>`;
             // ----------------------------------
