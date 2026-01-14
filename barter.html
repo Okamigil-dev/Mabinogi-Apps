@@ -1364,8 +1364,66 @@ function updateRow(row, item, needed) {
     }
 }
 
-        
         function createRow(item, needed) {
+    const h = ownedInventory[item] || 0;
+    const def = needed - h;
+    const tr = document.createElement('tr');
+    tr.dataset.item = item; 
+    
+    let statusHtml = "";
+    let statusClass = def <= 0 ? 'ready' : 'deficit';
+    
+    if (def <= 0) {
+        const totalWeeks = Math.floor(h / needed);
+        if (totalWeeks > 1 && isFinite(totalWeeks)) {
+            const years = Math.floor(totalWeeks / 52);
+            const remWeeks = totalWeeks % 52;
+            const months = Math.floor(remWeeks / 4);
+            const weeks = remWeeks % 4;
+
+            let timeParts = [];
+            if (years > 0) timeParts.push(`${years}Y`);
+            if (months > 0) timeParts.push(`${months}M`);
+            if (weeks > 0) timeParts.push(`${weeks}W`);
+            
+            statusHtml = `<span>${timeParts.join(' ')}</span>`;
+        } else {
+            statusHtml = "<span>READY</span>";
+        }
+    } else {
+        statusHtml = `<span>${Math.ceil(def)}</span>`;
+    }
+
+    tr.innerHTML = `
+        <td><div class="cell-flex"></div></td>
+        <td><input type="number" class="owned-input" value="${h}"></td>
+        <td style="text-align:center;">${Math.ceil(needed)}</td>
+        <td class="status-cell ${statusClass}">${statusHtml}</td>
+    `;
+
+    const icon = document.createElement('div'); 
+    icon.className = 'icon-small'; 
+    applyIcon(icon, item);
+    tr.querySelector('.cell-flex').append(icon, document.createTextNode(item));
+    
+    const input = tr.querySelector('input');
+
+    // LIVE UPDATE: Updates numbers instantly, but renderTable() prevents jumping
+    input.oninput = (e) => { 
+        ownedInventory[item] = parseInt(e.target.value) || 0; 
+        calculateMaterials(); 
+        saveData(); 
+    };
+
+    // ON BLUR: When you leave the box, trigger one last update to Sort the table
+    input.onblur = () => {
+        calculateMaterials();
+    };
+    
+    return tr;
+}
+        
+/*        function createRow(item, needed) {
     const h = ownedInventory[item] || 0;
     const def = needed - h;
     const tr = document.createElement('tr');
@@ -1423,7 +1481,7 @@ function updateRow(row, item, needed) {
     return tr;
 }
 
-        
+*/        
         function completeTrip() {
             currentCargo.forEach(item => {
                 if (item.mats) {
