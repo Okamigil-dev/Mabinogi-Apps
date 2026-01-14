@@ -1218,9 +1218,9 @@
             const weeks = remainingWeeksAfterYear % 4;
 
             let timeParts = [];
-            if (years > 0) timeParts.push(`${years}Y`);
-            if (months > 0) timeParts.push(`${months}M`);
-            if (weeks > 0) timeParts.push(`${weeks}W`);
+            if (years > 0) timeParts.push(`${years}Years`);
+            if (months > 0) timeParts.push(`${months}Months`);
+            if (weeks > 0) timeParts.push(`${weeks}Weeks`);
 
             // Join the parts (e.g., "1Y 2M 1W")
             statusCell.innerHTML = `<span>${timeParts.join(' ')}</span>`;
@@ -1254,9 +1254,9 @@
             const weeks = remainingWeeksAfterYear % 4;
 
             let timeParts = [];
-            if (years > 0) timeParts.push(`${years}Y`);
-            if (months > 0) timeParts.push(`${months}M`);
-            if (weeks > 0) timeParts.push(`${weeks}W`);
+            if (years > 0) timeParts.push(`${years}Years`);
+            if (months > 0) timeParts.push(`${months}Months`);
+            if (weeks > 0) timeParts.push(`${weeks}Weeks`);
 
             statusHtml = `<span>${timeParts.join(' ')}</span>`;
             // ----------------------------------
