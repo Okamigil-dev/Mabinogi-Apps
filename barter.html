@@ -1025,7 +1025,8 @@
             renderTable('crafted-tbody',need); renderTable('raw-tbody',raw);
         }
 
-        function renderTable(tbodyId, data) {
+/*       //previous rendertable function
+function renderTable(tbodyId, data) {
             const tbody = document.getElementById(tbodyId);
             
             // --- APPLY SORT ---
@@ -1124,7 +1125,7 @@
             }
         }
 
-/*   previous updateRow and createRow just in case
+   //previous updateRow and createRow just in case
 function updateRow(row, item, needed) {
             const h = ownedInventory[item] || 0;
             const def = needed - h;
@@ -1192,6 +1193,100 @@ function updateRow(row, item, needed) {
             return tr;
         }
 */
+        function renderTable(tbodyId, data) {
+    const tbody = document.getElementById(tbodyId);
+    
+    // --- 1. PREPARE KEYS ---
+    let currentKeys = Object.keys(data);
+
+    // Check if user is typing in this specific table
+    // If typing, we use the DOM order (visual order) instead of the Sort order
+    const isTyping = document.activeElement && 
+                     document.activeElement.classList.contains('owned-input') && 
+                     tbody.contains(document.activeElement);
+
+    if (isTyping) {
+        // Get keys from current DOM rows to preserve position
+        const domKeys = Array.from(tbody.children)
+            .map(tr => tr.dataset.item)
+            .filter(k => data[k] !== undefined); // Ensure key still exists in data
+        
+        // Find any new keys that aren't in the DOM yet (safety catch)
+        const domSet = new Set(domKeys);
+        const missingKeys = currentKeys.filter(k => !domSet.has(k));
+        
+        currentKeys = [...domKeys, ...missingKeys];
+    } else {
+        // --- NORMAL SORTING LOGIC (Only runs when not typing) ---
+        currentKeys.sort((a, b) => {
+            if (sortState.dir === 0) return 0;
+            let valA, valB;
+            switch(sortState.col) {
+                case 'name': return a.localeCompare(b) * sortState.dir;
+                case 'have':
+                    valA = ownedInventory[a] || 0; valB = ownedInventory[b] || 0;
+                    return (valA - valB) * sortState.dir;
+                case 'need':
+                    valA = data[a]; valB = data[b];
+                    return (valA - valB) * sortState.dir;
+                case 'status': {
+                    const ratioA = (ownedInventory[a] || 0) / data[a];
+                    const ratioB = (ownedInventory[b] || 0) / data[b];
+                    if (Math.abs(ratioA - ratioB) > 0.0001) return (ratioA - ratioB) * sortState.dir;
+                    const defA = data[a] - (ownedInventory[a] || 0);
+                    const defB = data[b] - (ownedInventory[b] || 0);
+                    return (defB - defA) * sortState.dir;
+                }
+                default: return 0;
+            }
+        });
+    }
+
+    // --- 2. RENDER ROWS ---
+    const existingRows = new Map();
+    Array.from(tbody.children).forEach(r => {
+        if(r.dataset.item) existingRows.set(r.dataset.item, r);
+        else r.remove();
+    });
+    
+    const shouldHide = hideCompleted;
+    let hasItems = false;
+    let writeIndex = 0; 
+
+    currentKeys.forEach(item => {
+        const needed = data[item];
+        const owned = ownedInventory[item] || 0;
+        const isComplete = (needed - owned) <= 0;
+
+        if (!shouldHide || !isComplete) {
+             let row = existingRows.get(item);
+             if (row) {
+                 updateRow(row, item, needed);
+                 existingRows.delete(item);
+             } else {
+                 row = createRow(item, needed);
+             }
+             
+             const currentRowAtPos = tbody.children[writeIndex];
+             if (currentRowAtPos !== row) {
+                 if (currentRowAtPos) tbody.insertBefore(row, currentRowAtPos);
+                 else tbody.appendChild(row);
+             }
+             
+             writeIndex++;
+             hasItems = true;
+        }
+    });
+
+    existingRows.forEach(row => row.remove());
+
+    if(!hasItems) {
+        if(tbody.children.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text-dim);">No materials needed</td></tr>';
+        }
+    }
+}
+        
         function updateRow(row, item, needed) {
     const h = ownedInventory[item] || 0;
     const def = needed - h;
