@@ -1124,7 +1124,7 @@
             }
         }
 
-        function updateRow(row, item, needed) {
+/*         function updateRow(row, item, needed) {
             const h = ownedInventory[item] || 0;
             const def = needed - h;
             
@@ -1149,7 +1149,7 @@
         }
 
         // Split createRow to return element instead of appending directly
-        function createRow(item, needed) {
+       function createRow(item, needed) {
             const h = ownedInventory[item] || 0;
             const def = needed - h;
             const tr = document.createElement('tr');
@@ -1190,7 +1190,109 @@
             
             return tr;
         }
+*/
+        function updateRow(row, item, needed) {
+    const h = ownedInventory[item] || 0;
+    const def = needed - h;
 
+    // Only update input value if it's NOT focused
+    const input = row.querySelector('.owned-input');
+    if (document.activeElement !== input) {
+        input.value = h;
+    }
+
+    // Update Text Cells
+    row.children[2].innerText = Math.ceil(needed);
+
+    const statusCell = row.children[3];
+    statusCell.className = `status-cell ${def <= 0 ? 'ready' : 'deficit'}`;
+
+    if (def <= 0) {
+        const totalWeeks = Math.floor(h / needed);
+
+        if (totalWeeks > 1 && isFinite(totalWeeks)) {
+            // --- NEW TIME CALCULATION LOGIC ---
+            const years = Math.floor(totalWeeks / 52);
+            const remainingWeeksAfterYear = totalWeeks % 52;
+            const months = Math.floor(remainingWeeksAfterYear / 4);
+            const weeks = remainingWeeksAfterYear % 4;
+
+            let timeParts = [];
+            if (years > 0) timeParts.push(`${years}Y`);
+            if (months > 0) timeParts.push(`${months}M`);
+            if (weeks > 0) timeParts.push(`${weeks}W`);
+
+            // Join the parts (e.g., "1Y 2M 1W")
+            statusCell.innerHTML = `<span>${timeParts.join(' ')}</span>`;
+            // ----------------------------------
+        } else {
+            statusCell.innerHTML = "<span>READY</span>";
+        }
+    } else {
+        statusCell.innerHTML = `<span>${Math.ceil(def)}</span>`;
+    }
+}
+
+        
+        function createRow(item, needed) {
+    const h = ownedInventory[item] || 0;
+    const def = needed - h;
+    const tr = document.createElement('tr');
+    tr.dataset.item = item; 
+    
+    let statusHtml = "";
+    let statusClass = def <= 0 ? 'ready' : 'deficit';
+    
+    if (def <= 0) {
+        const totalWeeks = Math.floor(h / needed);
+
+        if (totalWeeks > 1 && isFinite(totalWeeks)) {
+            // --- NEW TIME CALCULATION LOGIC ---
+            const years = Math.floor(totalWeeks / 52);
+            const remainingWeeksAfterYear = totalWeeks % 52;
+            const months = Math.floor(remainingWeeksAfterYear / 4);
+            const weeks = remainingWeeksAfterYear % 4;
+
+            let timeParts = [];
+            if (years > 0) timeParts.push(`${years}Y`);
+            if (months > 0) timeParts.push(`${months}M`);
+            if (weeks > 0) timeParts.push(`${weeks}W`);
+
+            statusHtml = `<span>${timeParts.join(' ')}</span>`;
+            // ----------------------------------
+        } else {
+            statusHtml = "<span>READY</span>";
+        }
+    } else {
+        statusHtml = `<span>${Math.ceil(def)}</span>`;
+    }
+
+    tr.innerHTML = `
+        <td><div class="cell-flex"></div></td>
+        <td><input type="number" class="owned-input" value="${h}"></td>
+        <td style="text-align:center;">${Math.ceil(needed)}</td>
+        <td class="status-cell ${statusClass}">${statusHtml}</td>
+    `;
+
+    const icon = document.createElement('div'); 
+    icon.className = 'icon-small'; 
+    applyIcon(icon, item);
+    
+    const span = document.createElement('span'); 
+    span.textContent = item;
+    
+    tr.querySelector('.cell-flex').append(icon, span);
+    
+    tr.querySelector('input').oninput = (e) => { 
+        ownedInventory[item] = parseInt(e.target.value) || 0; 
+        calculateMaterials(); 
+        saveData(); 
+    };
+    
+    return tr;
+}
+
+        
         function completeTrip() {
             currentCargo.forEach(item => {
                 if (item.mats) {
