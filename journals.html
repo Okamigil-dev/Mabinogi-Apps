@@ -285,6 +285,10 @@
                             <div class="stat-label">5-Star Dishes</div>
                         </div>
                         <div class="stat-box" style="margin-top:10px;">
+                            <div id="stat-started" class="stat-val">0</div>
+                            <div class="stat-label">Dishes Started</div>
+                        </div>
+                        <div class="stat-box" style="margin-top:10px;">
                             <div id="stat-total" class="stat-val">0</div>
                             <div class="stat-label">Total Stars Earned</div>
                         </div>
@@ -904,15 +908,25 @@
         const totalDishes = RECIPE_DB.length;
         if(totalDishes === 0) {
             document.getElementById('stat-completed').innerText = `0 / 0`;
+            document.getElementById('stat-started').innerText = `0 / 0`;
             document.getElementById('stat-total').innerText = 0;
             return;
         }
         const entries = Object.entries(userStars);
         const validStars = entries.filter(([k,v]) => RECIPE_DB.some(r => r.name === k));
+        
+        // Count dishes with exactly 5 stars
         const completed = validStars.filter(([k, v]) => v === 5).length;
+        
+        // Count dishes with ANY stars (> 0)
+        const started = validStars.filter(([k, v]) => v > 0).length;
+        
+        // Sum of all stars
         const totalStars = validStars.reduce((acc, [k, v]) => acc + v, 0);
 
+        // Update Stats
         document.getElementById('stat-completed').innerText = `${completed} / ${totalDishes}`;
+        document.getElementById('stat-started').innerText = `${started} / ${totalDishes}`;
         document.getElementById('stat-total').innerText = totalStars;
     }
 
