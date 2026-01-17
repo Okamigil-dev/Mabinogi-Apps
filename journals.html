@@ -878,22 +878,7 @@
                 const pctHtml = i.r > 0 ? `<span class="ing-val">${i.r}%</span>` : '';
                 return `<div class="ing-row"><span>${i.n}</span>${pctHtml}</div>`;
             }).join('');
-/*
-            const card = document.createElement('div');
-            card.className = `recipe-card ${isComplete ? 'complete' : ''}`;
-            card.innerHTML = `
-                <div class="recipe-header">
-                    <div class="recipe-name">${r.name}</div>
-                    <div class="recipe-method">${r.method}</div>
-                </div>
-                <div class="recipe-ingredients">
-                    ${ingHtml}
-                </div>
-                <div class="star-rating" title="Click same star to reset">
-                    ${starsHtml}
-                    ${clearBtn}
-                </div>
-                */
+
             const wikiUrl = `https://wiki.mabinogiworld.com/view/${r.name.replace(/ /g, '_')}`;
 
             const card = document.createElement('div');
