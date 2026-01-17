@@ -104,10 +104,26 @@
         .ing-val { font-family: 'JetBrains Mono', monospace; color: var(--accent); }
         
         /* Star Rating */
-        .star-rating { display: flex; gap: 4px; cursor: pointer; }
-        .star { font-size: 18px; color: #333; transition: color 0.1s; }
+        .star-rating { display: flex; gap: 4px; align-items: center; cursor: pointer; min-height: 24px; }
+        .star { font-size: 18px; color: #333; transition: color 0.1s; padding: 2px; }
         .star.filled { color: var(--star-gold); }
         .star:hover { color: #fff; }
+
+        .star-reset { 
+            font-size: 10px; 
+            color: var(--danger); 
+            opacity: 0.6; 
+            margin-left: 8px; 
+            padding: 2px 6px;
+            border: 1px solid var(--border);
+            background: rgba(239, 68, 68, 0.05);
+            border-radius: 4px;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            height: 20px;
+        }
+        .star-reset:hover { opacity: 1; border-color: var(--danger); background: rgba(239, 68, 68, 0.2); }
 
         /* Stats Box */
         .stat-box { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border); text-align: center; }
@@ -122,25 +138,6 @@
         input:checked + .toggle-switch::after { transform: translateX(16px); }
         .toggle-input { display: none; }
         
-        /* Import Modal - COMMENTED OUT
-        #import-modal {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000;
-            display: none; align-items: center; justify-content: center; padding: 20px;
-            backdrop-filter: blur(5px);
-        }
-        .modal-card {
-            background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
-            width: 100%; max-width: 500px; display: flex; flex-direction: column;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-        }
-        .modal-header {
-            padding: 15px 20px; border-bottom: 1px solid var(--border);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .modal-body { padding: 20px; }
-        .modal-footer { padding: 15px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
-        */
-
         /* Mobile */
         .mobile-nav { display: none; }
         .mobile-backdrop { display: none; }
@@ -187,34 +184,6 @@
 
     <div class="mobile-backdrop" id="mobile-backdrop" onclick="closeSidebars()"></div>
     
-    <!-- IMPORT MODAL COMMENTED OUT
-    <div id="import-modal">
-        <div class="modal-card">
-            <div class="modal-header">
-                <span style="font-weight:700; color:#fff;">Update Public Database</span>
-                <button onclick="toggleImport(false)" style="background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:18px;">×</button>
-            </div>
-            <div class="modal-body">
-                <p style="font-size:12px; color:var(--text-dim); margin-bottom:10px;">
-                    Paste your recipe data here. This will update the <b>PUBLIC</b> list for everyone.
-                </p>
-                <div style="margin-bottom:15px;">
-                    <label class="toggle-row" style="background:var(--bg); padding:8px; border-radius:6px; border:1px solid var(--border);">
-                        <span style="font-size:12px; font-weight:600;">Includes Percentages?</span>
-                        <input type="checkbox" id="import-has-percent" class="toggle-input" checked>
-                        <div class="toggle-switch"></div>
-                    </label>
-                </div>
-                <textarea id="import-text" class="input-dark" style="height:200px; font-family:'JetBrains Mono'; font-size:11px;" placeholder="Paste text here..."></textarea>
-            </div>
-            <div class="modal-footer">
-                <button onclick="toggleImport(false)" class="hub-btn">Cancel</button>
-                <button onclick="processImport()" class="hub-btn active" style="border-color:var(--accent);">Publish</button>
-            </div>
-        </div>
-    </div>
-    -->
-
     <div class="interface-container">
         <!-- Global Navigation Bar -->
         <script src="nav.js" defer></script>
@@ -251,13 +220,7 @@
 
                 <!-- COOKING SPECIFIC FILTERS -->
                 <div id="ctrl-cooking" style="display:block;">
-                    <!-- 
-                    <div class="config-section" style="border-top:1px solid var(--border);">
-                        <label class="panel-label">Admin</label>
-                        <button class="hub-btn" onclick="toggleImport(true)">📂 Update Public List</button>
-                    </div>
-                    -->
-
+                    
                     <div class="config-section">
                         <label class="panel-label">Search</label>
                         <input type="text" id="search-input" class="input-dark" placeholder="Dish name..." oninput="renderRecipes()">
@@ -355,15 +318,15 @@
     // Order maintained from user's list (Journal Order)
     let RECIPE_DB = [
         {name: "Potato and Egg Salad", method: "Mixing", ingredients: [{n:"Steamed Potato", r:75}, {n:"Hard-Boiled Egg", r:15}, {n:"Mayonnaise", r:10}]},
-        {name: "Potato Salad", method: "Mixing", ingredients: [{n:"Steamed Potato", r:70}, {n:"Onion", r:20}, {n:"Salt", r:10}]},
-        {name: "Egg Salad", method: "Mixing", ingredients: [{n:"Hard-Boiled Egg", r:55}, {n:"Mayonnaise", r:10}, {n:"Vegetables", r:35}]},
-        {name: "Fruit Salad", method: "Mixing", ingredients: [{n:"Assorted Fruits", r:55}, {n:"Mayonnaise", r:35}, {n:"Sugar", r:10}]},
+        {name: "Potato Salad", method: "Mixing", ingredients: [{n:"Steamed Potato", r:68}, {n:"Onion", r:23}, {n:"Salt", r:9}]},
+        {name: "Egg Salad", method: "Mixing", ingredients: [{n:"Hard-Boiled Egg", r:75}, {n:"Mayonnaise", r:15}, {n:"Salt", r:10}]},
+        {name: "Fruit Salad", method: "Mixing", ingredients: [{n:"Assorted Fruits", r:83}, {n:"Mayonnaise", r:17}]},
         {name: "Catfish Garden Salad", method: "Mixing", ingredients: [{n:"Catfish", r:50}, {n:"Mixed Vegetables", r:40}, {n:"Mayonnaise", r:10}]},
         {name: "Caviar Salad", method: "Mixing", ingredients: [{n:"Mako Shark", r:50}, {n:"Assorted Fruits", r:40}, {n:"Mayonnaise", r:10}]},
         {name: "Tomato Basil Salad", method: "Mixing", ingredients: [{n:"Tomato", r:50}, {n:"Basil", r:30}, {n:"Steamed Potato", r:20}]},
         {name: "Herb Mushroom Salad", method: "Mixing", ingredients: [{n:"Steamed Mushroom", r:60}, {n:"Thyme", r:30}, {n:"Olive Oil", r:10}]},
         {name: "Dog Biscuit", method: "Mixing", ingredients: [{n:"Chocolate Chip Cookie", r:50}, {n:"Butter Biscuit", r:50}]},
-        {name: "Assorted Fruits", method: "Mixing", ingredients: [{n:"Strawberry", r:40}, {n:"Apple", r:40}, {n:"Berry", r:20}]},
+        {name: "Assorted Fruits", method: "Mixing", ingredients: [{n:"Strawberry", r:45}, {n:"Apple", r:31}, {n:"Berry", r:24}]},
         {name: "Granita", method: "Mixing", ingredients: [{n:"Assorted Fruits", r:40}, {n:"Sugar", r:20}, {n:"Ice", r:40}]},
         {name: "Magic Bean Tofu", method: "Boiling", ingredients: [{n:"Magic Bean Powder", r:75}, {n:"Bottled Water", r:15}, {n:"Nigari", r:10}]},
         {name: "Mashed Roasted Bean Powder Tofu", method: "Boiling", ingredients: [{n:"Roasted Bean Powder", r:80}, {n:"Bottled Water", r:15}, {n:"Salt", r:5}]},
@@ -377,31 +340,31 @@
         {name: "Shrimp Bruschetta", method: "Mixing", ingredients: [{n:"Bread", r:50}, {n:"Mixed Vegetables", r:30}, {n:"Shrimp", r:20}]},
         {name: "Corned Abb Neagh Carp and Vegetables", method: "Mixing", ingredients: [{n:"Abb Neagh Carp", r:40}, {n:"Mixed Vegetables", r:50}, {n:"Salt", r:10}]},
         {name: "Egg Caviar", method: "Mixing", ingredients: [{n:"Fried Egg", r:50}, {n:"Sturgeon", r:40}, {n:"Slice of Cheese", r:10}]},
-        {name: "Chocolate", method: "Mixing", ingredients: [{n:"Baking Chocolate", r:50}, {n:"Whipped Cream", r:40}, {n:"Sugar", r:10}]},
-        {name: "Caviar Canape", method: "Mixing", ingredients: [{n:"Sturgeon", r:40}, {n:"Bread", r:40}, {n:"Berry", r:20}]},
+        {name: "Chocolate", method: "Jam Making", ingredients: [{n:"Baking Chocolate", r:42}, {n:"Whipped Cream", r:41}, {n:"Sugar", r:17}]},
+        {name: "Caviar Canape", method: "Mixing", ingredients: [{n:"Sturgeon", r:40}, {n:"Bread", r:55}, {n:"Berry", r:5}]},
         {name: "Cream Farfalle", method: "Mixing", ingredients: [{n:"Short Pasta", r:60}, {n:"Cream Sauce", r:35}, {n:"Pepper", r:5}]},
         {name: "Jellyfish Salad", method: "Mixing", ingredients: [{n:"Jellyfish", r:80}, {n:"Salt", r:10}, {n:"Sugar", r:10}]},
-        {name: "Belvast Eel Rice Bowl", method: "Mixing", ingredients: [{n:"Steamed Rice", r:50}, {n:"Belvast Eel", r:40}, {n:"Mixed Vegetables", r:10}]},
+        {name: "Belvast Eel Rice Bowl", method: "Baking", ingredients: [{n:"Steamed Rice", r:53}, {n:"Belvast Eel", r:36}, {n:"Mixed Vegetables", r:11}]},
         {name: "Lunch Box of Memories", method: "Mixing", ingredients: [{n:"Steamed Rice", r:50}, {n:"Fried Egg", r:30}, {n:"Cooking Potion", r:20}]},
-        {name: "Strawberry Milk", method: "Mixing", ingredients: [{n:"Strawberry", r:70}, {n:"Milk", r:25}, {n:"Sugar", r:5}]},
-        {name: "Lemonade", method: "Mixing", ingredients: [{n:"Lemon", r:40}, {n:"Berry", r:40}, {n:"Sugar", r:20}]},
+        {name: "Strawberry Milk", method: "Mixing", ingredients: [{n:"Strawberry", r:30}, {n:"Milk", r:65}, {n:"Sugar", r:5}]},
+        {name: "Lemonade", method: "Mixing", ingredients: [{n:"Lemon", r:60}, {n:"Berry", r:30}, {n:"Sugar", r:10}]},
         {name: "Macchiato", method: "Mixing", ingredients: [{n:"Espresso", r:40}, {n:"Steamed Milk", r:40}, {n:"Whipped Cream", r:20}]},
-        {name: "Brifne Rocks", method: "Mixing", ingredients: [{n:"Ice", r:60}, {n:"Brifne Whiskey", r:30}, {n:"Lemon", r:10}]},
-        {name: "Apple Juice", method: "Mixing", ingredients: [{n:"Apple", r:40}, {n:"Berry", r:40}, {n:"Sugar", r:20}]},
+        {name: "Brifne Rocks", method: "Mixing", ingredients: [{n:"Ice", r:57}, {n:"Brifne Whiskey", r:40}, {n:"Lemon", r:3}]},
+        {name: "Apple Juice", method: "Mixing", ingredients: [{n:"Apple", r:73}, {n:"Berry", r:18}, {n:"Sugar", r:9}]},
         {name: "Iced Macchiato", method: "Mixing", ingredients: [{n:"Macchiato", r:50}, {n:"Whipped Cream", r:30}, {n:"Ice", r:20}]},
         {name: "Iced Cafe Mocha", method: "Mixing", ingredients: [{n:"Cafe Mocha", r:50}, {n:"Whipped Cream", r:30}, {n:"Ice", r:20}]},
         {name: "Espresso Macchiato", method: "Mixing", ingredients: [{n:"Espresso", r:50}, {n:"Steamed Milk", r:40}, {n:"Bottled Water", r:10}]},
-        {name: "Orange Juice", method: "Mixing", ingredients: [{n:"Orange", r:60}, {n:"Berry", r:35}, {n:"Sugar", r:5}]},
-        {name: "Chocolate Milk", method: "Mixing", ingredients: [{n:"Chocolate", r:40}, {n:"Milk", r:40}, {n:"Sugar", r:20}]},
+        {name: "Orange Juice", method: "Mixing", ingredients: [{n:"Orange", r:72}, {n:"Berry", r:18}, {n:"Sugar", r:9}]},
+        {name: "Chocolate Milk", method: "Mixing", ingredients: [{n:"Chocolate", r:45}, {n:"Milk", r:42}, {n:"Sugar", r:13}]},
         {name: "Cafe Mocha", method: "Mixing", ingredients: [{n:"Espresso", r:40}, {n:"Steamed Milk", r:50}, {n:"Baking Chocolate", r:10}]},
-        {name: "Cappuccino", method: "Mixing", ingredients: [{n:"Espresso", r:40}, {n:"Milk", r:30}, {n:"Steamed Milk", r:30}]},
-        {name: "BnR", method: "Mixing", ingredients: [{n:"Leighean Gin", r:40}, {n:"Brifne Whiskey", r:40}, {n:"Ice", r:20}]},
-        {name: "Leighean Sling", method: "Mixing", ingredients: [{n:"Lemonade", r:50}, {n:"Leighean Gin", r:40}, {n:"Sugar", r:10}]},
-        {name: "Red Sunrise", method: "Mixing", ingredients: [{n:"Orange Juice", r:50}, {n:"Brifne Whiskey", r:40}, {n:"Sugar", r:10}]},
+        {name: "Cappuccino", method: "Mixing", ingredients: [{n:"Espresso", r:30}, {n:"Milk", r:30}, {n:"Steamed Milk", r:40}]},
+        {name: "BnR", method: "Mixing", ingredients: [{n:"Leighean Gin", r:36}, {n:"Brifne Whiskey", r:37}, {n:"Ice", r:27}]},
+        {name: "Leighean Sling", method: "Mixing", ingredients: [{n:"Lemonade", r:73}, {n:"Leighean Gin", r:19}, {n:"Sugar", r:8}]},
+        {name: "Red Sunrise", method: "Mixing", ingredients: [{n:"Orange Juice", r:60}, {n:"Brifne Whiskey", r:25}, {n:"Sugar", r:15}]},
         {name: "Lutra Cocktail Set", method: "Mixing", ingredients: [{n:"Leighean Sling", r:34}, {n:"Red Sunrise", r:33}, {n:"Screwdriver", r:33}]},
         {name: "Vales Fire", method: "Mixing", ingredients: [{n:"Vales Whiskey", r:70}, {n:"Ice", r:30}]},
-        {name: "Screwdriver", method: "Mixing", ingredients: [{n:"Orange Juice", r:50}, {n:"Brifne Whiskey", r:40}, {n:"Lemon", r:10}]},
-        {name: "Kiss on the Lips", method: "Mixing", ingredients: [{n:"Brifne Whiskey", r:50}, {n:"Lemonade", r:40}, {n:"Sugar", r:10}]},
+        {name: "Screwdriver", method: "Mixing", ingredients: [{n:"Orange Juice", r:75}, {n:"Brifne Whiskey", r:20}, {n:"Lemon", r:5}]},
+        {name: "Kiss on the Lips", method: "Mixing", ingredients: [{n:"Brifne Whiskey", r:55}, {n:"Lemonade", r:32}, {n:"Sugar", r:13}]},
         {name: "Nares Cake Set", method: "Mixing", ingredients: [{n:"Coconut Pound Cake", r:34}, {n:"Gateau Au Chocolat", r:33}, {n:"Rare Cheesecake", r:33}]},
         {name: "Rare Cheesecake", method: "Mixing", ingredients: [{n:"Block of Cheese", r:50}, {n:"Butter Biscuit", r:30}, {n:"Whipped Cream", r:20}]},
         {name: "Cheese Bread", method: "Baking", ingredients: [{n:"Bread", r:80}, {n:"Slice of Cheese", r:20}]},
@@ -411,13 +374,13 @@
         {name: "Seafood Spaghetti", method: "Mixing", ingredients: [{n:"Long Pasta", r:60}, {n:"Seafood Sauce", r:30}, {n:"Pepper", r:10}]},
         {name: "Camellia Sling", method: "Mixing", ingredients: [{n:"Vales Whiskey", r:50}, {n:"Camellia Seed", r:40}, {n:"Bottled Water", r:10}]},
         {name: "Curry-Roasted Black Sea Bream", method: "Baking", ingredients: [{n:"Black Sea Bream", r:80}, {n:"Curry Powder", r:10}, {n:"Salt", r:10}]},
-        {name: "Fried Egg", method: "Baking", ingredients: [{n:"Egg", r:90}, {n:"Salt", r:5}, {n:"Pepper", r:5}]},
-        {name: "Roasted Chicken Wing", method: "Baking", ingredients: [{n:"Chicken Wings", r:90}, {n:"Olive Oil", r:10}]},
-        {name: "Roasted Chicken", method: "Baking", ingredients: [{n:"Chicken Wings", r:80}, {n:"Thyme", r:10}, {n:"Salt", r:10}]},
+        {name: "Fried Egg", method: "Baking", ingredients: [{n:"Egg", r:90}, {n:"Salt", r:10}]},
+        {name: "Roasted Chicken Wing", method: "Baking", ingredients: [{n:"Chicken Wings", r:79}, {n:"Olive Oil", r:21}]},
+        {name: "Roasted Chicken", method: "Baking", ingredients: [{n:"Chicken Wings", r:73}, {n:"Thyme", r:18}, {n:"Salt", r:9}]},
         {name: "Grilled Catfish", method: "Baking", ingredients: [{n:"Catfish", r:80}, {n:"Cabbage", r:20}]},
         {name: "Roasted Bacon", method: "Baking", ingredients: [{n:"Bacon", r:90}, {n:"Salt", r:10}]},
-        {name: "Broiled Brifne Carp", method: "Baking", ingredients: [{n:"Brifne Carp", r:80}, {n:"Olive Oil", r:10}, {n:"Salt", r:10}]},
-        {name: "Grilled Silk-Striped Marlin", method: "Baking", ingredients: [{n:"Silk-Striped Marlin", r:80}, {n:"Olive Oil", r:10}, {n:"Salt", r:10}]},
+        {name: "Broiled Brifne Carp", method: "Baking", ingredients: [{n:"Brifne Carp", r:84}, {n:"Olive Oil", r:11}, {n:"Salt", r:5}]},
+        {name: "Grilled Silk-Striped Marlin", method: "Baking", ingredients: [{n:"Silk-Striped Marlin", r:85}, {n:"Olive Oil", r:10}, {n:"Salt", r:5}]},
         {name: "Taitinn Carp Brochette", method: "Baking", ingredients: [{n:"Taitinn Carp", r:80}, {n:"Thyme", r:10}, {n:"Lemon", r:10}]},
         {name: "Salt Grilled Sweetfish", method: "Baking", ingredients: [{n:"Sweetfish", r:85}, {n:"Salt", r:10}, {n:"Lemon", r:5}]},
         {name: "Grilled Eel", method: "Baking", ingredients: [{n:"Lamprey", r:90}, {n:"Salt", r:10}]},
@@ -429,7 +392,7 @@
         {name: "Strawberry Jam & Toast", method: "Baking", ingredients: [{n:"Milk Bread", r:70}, {n:"Strawberry Jam", r:20}, {n:"Butter", r:10}]},
         {name: "Garlic Bread", method: "Baking", ingredients: [{n:"Bread", r:85}, {n:"Garlic", r:15}]},
         {name: "Barley Bread", method: "Baking", ingredients: [{n:"Barley Flour", r:55}, {n:"Bottled Water", r:35}, {n:"Yeast", r:10}]},
-        {name: "Sliced Bread", method: "Baking", ingredients: [{n:"Flour Dough", r:70}, {n:"Butter", r:30}]},
+        {name: "Sliced Bread", method: "Baking", ingredients: [{n:"Flour Dough", r:83}, {n:"Butter", r:17}]},
         {name: "Corn Scone", method: "Baking", ingredients: [{n:"Flour Dough", r:60}, {n:"Corn", r:30}, {n:"Whipped Cream", r:10}]},
         {name: "Cornbread", method: "Baking", ingredients: [{n:"Cornbread Dough", r:70}, {n:"Egg", r:20}, {n:"Yeast", r:10}]},
         {name: "Milk Bread", method: "Baking", ingredients: [{n:"Flour Dough", r:60}, {n:"Milk", r:30}, {n:"Butter", r:10}]},
@@ -459,7 +422,7 @@
         {name: "Braised Catfish and Clams", method: "Simmering", ingredients: [{n:"Catfish", r:50}, {n:"Shellfish", r:40}, {n:"Garlic", r:10}]},
         {name: "Steamed Mushroom", method: "Steaming", ingredients: [{n:"Hazelnut Mushroom", r:80}, {n:"Bottled Water", r:15}, {n:"Salt", r:5}]},
         {name: "Steamed Shark Fin", method: "Simmering", ingredients: [{n:"Mako Shark", r:70}, {n:"Bottled Water", r:20}, {n:"Celery", r:10}]},
-        {name: "Steamed Brifne Carp", method: "Simmering", ingredients: [{n:"Brifne Carp", r:70}, {n:"Bottled Water", r:20}, {n:"Salt", r:10}]},
+        {name: "Steamed Brifne Carp", method: "Steaming", ingredients: [{n:"Brifne Carp", r:75}, {n:"Bottled Water", r:17}, {n:"Salt", r:8}]},
         {name: "Steamed Trout", method: "Simmering", ingredients: [{n:"Rainbow Trout", r:70}, {n:"Bottled Water", r:20}, {n:"Thyme", r:10}]},
         {name: "Braised Angler Fish", method: "Simmering", ingredients: [{n:"Angler Fish", r:60}, {n:"Celery", r:20}, {n:"Red Pepper Powder", r:20}]},
         {name: "Steamed Corn", method: "Simmering", ingredients: [{n:"Corn", r:80}, {n:"Bottled Water", r:20}]},
@@ -608,7 +571,7 @@
         {name: "Sweet Potato Pie", method: "Pie Making", ingredients: [{n:"Pan Pie Crust", r:40}, {n:"Sweet Potato", r:45}, {n:"Egg", r:15}]},
         {name: "Almond Pie", method: "Pie Making", ingredients: [{n:"Pan Pie Crust", r:40}, {n:"Almond", r:45}, {n:"Egg", r:15}]},
         {name: "Almond Strawberry Jam Tart", method: "Pie Making", ingredients: [{n:"Tart Crust", r:50}, {n:"Strawberry Jam", r:40}, {n:"Almond", r:10}]},
-        {name: "Blueberry Jam", method: "Jam Making", ingredients: [{n:"Blueberry", r:65}, {n:"Sugar", r:35}]},
+        {name: "Blueberry Jam", method: "Jam Making", ingredients: [{n:"Blueberry", r:70}, {n:"Sugar", r:30}]},
         {name: "Orange Marmalade", method: "Jam Making", ingredients: [{n:"Orange", r:60}, {n:"Sugar", r:35}, {n:"Bottled Water", r:5}]},
         {name: "Lemon Jam", method: "Jam Making", ingredients: [{n:"Lemon", r:65}, {n:"Sugar", r:35}]},
         {name: "Pasta Ingredients", method: "Stir-frying", ingredients: [{n:"Onion", r:50}, {n:"Garlic", r:25}, {n:"Bacon", r:25}]},
@@ -826,7 +789,15 @@
     }
 
     function setStar(dishName, rating) {
-        userStars[dishName] = rating;
+        // Toggle Logic: If clicking the current rating, reset to 0
+        const currentRating = userStars[dishName] || 0;
+        
+        if (currentRating === rating) {
+            userStars[dishName] = 0; // Reset
+        } else {
+            userStars[dishName] = rating; // Set new
+        }
+
         saveStars(); 
         renderRecipes();
         updateStats();
@@ -896,6 +867,13 @@
                 starsHtml += `<span class="star ${i <= stars ? 'filled' : ''}" onclick="setStar('${r.name.replace(/'/g, "\\'")}', ${i})">★</span>`;
             }
 
+            // Explicit Clear Button
+            let clearBtn = '';
+            if (stars > 0) {
+                // Using event.stopPropagation() is not strictly needed here as spans don't bubble significantly, but good practice
+                clearBtn = `<span class="star-reset" onclick="setStar('${r.name.replace(/'/g, "\\'")}', 0)" title="Clear rating">Clear</span>`;
+            }
+
             let ingHtml = r.ingredients.map(i => {
                 const pctHtml = i.r > 0 ? `<span class="ing-val">${i.r}%</span>` : '';
                 return `<div class="ing-row"><span>${i.n}</span>${pctHtml}</div>`;
@@ -911,8 +889,9 @@
                 <div class="recipe-ingredients">
                     ${ingHtml}
                 </div>
-                <div class="star-rating">
+                <div class="star-rating" title="Click same star to reset">
                     ${starsHtml}
+                    ${clearBtn}
                 </div>
             `;
             container.appendChild(card);
