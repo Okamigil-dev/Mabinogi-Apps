@@ -95,16 +95,29 @@
         .recipe-card:hover { border-color: #444; }
         .recipe-card.complete { opacity: 0.6; border-style: dashed; }
 
-        .recipe-header { display: flex; justify-content: space-between; align-items: flex-start; }
-        .recipe-name { font-weight: 700; color: #fff; font-size: 14px; }
-        .recipe-method { font-size: 10px; color: var(--text-dim); background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border); }
+        .recipe-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .recipe-name { font-weight: 700; color: #fff; font-size: 14px; flex-grow: 1; }
+        
+        /* New Inputs for Editing */
+        .method-select {
+            background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-dim);
+            font-size: 10px; padding: 2px 4px; border-radius: 4px; outline: none; cursor: pointer;
+            max-width: 100px;
+        }
+        .method-select:hover, .method-select:focus { border-color: var(--accent); color: #fff; }
 
-        .recipe-ingredients { font-size: 11px; color: var(--text-dim); line-height: 1.4; }
-        .ing-row { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 3px 0; }
-        .ing-val { font-family: 'JetBrains Mono', monospace; color: var(--accent); }
+        .recipe-ingredients { font-size: 11px; color: var(--text-dim); line-height: 1.4; margin-top: 5px; }
+        .ing-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 4px 0; }
+        .ing-val-input { 
+            font-family: 'JetBrains Mono', monospace; color: var(--accent); 
+            background: transparent; border: 1px solid transparent; 
+            width: 40px; text-align: right; padding: 2px; border-radius: 4px;
+            font-size: 11px;
+        }
+        .ing-val-input:hover, .ing-val-input:focus { border-color: var(--border); background: rgba(0,0,0,0.3); }
         
         /* Star Rating */
-        .star-rating { display: flex; gap: 4px; align-items: center; cursor: pointer; min-height: 24px; }
+        .star-rating { display: flex; gap: 4px; align-items: center; cursor: pointer; min-height: 24px; margin-top: 5px; }
         .star { font-size: 18px; color: #333; transition: color 0.1s; padding: 2px; }
         .star.filled { color: var(--star-gold); }
         .star:hover { color: #fff; }
@@ -686,8 +699,6 @@
         {name: "Full Kraken Meal", method: "Mixing", ingredients: [{n:"Spicy Kraken Stew", r:50}, {n:"Kraken Stirfry", r:50}]},
         {name: "Scuabtuinne Sucker Skewers", method: "Baking", ingredients: [{n:"Fresh Kraken Sucker", r:80}, {n:"Salt", r:10}, {n:"Pepper", r:10}]},
         {name: "Scuabtuinne Sucker Sous Vide", method: "Sous Vide", ingredients: [{n:"Fresh Kraken Sucker", r:80}, {n:"Lemon Juice", r:10}, {n:"Pepper", r:10}]},
-        {name: "Shoyu Ramen", method: "Noodle Making", ingredients: [{n:"Meat Broth", r:40}, {n:"Noodle", r:40}, {n:"Soy Sauce", r:20}]},
-        {name: "Shio Ramen", method: "Noodle Making", ingredients: [{n:"Meat Broth", r:40}, {n:"Noodle", r:40}, {n:"Salt", r:20}]},
         {name: "Cheeseburger", method: "Mixing", ingredients: [{n:"Bread", r:40}, {n:"Cabbage", r:40}, {n:"Slice of Cheese", r:20}]},
         {name: "Shrimp Burger", method: "Mixing", ingredients: [{n:"Bread", r:40}, {n:"Cabbage", r:30}, {n:"Shrimp", r:30}]},
         {name: "Bacon Burger", method: "Mixing", ingredients: [{n:"Bread", r:40}, {n:"Cabbage", r:30}, {n:"Bacon", r:30}]},
@@ -697,13 +708,15 @@
         {name: "Pan's Craft Brew", method: "Mixing", ingredients: [{n:"Barley Flour", r:60}, {n:"Malt", r:20}, {n:"Bottled Water", r:20}]},
         {name: "Highball", method: "Mixing", ingredients: [{n:"Brifne Whiskey", r:80}, {n:"Lemon", r:20}]},
         {name: "Hard Cider", method: "Mixing", ingredients: [{n:"Brifne Whiskey", r:70}, {n:"Apple", r:30}]},
-        {name: "Omurice", method: "Stir-frying", ingredients: [{n:"Mixed Fried Rice", r:60}, {n:"Egg", r:40}]},
-        {name: "Egg Porridge", method: "Boiling", ingredients: [{n:"Egg", r:40}, {n:"Bottled Water", r:40}, {n:"Steamed Rice", r:20}]},
         {name: "Egg Sandwich", method: "Mixing", ingredients: [{n:"Fried Egg", r:60}, {n:"Sliced Bread", r:40}]},
-        {name: "Takoyaki", method: "Baking", ingredients: [{n:"Simmered Octopus", r:40}, {n:"Wheat Flour", r:40}, {n:"Egg", r:20}]},
-        {name: "Miso Ramen", method: "Noodle Making", ingredients: [{n:"Meat Broth", r:40}, {n:"Noodle", r:40}, {n:"Soybean Paste", r:20}]},
-        {name: "Miso Soup", method: "Boiling", ingredients: [{n:"Soybean Paste", r:40}, {n:"Bottled Water", r:40}, {n:"Mixed Vegetables", r:20}]},
         {name: "Red Bean Shaved Ice", method: "Mixing", ingredients: [{n:"Mung Bean", r:40}, {n:"Ice", r:40}, {n:"Assorted Fruits", r:20}]},
+        {name: "Takoyaki", method: "Baking", ingredients: [{n:"Simmered Octopus", r:40}, {n:"Wheat Flour", r:40}, {n:"Egg", r:20}]},
+        {name: "Egg Porridge", method: "Boiling", ingredients: [{n:"Egg", r:40}, {n:"Bottled Water", r:40}, {n:"Steamed Rice", r:20}]},
+        {name: "Miso Soup", method: "Boiling", ingredients: [{n:"Soybean Paste", r:40}, {n:"Bottled Water", r:40}, {n:"Mixed Vegetables", r:20}]},
+        {name: "Shoyu Ramen", method: "Noodle Making", ingredients: [{n:"Meat Broth", r:40}, {n:"Noodle", r:40}, {n:"Soy Sauce", r:20}]},
+        {name: "Shio Ramen", method: "Noodle Making", ingredients: [{n:"Meat Broth", r:40}, {n:"Noodle", r:40}, {n:"Salt", r:20}]},
+        {name: "Miso Ramen", method: "Noodle Making", ingredients: [{n:"Meat Broth", r:40}, {n:"Noodle", r:40}, {n:"Soybean Paste", r:20}]},
+        {name: "Omurice", method: "Stir-frying", ingredients: [{n:"Mixed Fried Rice", r:60}, {n:"Egg", r:40}]},
         {name: "Weekend Warrior Hotwings and Beer", method: "Mixing", ingredients: [{n:"Fried Chicken", r:34}, {n:"Spicy Fried Chicken", r:33}, {n:"Highball", r:33}]},
         {name: "Afternoon Tea Set", method: "Mixing", ingredients: [{n:"Black Tea Honey Scone", r:34}, {n:"Macaron", r:33}, {n:"Panna Cotta", r:33}]},
         {name: "Strawberry Shortcake", method: "Baking", ingredients: [{n:"Flour Dough", r:40}, {n:"Strawberry", r:30}, {n:"Whipped Cream", r:30}]},
@@ -735,45 +748,23 @@
         {name: "Kimchi", method: "Fermenting", ingredients: [{n:"Napa Cabbage", r:80}, {n:"Red Pepper Powder", r:10}, {n:"Salt", r:10}]},
         {name: "Turkey Tetrazzini", method: "Baking", ingredients: [{n:"Turkey", r:50}, {n:"White Truffle", r:10}, {n:"Cream Farfalle", r:40}]},
         {name: "Honey Chestnut Latte", method: "Boiling", ingredients: [{n:"Simmered Chestnuts", r:30}, {n:"Fresh Honey", r:10}, {n:"Milk", r:60}]},
+        {name: "Scallop Tomato Stew", method: "Boiling", ingredients: [{n:"Scallop", r:50}, {n:"Onion", r:20}, {n:"Tomato", r:30}]},
         {name: "Nutritious Walnut Bread", method: "Baking", ingredients: [{n:"Bean Stuffing", r:20}, {n:"Walnut", r:20}, {n:"Wheat Flour", r:60}]},
         {name: "Assorted Shellfish Sashimi", method: "Julienning", ingredients: [{n:"Scallop", r:50}, {n:"Fan Mussel", r:40}, {n:"Chojang", r:10}]},
-        {name: "Grilled Scallop with Cheese", method: "Baking", ingredients: [{n:"Scallop", r:60}, {n:"Slice of Cheese", r:20}, {n:"Bell Pepper", r:20}]},
-        {name: "Scallop Tomato Stew", method: "Boiling", ingredients: [{n:"Scallop", r:50}, {n:"Onion", r:20}, {n:"Tomato", r:30}]}
+        {name: "Grilled Scallop with Cheese", method: "Baking", ingredients: [{n:"Scallop", r:60}, {n:"Slice of Cheese", r:20}, {n:"Bell Pepper", r:20}]}
     ];
 
     let userStars = {}; 
+    let userOverrides = {}; // New storage for custom recipe data
     let currentUser = null;
     let activeMethod = 'All';
     let currentSort = 'default'; // Default is now Journal Order
     let currentJournal = 'cooking';
 
-    // ... existing auth ...
-    auth.onAuthStateChanged(user => {
-        if (user) {
-            currentUser = user;
-            db.ref(`users/${user.uid}/profile`).on('value', snap => {
-                const profile = snap.val();
-                if(profile) {
-                    localStorage.setItem('mabi_user_cache_' + user.uid, JSON.stringify(profile));
-                    document.querySelectorAll('user-header').forEach(h => { if(h.updateUI) h.updateUI(user); });
-                }
-            });
+    // Helper: Get unique methods
+    const UNIQUE_METHODS = [...new Set(RECIPE_DB.map(r => r.method))].sort();
 
-            db.ref(`users/${user.uid}/cooking_stars`).on('value', snap => {
-                userStars = snap.val() || {};
-                renderRecipes();
-                updateStats();
-            });
-        } else {
-            currentUser = { uid: 'local_guest', isGuest: true };
-            const localStars = localStorage.getItem('mabi_cooking_journal');
-            userStars = localStars ? JSON.parse(localStars) : {};
-            renderRecipes();
-            updateStats();
-        }
-    });
-
-    // ... existing setJournal / toggleImport ...
+    // --- RESTORED FUNCTIONS ---
 
     function toggleImport(show) {
         document.getElementById('import-modal').style.display = show ? 'flex' : 'none';
@@ -790,6 +781,30 @@
         } else {
             localStorage.setItem('mabi_cooking_journal', JSON.stringify(userStars));
         }
+    }
+
+    function saveOverrides() {
+        if (currentUser && !currentUser.isGuest) {
+            db.ref(`users/${currentUser.uid}/custom_recipes`).set(userOverrides);
+        } else {
+            localStorage.setItem('mabi_cooking_overrides', JSON.stringify(userOverrides));
+        }
+    }
+
+    // New function to update custom data
+    function updateCustomData(dishName, type, val, index = null) {
+        if (!userOverrides[dishName]) {
+            userOverrides[dishName] = {};
+        }
+
+        if (type === 'method') {
+            userOverrides[dishName].method = val;
+        } else if (type === 'ratio') {
+            if (!userOverrides[dishName].ratios) userOverrides[dishName].ratios = {};
+            userOverrides[dishName].ratios[index] = Number(val);
+        }
+
+        saveOverrides();
     }
 
     function setStar(dishName, rating) {
@@ -821,6 +836,25 @@
         renderFilters(); 
     }
 
+    function setJournal(j) {
+        currentJournal = j;
+        document.querySelectorAll('.hub-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`btn-j-${j}`).classList.add('active');
+        
+        // Hide all controls/views/stats first
+        ['cooking', 'fishing', 'taming'].forEach(type => {
+            document.getElementById(`ctrl-${type}`).style.display = 'none';
+            document.getElementById(`view-${type}`).style.display = 'none';
+            document.getElementById(`stats-${type}`).style.display = 'none';
+        });
+
+        // Show selected
+        document.getElementById(`ctrl-${j}`).style.display = 'block';
+        if(j === 'cooking') document.getElementById(`view-${j}`).style.display = 'flex'; // flex for cooking view
+        else document.getElementById(`view-${j}`).style.display = 'flex'; // flex for placeholders
+        document.getElementById(`stats-${j}`).style.display = 'block';
+    }
+
     function renderFilters() {
         if(!RECIPE_DB.length) return;
         const methods = [...new Set(RECIPE_DB.map(r => r.method))].sort();
@@ -840,7 +874,11 @@
         let filtered = RECIPE_DB.filter(r => {
             const stars = userStars[r.name] || 0;
             if (hideCompleted && stars === 5) return false;
+            
+            // Note: Filtering by method checks the PUBLIC DB value, not the overridden one, to keep the list consistent
+            // But we could change this to check the overridden value if desired. For now, strict DB filter.
             if (activeMethod !== 'All' && r.method !== activeMethod) return false;
+            
             if (search && !r.name.toLowerCase().includes(search)) return false;
             return true;
         });
@@ -866,6 +904,10 @@
             const stars = userStars[r.name] || 0;
             const isComplete = stars === 5;
             
+            // Check for overrides
+            const customData = userOverrides[r.name] || {};
+            const displayMethod = customData.method || r.method;
+
             let starsHtml = '';
             for(let i=1; i<=5; i++) {
                 starsHtml += `<span class="star ${i <= stars ? 'filled' : ''}" onclick="setStar('${r.name.replace(/'/g, "\\'")}', ${i})">★</span>`;
@@ -874,13 +916,27 @@
             // Explicit Clear Button
             let clearBtn = '';
             if (stars > 0) {
-                // Using event.stopPropagation() is not strictly needed here as spans don't bubble significantly, but good practice
                 clearBtn = `<span class="star-reset" onclick="setStar('${r.name.replace(/'/g, "\\'")}', 0)" title="Clear rating">Clear</span>`;
             }
 
-            let ingHtml = r.ingredients.map(i => {
-                const pctHtml = i.r > 0 ? `<span class="ing-val">${i.r}%</span>` : '';
-                return `<div class="ing-row"><span>${i.n}</span>${pctHtml}</div>`;
+            // Generate Method Dropdown
+            let methodOptions = UNIQUE_METHODS.map(m => 
+                `<option value="${m}" ${m === displayMethod ? 'selected' : ''}>${m}</option>`
+            ).join('');
+            
+            const methodSelect = `<select class="method-select" onchange="updateCustomData('${r.name.replace(/'/g, "\\'")}', 'method', this.value)">${methodOptions}</select>`;
+
+            let ingHtml = r.ingredients.map((i, idx) => {
+                // Get custom ratio if exists, else public DB ratio
+                const ratio = (customData.ratios && customData.ratios[idx] !== undefined) ? customData.ratios[idx] : i.r;
+                
+                // Input for percentage
+                const valInput = `<input type="number" class="ing-val-input" value="${ratio}" onchange="updateCustomData('${r.name.replace(/'/g, "\\'")}', 'ratio', this.value, ${idx})">`;
+                
+                return `<div class="ing-row">
+                    <span>${i.n}</span>
+                    ${valInput}<span style="color:var(--text-dim); margin-left:2px;">%</span>
+                </div>`;
             }).join('');
 
             const wikiUrl = `https://wiki.mabinogiworld.com/view/${r.name.replace(/ /g, '_')}`;
@@ -890,7 +946,7 @@
             card.innerHTML = `
                 <div class="recipe-header">
                     <a href="${wikiUrl}" target="_blank" class="recipe-name" style="text-decoration:none; color:inherit;">${r.name} 🔗</a>
-                    <div class="recipe-method">${r.method}</div>
+                    ${methodSelect}
                 </div>
                 <div class="recipe-ingredients">
                     ${ingHtml}
@@ -943,6 +999,44 @@
         document.getElementById('right-panel').classList.remove('active');
         document.getElementById('mobile-backdrop').classList.remove('active');
     };
+
+    // ... existing auth ...
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            currentUser = user;
+            db.ref(`users/${user.uid}/profile`).on('value', snap => {
+                const profile = snap.val();
+                if(profile) {
+                    localStorage.setItem('mabi_user_cache_' + user.uid, JSON.stringify(profile));
+                    document.querySelectorAll('user-header').forEach(h => { if(h.updateUI) h.updateUI(user); });
+                }
+            });
+
+            // Listen for Star ratings
+            db.ref(`users/${user.uid}/cooking_stars`).on('value', snap => {
+                userStars = snap.val() || {};
+                renderRecipes();
+                updateStats();
+            });
+
+            // Listen for Recipe Overrides (NEW)
+            db.ref(`users/${user.uid}/custom_recipes`).on('value', snap => {
+                userOverrides = snap.val() || {};
+                renderRecipes();
+            });
+
+        } else {
+            currentUser = { uid: 'local_guest', isGuest: true };
+            const localStars = localStorage.getItem('mabi_cooking_journal');
+            userStars = localStars ? JSON.parse(localStars) : {};
+            
+            const localOverrides = localStorage.getItem('mabi_cooking_overrides');
+            userOverrides = localOverrides ? JSON.parse(localOverrides) : {};
+
+            renderRecipes();
+            updateStats();
+        }
+    });
 
     setMethod('All');
     renderRecipes();
