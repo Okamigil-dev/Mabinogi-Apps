@@ -395,7 +395,8 @@
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
     // --- STATIC DATA: FALLBACK ---
-/*    let RECIPE_DB = [
+    /*
+    let RECIPE_DB = [
         {name: "Potato and Egg Salad", method: "Mixing", ingredients: [{n:"Steamed Potato", r:75}, {n:"Hard-Boiled Egg", r:15}, {n:"Mayonnaise", r:10}]},
         {name: "Potato Salad", method: "Mixing", ingredients: [{n:"Steamed Potato", r:68}, {n:"Onion", r:23}, {n:"Salt", r:9}]},
         {name: "Egg Salad", method: "Mixing", ingredients: [{n:"Hard-Boiled Egg", r:75}, {n:"Mayonnaise", r:15}, {n:"Salt", r:10}]},
@@ -816,6 +817,7 @@
         {name: "Grilled Scallop with Cheese", method: "Baking", ingredients: [{n:"Scallop", r:60}, {n:"Slice of Cheese", r:20}, {n:"Bell Pepper", r:20}]}
     ];
 */
+    let RECIPE_DB = []; // Initialize empty, populate from Firebase
     let userStars = {}; 
     let userOverrides = {}; // New storage for custom recipe data
     let currentUser = null;
