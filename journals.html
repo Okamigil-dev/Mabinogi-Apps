@@ -100,11 +100,19 @@
         
         /* New Inputs for Editing */
         .method-select {
-            background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-dim);
-            font-size: 10px; padding: 2px 4px; border-radius: 4px; outline: none; cursor: pointer;
-            max-width: 100px;
+            background: var(--bg); /* Darker background for visibility */
+            border: 1px solid var(--border); 
+            color: var(--text-main); /* Brighter text */
+            font-size: 11px; 
+            padding: 4px 8px; 
+            border-radius: 4px; 
+            outline: none; 
+            cursor: pointer;
+            min-width: 120px; /* Wider to fit text */
+            color-scheme: dark; /* Helps standard selects render dark in modern browsers */
         }
-        .method-select:hover, .method-select:focus { border-color: var(--accent); color: #fff; }
+        .method-select:hover, .method-select:focus { border-color: var(--accent); }
+        .method-select option { background: #121214; color: #fff; } /* Force dark options */
 
         .recipe-ingredients { font-size: 11px; color: var(--text-dim); line-height: 1.4; margin-top: 5px; }
         .ing-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 4px 0; }
@@ -265,10 +273,11 @@
                 <!-- COOKING SPECIFIC FILTERS -->
                 <div id="ctrl-cooking" style="display:block;">
                     
-                    <div class="config-section" style="border-top:1px solid var(--border);">
+            <!--       <div class="config-section" style="border-top:1px solid var(--border);">
                         <label class="panel-label">Admin</label>
                         <button class="hub-btn" onclick="toggleImport(true)">📂 Update Public Database</button>
-                    </div>
+                    </div> 
+            -->
 
                     <div class="config-section">
                         <label class="panel-label">Search</label>
@@ -992,24 +1001,30 @@
             
             const methodSelect = `<select class="method-select" onchange="updateCustomData('${r.name.replace(/'/g, "\\'")}', 'method', this.value)">${methodOptions}</select>`;
 
-            let ingHtml = r.ingredients.map((i, idx) => {
-                // Get custom data if exists, else public DB data
-                const ratio = (customData.ratios && customData.ratios[idx] !== undefined) ? customData.ratios[idx] : i.r;
-                const ingName = (customData.names && customData.names[idx] !== undefined) ? customData.names[idx] : i.n;
+            let ingHtml = '';
+            // Force 3 ingredient slots
+            for (let idx = 0; idx < 3; idx++) {
+                // Get default data if it exists in DB, otherwise use empty placeholders
+                const defaultIng = r.ingredients[idx] || { n: '', r: 0 };
+                
+                // Get custom data overrides
+                // Note: user might input a name even if default name is empty.
+                const ingName = (customData.names && customData.names[idx] !== undefined) ? customData.names[idx] : defaultIng.n;
+                const ratio = (customData.ratios && customData.ratios[idx] !== undefined) ? customData.ratios[idx] : defaultIng.r;
                 
                 // Input for percentage
                 const valInput = `<input type="number" class="ing-val-input" value="${ratio}" onchange="updateCustomData('${r.name.replace(/'/g, "\\'")}', 'ratio', this.value, ${idx})">`;
                 
                 // Input for Name
-                const nameInput = `<input type="text" class="ing-name-input" value="${ingName}" onchange="updateCustomData('${r.name.replace(/'/g, "\\'")}', 'name', this.value, ${idx})">`;
+                const nameInput = `<input type="text" class="ing-name-input" value="${ingName}" placeholder="Ingredient ${idx+1}" onchange="updateCustomData('${r.name.replace(/'/g, "\\'")}', 'name', this.value, ${idx})">`;
 
-                return `<div class="ing-row">
+                ingHtml += `<div class="ing-row">
                     <div style="flex-grow:1; margin-right:5px;">${nameInput}</div>
                     <div style="display:flex; align-items:center;">
                         ${valInput}<span style="color:var(--text-dim); margin-left:2px;">%</span>
                     </div>
                 </div>`;
-            }).join('');
+            }
 
             const wikiUrl = `https://wiki.mabinogiworld.com/view/${r.name.replace(/ /g, '_')}`;
 
