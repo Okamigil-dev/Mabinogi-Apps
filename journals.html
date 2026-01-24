@@ -108,6 +108,15 @@
 
         .recipe-ingredients { font-size: 11px; color: var(--text-dim); line-height: 1.4; margin-top: 5px; }
         .ing-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 4px 0; }
+        
+        /* New Input for Ingredient Names */
+        .ing-name-input {
+            background: transparent; border: 1px solid transparent; 
+            color: var(--text-main); font-size: 11px; width: 100%;
+            padding: 2px; border-radius: 4px; font-family: 'Inter', sans-serif;
+        }
+        .ing-name-input:hover, .ing-name-input:focus { border-color: var(--border); background: rgba(255,255,255,0.05); }
+
         .ing-val-input { 
             font-family: 'JetBrains Mono', monospace; color: var(--accent); 
             background: transparent; border: 1px solid transparent; 
@@ -856,6 +865,9 @@
         } else if (type === 'ratio') {
             if (!userOverrides[dishName].ratios) userOverrides[dishName].ratios = {};
             userOverrides[dishName].ratios[index] = Number(val);
+        } else if (type === 'name') {
+            if (!userOverrides[dishName].names) userOverrides[dishName].names = {};
+            userOverrides[dishName].names[index] = val;
         }
 
         saveOverrides();
@@ -981,15 +993,21 @@
             const methodSelect = `<select class="method-select" onchange="updateCustomData('${r.name.replace(/'/g, "\\'")}', 'method', this.value)">${methodOptions}</select>`;
 
             let ingHtml = r.ingredients.map((i, idx) => {
-                // Get custom ratio if exists, else public DB ratio
+                // Get custom data if exists, else public DB data
                 const ratio = (customData.ratios && customData.ratios[idx] !== undefined) ? customData.ratios[idx] : i.r;
+                const ingName = (customData.names && customData.names[idx] !== undefined) ? customData.names[idx] : i.n;
                 
                 // Input for percentage
                 const valInput = `<input type="number" class="ing-val-input" value="${ratio}" onchange="updateCustomData('${r.name.replace(/'/g, "\\'")}', 'ratio', this.value, ${idx})">`;
                 
+                // Input for Name
+                const nameInput = `<input type="text" class="ing-name-input" value="${ingName}" onchange="updateCustomData('${r.name.replace(/'/g, "\\'")}', 'name', this.value, ${idx})">`;
+
                 return `<div class="ing-row">
-                    <span>${i.n}</span>
-                    ${valInput}<span style="color:var(--text-dim); margin-left:2px;">%</span>
+                    <div style="flex-grow:1; margin-right:5px;">${nameInput}</div>
+                    <div style="display:flex; align-items:center;">
+                        ${valInput}<span style="color:var(--text-dim); margin-left:2px;">%</span>
+                    </div>
                 </div>`;
             }).join('');
 
