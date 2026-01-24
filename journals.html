@@ -110,8 +110,13 @@
             cursor: pointer;
             min-width: 120px; /* Wider to fit text */
             color-scheme: dark; /* Helps standard selects render dark in modern browsers */
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
-        .method-select:hover, .method-select:focus { border-color: var(--accent); }
+        .method-select:hover { border-color: #444; }
+        .method-select:focus { 
+            border-color: var(--accent); 
+            box-shadow: 0 0 0 2px var(--accent-dim);
+        }
         .method-select option { background: #121214; color: #fff; } /* Force dark options */
 
         .recipe-ingredients { font-size: 11px; color: var(--text-dim); line-height: 1.4; margin-top: 5px; }
@@ -121,17 +126,31 @@
         .ing-name-input {
             background: transparent; border: 1px solid transparent; 
             color: var(--text-main); font-size: 11px; width: 100%;
-            padding: 2px; border-radius: 4px; font-family: 'Inter', sans-serif;
+            padding: 4px; border-radius: 4px; font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
         }
-        .ing-name-input:hover, .ing-name-input:focus { border-color: var(--border); background: rgba(255,255,255,0.05); }
+        .ing-name-input:hover { background: rgba(255,255,255,0.05); }
+        .ing-name-input:focus { 
+            border-color: var(--accent); 
+            background: rgba(0,0,0,0.3);
+            outline: none;
+            box-shadow: 0 0 0 1px var(--accent-dim);
+        }
 
         .ing-val-input { 
             font-family: 'JetBrains Mono', monospace; color: var(--accent); 
             background: transparent; border: 1px solid transparent; 
-            width: 40px; text-align: right; padding: 2px; border-radius: 4px;
+            width: 45px; text-align: right; padding: 4px; border-radius: 4px;
             font-size: 11px;
+            transition: all 0.2s;
         }
-        .ing-val-input:hover, .ing-val-input:focus { border-color: var(--border); background: rgba(0,0,0,0.3); }
+        .ing-val-input:hover { background: rgba(255,255,255,0.05); }
+        .ing-val-input:focus { 
+            border-color: var(--accent); 
+            background: rgba(0,0,0,0.3);
+            outline: none;
+            box-shadow: 0 0 0 1px var(--accent-dim);
+        }
         
         /* Star Rating */
         .star-rating { display: flex; gap: 4px; align-items: center; cursor: pointer; min-height: 24px; margin-top: 5px; }
@@ -223,7 +242,7 @@
             </div>
             <div style="padding: 20px;">
                 <p style="font-size:12px; color:var(--text-dim); margin-bottom:10px;">
-                    <b>Admin Only:</b> This will overwrite the public 'public_recipes' database node with your current local static list.
+                    <b>Admin Only:</b> This will merge your personal corrections (percentages, names, methods) into the main list and publish it for everyone.
                 </p>
                 <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:6px; margin-bottom:10px;">
                     <span style="color:var(--accent); font-size:11px;">Target Node: /public_recipes</span>
@@ -231,7 +250,7 @@
             </div>
             <div style="padding: 15px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px;">
                 <button onclick="toggleImport(false)" class="hub-btn">Cancel</button>
-                <button onclick="uploadMasterList()" class="hub-btn active" style="border-color:var(--danger); color:var(--danger);">Upload Local to DB</button>
+                <button onclick="uploadMasterList()" class="hub-btn active" style="border-color:var(--danger); color:var(--danger);">Publish My Fixes</button>
             </div>
         </div>
     </div>
@@ -273,11 +292,10 @@
                 <!-- COOKING SPECIFIC FILTERS -->
                 <div id="ctrl-cooking" style="display:block;">
                     
-            <!--       <div class="config-section" style="border-top:1px solid var(--border);">
+                    <div class="config-section" style="border-top:1px solid var(--border);">
                         <label class="panel-label">Admin</label>
                         <button class="hub-btn" onclick="toggleImport(true)">📂 Update Public Database</button>
-                    </div> 
-            -->
+                    </div>
 
                     <div class="config-section">
                         <label class="panel-label">Search</label>
@@ -376,8 +394,7 @@
     const db = firebase.database();
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
-    // --- STATIC DATA: FULL RECIPE DATABASE (With correct 5-Star Ratios) ---
-    // Order maintained from user's list (Journal Order)
+    // --- STATIC DATA: FALLBACK ---
 /*    let RECIPE_DB = [
         {name: "Potato and Egg Salad", method: "Mixing", ingredients: [{n:"Steamed Potato", r:75}, {n:"Hard-Boiled Egg", r:15}, {n:"Mayonnaise", r:10}]},
         {name: "Potato Salad", method: "Mixing", ingredients: [{n:"Steamed Potato", r:68}, {n:"Onion", r:23}, {n:"Salt", r:9}]},
@@ -799,7 +816,6 @@
         {name: "Grilled Scallop with Cheese", method: "Baking", ingredients: [{n:"Scallop", r:60}, {n:"Slice of Cheese", r:20}, {n:"Bell Pepper", r:20}]}
     ];
 */
-        
     let userStars = {}; 
     let userOverrides = {}; // New storage for custom recipe data
     let currentUser = null;
@@ -808,7 +824,8 @@
     let currentJournal = 'cooking';
 
     // Helper: Get unique methods
-    const UNIQUE_METHODS = [...new Set(RECIPE_DB.map(r => r.method))].sort();
+    // Initialized from the static fallback list
+    let uniqueMethods = [...new Set(RECIPE_DB.map(r => r.method))].sort();
 
     // --- RESTORED FUNCTIONS ---
 
@@ -827,15 +844,58 @@
             alert("You must be logged in to update the public database.");
             return;
         }
-        if (confirm("WARNING: This will overwrite the public 'public_recipes' database node with your current local static list. Are you sure?")) {
+        
+        // Safety check to prevent wiping the DB with an empty local list
+        if (!RECIPE_DB || RECIPE_DB.length === 0) {
+            alert("Local list is empty! Cannot upload to DB.");
+            return;
+        }
+
+        if (confirm("WARNING: This will overwrite the PUBLIC database with the recipes currently visible to YOU (including your edits). Are you sure?")) {
             const btn = document.querySelector('#import-modal .hub-btn.active');
             const originalText = btn.innerText;
-            btn.innerText = "Uploading...";
+            btn.innerText = "Merging & Uploading...";
             btn.disabled = true;
 
-            db.ref('public_recipes').set(RECIPE_DB)
+            // 1. Create a deep copy of the current public list
+            let newPublicList = JSON.parse(JSON.stringify(RECIPE_DB));
+
+            // 2. Merge User Overrides into this new list
+            newPublicList.forEach(recipe => {
+                const overrides = userOverrides[recipe.name];
+                if (overrides) {
+                    // Update Method
+                    if (overrides.method) {
+                        recipe.method = overrides.method;
+                    }
+
+                    // Update Ingredients
+                    // We check indices 0, 1, 2 because the UI exposes 3 slots
+                    for (let i = 0; i < 3; i++) {
+                        const hasNameOverride = overrides.names && overrides.names[i] !== undefined;
+                        const hasRatioOverride = overrides.ratios && overrides.ratios[i] !== undefined;
+
+                        if (hasNameOverride || hasRatioOverride) {
+                            // Ensure the ingredient object exists at this index in the new list
+                            if (!recipe.ingredients[i]) {
+                                recipe.ingredients[i] = { n: '', r: 0 };
+                            }
+
+                            if (hasNameOverride) {
+                                recipe.ingredients[i].n = overrides.names[i];
+                            }
+                            if (hasRatioOverride) {
+                                recipe.ingredients[i].r = Number(overrides.ratios[i]);
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 3. Send the merged list to Firebase
+            db.ref('public_recipes').set(newPublicList)
                 .then(() => {
-                    alert("Success! The public database has been updated.");
+                    alert("Success! Your custom recipes have been published to the main database.");
                     toggleImport(false);
                 })
                 .catch(e => {
@@ -996,7 +1056,7 @@
             }
 
             // Generate Method Dropdown
-            let methodOptions = UNIQUE_METHODS.map(m => 
+            let methodOptions = uniqueMethods.map(m => 
                 `<option value="${m}" ${m === displayMethod ? 'selected' : ''}>${m}</option>`
             ).join('');
             
@@ -1014,10 +1074,10 @@
                 const ratio = (customData.ratios && customData.ratios[idx] !== undefined) ? customData.ratios[idx] : defaultIng.r;
                 
                 // Input for percentage
-                const valInput = `<input type="number" class="ing-val-input" value="${ratio}" onchange="updateCustomData('${r.name.replace(/'/g, "\\'")}', 'ratio', this.value, ${idx})">`;
+                const valInput = `<input type="number" class="ing-val-input" value="${ratio}" autocomplete="off" onchange="updateCustomData('${r.name.replace(/'/g, "\\'")}', 'ratio', this.value, ${idx})">`;
                 
                 // Input for Name
-                const nameInput = `<input type="text" class="ing-name-input" value="${ingName}" placeholder="Ingredient ${idx+1}" onchange="updateCustomData('${r.name.replace(/'/g, "\\'")}', 'name', this.value, ${idx})">`;
+                const nameInput = `<input type="text" class="ing-name-input" value="${ingName}" placeholder="Ingredient ${idx+1}" autocomplete="off" onchange="updateCustomData('${r.name.replace(/'/g, "\\'")}', 'name', this.value, ${idx})">`;
 
                 ingHtml += `<div class="ing-row">
                     <div style="flex-grow:1; margin-right:5px;">${nameInput}</div>
@@ -1033,7 +1093,7 @@
             card.className = `recipe-card ${isComplete ? 'complete' : ''}`;
             card.innerHTML = `
                 <div class="recipe-header">
-                    <a href="${wikiUrl}" target="_blank" class="recipe-name" style="text-decoration:none; color:inherit;">${r.name} 🔗</a>
+                    <a href="${wikiUrl}" target="_blank" tabindex="-1" class="recipe-name" style="text-decoration:none; color:inherit;">${r.name} 🔗</a>
                     ${methodSelect}
                 </div>
                 <div class="recipe-ingredients">
@@ -1088,7 +1148,36 @@
         document.getElementById('mobile-backdrop').classList.remove('active');
     };
 
-    // ... existing auth ...
+    // --- MAIN DATA LOADING LOGIC ---
+
+    // 1. Initialize Public Data Listener (OUTSIDE of Auth)
+    // This ensures data loads immediately regardless of login state
+    db.ref('public_recipes').on('value', snap => {
+        const publicData = snap.val();
+        if (publicData) {
+            console.log("Syncing recipes from public DB...");
+            
+            // Handle both Array and Object formats from Firebase
+            if (Array.isArray(publicData)) {
+                RECIPE_DB = publicData;
+            } else {
+                RECIPE_DB = Object.values(publicData);
+            }
+
+            // Update derived data dynamically
+            uniqueMethods = [...new Set(RECIPE_DB.map(r => r.method))].sort();
+            
+            renderRecipes();
+            updateStats();
+            renderFilters();
+        } else {
+            console.log("No public data found, using static fallback.");
+        }
+    }, (error) => {
+        console.error("Error reading public DB:", error);
+    });
+
+    // 2. Auth Listener for User-Specific Data
     auth.onAuthStateChanged(user => {
         if (user) {
             currentUser = user;
@@ -1111,18 +1200,6 @@
             db.ref(`users/${user.uid}/custom_recipes`).on('value', snap => {
                 userOverrides = snap.val() || {};
                 renderRecipes();
-            });
-
-            // NEW: Listen for Public Recipes Update (Sync Logic)
-            db.ref('public_recipes').on('value', snap => {
-                const publicData = snap.val();
-                if (publicData) {
-                    console.log("Syncing recipes from public DB...");
-                    RECIPE_DB = publicData;
-                    renderRecipes();
-                    updateStats();
-                    renderFilters(); // Re-render filters in case new methods appeared
-                }
             });
 
         } else {
