@@ -339,9 +339,19 @@
                 
                     <div id="res-view-conv" style="display: none;">
                         <div class="main-stat-display">
-                            <div class="stat-label-main">MML OUTPUT</div>
-                            <textarea id="mml-output" class="input-dark" style="height: 100px; font-family: 'JetBrains Mono'; margin-top: 15px; background: rgba(0,0,0,0.4);" readonly></textarea>
-                            <button class="hub-btn active" id="copy-btn" onclick="copyToClipboard()" style="margin-top: 15px; justify-content: center;">COPY TO CLIPBOARD</button>
+                            <div class="stat-label-main">MML CONVERTER</div>
+                            
+                            <div id="scroll-metadata" style="margin-top: 10px; margin-bottom: 20px; display: none;">
+                                <div style="font-size: 14px; font-weight: 700; color: var(--accent);" id="display-title">---</div>
+                                <div style="font-size: 11px; color: var(--text-dim);" id="display-composer">Composer: Unknown</div>
+                            </div>
+                    
+                            <label class="panel-label" style="text-align: left;">MML Output</label>
+                            <textarea id="mml-output" class="input-dark" style="height: 100px; font-family: 'JetBrains Mono'; background: rgba(0,0,0,0.4);" readonly></textarea>
+                            
+                            <button class="hub-btn active" id="copy-btn" onclick="copyToClipboard()" style="margin-top: 15px; justify-content: center;">
+                                COPY TO CLIPBOARD
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1108,13 +1118,35 @@
 
     function convertScroll() {
         const input = document.getElementById('scroll-input').value;
+        
         const getPart = (key) => {
             const regex = new RegExp(`${key}\\s*:\\s*(.*)`, 'i');
             const match = input.match(regex);
             return match ? match[1].trim() : "";
         };
     
-        const mml = `MML@${getPart("Melody")},${getPart("Harmony 1")},${getPart("Harmony 2")},${getPart("Song")};`;
+        // Extract Metadata
+        const title = getPart("Title");
+        const composer = getPart("Composer");
+        
+        // Extract MML Parts
+        const melody = getPart("Melody");
+        const h1 = getPart("Harmony 1");
+        const h2 = getPart("Harmony 2");
+        const song = getPart("Song");
+    
+        // Update Metadata UI
+        const metaContainer = document.getElementById('scroll-metadata');
+        if (title || composer) {
+            metaContainer.style.display = "block";
+            document.getElementById('display-title').innerText = title || "Untitled Scroll";
+            document.getElementById('display-composer').innerText = "Composer: " + (composer || "Unknown");
+        } else {
+            metaContainer.style.display = "none";
+        }
+    
+        // Generate Final String
+        const mml = `MML@${melody},${h1},${h2},${song};`;
         document.getElementById('mml-output').value = mml;
     }
     
