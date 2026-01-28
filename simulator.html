@@ -213,6 +213,22 @@
                 </div>
                 
                 <div class="config-section">
+                    <div class="config-section" style="padding-bottom: 10px;">
+                        <label class="panel-label">Tool Mode</label>
+                        <div style="display: flex; gap: 5px;">
+                            <button id="btn-mode-calc" class="hub-btn active" onclick="setMode('calc')" style="justify-content: center; flex: 1;">Calculator</button>
+                            <button id="btn-mode-conv" class="hub-btn" onclick="setMode('conv')" style="justify-content: center; flex: 1;">Converter</button>
+                        </div>
+                    </div>
+                    
+                    <div id="calc-controls">
+                        </div>
+                    
+                    <div id="conv-controls" style="display: none; padding: 20px;">
+                        <label class="panel-label">Scroll Text</label>
+                        <textarea id="scroll-input" class="input-dark" style="height: 200px; font-family: 'JetBrains Mono'; margin-bottom: 10px;" placeholder="Paste Scroll text here..."></textarea>
+                        <button class="hub-btn active" onclick="convertScroll()" style="justify-content: center;">PROCESS MML</button>
+                    </div>
                     <label class="panel-label">Active Buff</label>
                     <select id="active-song" class="input-dark" onchange="updateUI()">
                         <option value="bfo">Battlefield Overture</option>
@@ -304,21 +320,28 @@
             <div class="panel center-panel">
                 <!-- Result Card -->
                 <div class="result-card">
-                    <div class="main-stat-display">
-                        <div class="stat-label-main" id="res-label">FINAL EFFECTS</div>
-                        <div id="result-container" class="res-list">
-                            <!-- Results go here -->
+                    <div id="res-view-calc">
+                        <div class="main-stat-display">
+                            <div class="stat-label-main" id="res-label">FINAL EFFECTS</div>
+                            <div id="result-container" class="res-list"></div>
+                        </div>
+                        <div class="sub-stat-grid">
+                            <div class="sub-stat">
+                                <div class="sub-val" id="res-buff-stat">0</div>
+                                <div class="sub-label">Buff Bonus Sum</div>
+                            </div>
+                            <div class="sub-stat">
+                                <div class="sub-val" id="res-insp-chance" style="color:var(--gold);">0.00%</div>
+                                <div class="sub-label" style="color:var(--gold);">Inspiring Chance</div>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="sub-stat-grid">
-                        <div class="sub-stat">
-                            <div class="sub-val" id="res-buff-stat">0</div>
-                            <div class="sub-label">Buff Bonus Sum</div>
-                        </div>
-                        <div class="sub-stat">
-                            <div class="sub-val" id="res-insp-chance" style="color:var(--gold);">0.00%</div>
-                            <div class="sub-label" style="color:var(--gold);">Inspiring Chance</div>
+                
+                    <div id="res-view-conv" style="display: none;">
+                        <div class="main-stat-display">
+                            <div class="stat-label-main">MML OUTPUT</div>
+                            <textarea id="mml-output" class="input-dark" style="height: 100px; font-family: 'JetBrains Mono'; margin-top: 15px; background: rgba(0,0,0,0.4);" readonly></textarea>
+                            <button class="hub-btn active" id="copy-btn" onclick="copyToClipboard()" style="margin-top: 15px; justify-content: center;">COPY TO CLIPBOARD</button>
                         </div>
                     </div>
                 </div>
@@ -1056,6 +1079,53 @@
         document.getElementById('mobile-backdrop').classList.remove('active');
     };
 
+        function setMode(mode) {
+    // UI Elements
+    const calcControls = document.getElementById('calc-controls');
+    const convControls = document.getElementById('conv-controls');
+    const calcView = document.getElementById('res-view-calc');
+    const convView = document.getElementById('res-view-conv');
+    const btnCalc = document.getElementById('btn-mode-calc');
+    const btnConv = document.getElementById('btn-mode-conv');
+
+    if (mode === 'conv') {
+        calcControls.style.display = 'none';
+        calcView.style.display = 'none';
+        convControls.style.display = 'block';
+        convView.style.display = 'block';
+        btnConv.classList.add('active');
+        btnCalc.classList.remove('active');
+    } else {
+        calcControls.style.display = 'block';
+        calcView.style.display = 'block';
+        convControls.style.display = 'none';
+        convView.style.display = 'none';
+        btnCalc.classList.add('active');
+        btnConv.classList.remove('active');
+        calc(); // Refresh calculator logic
+    }
+}
+
+    function convertScroll() {
+        const input = document.getElementById('scroll-input').value;
+        const getPart = (key) => {
+            const regex = new RegExp(`${key}\\s*:\\s*(.*)`, 'i');
+            const match = input.match(regex);
+            return match ? match[1].trim() : "";
+        };
+    
+        const mml = `MML@${getPart("Melody")},${getPart("Harmony 1")},${getPart("Harmony 2")},${getPart("Song")};`;
+        document.getElementById('mml-output').value = mml;
+    }
+    
+    function copyToClipboard() {
+        const el = document.getElementById('mml-output');
+        el.select();
+        document.execCommand('copy');
+        const btn = document.getElementById('copy-btn');
+        btn.innerText = "COPIED TO CLIPBOARD!";
+        setTimeout(() => btn.innerText = "COPY TO CLIPBOARD", 2000);
+    }
     // Init will be triggered by auth listener or fallback
     </script>
 </body>
