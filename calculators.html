@@ -289,7 +289,7 @@
                     
                     <div class="calc-group" style="margin-bottom:20px;">
                         <label class="calc-label">Current Total Accumulated EXP</label>
-                        <input type="text" id="cur-total-exp" class="input-dark" placeholder="e.g. 10,000,000" oninput="this.value = this.value.replace(/[^0-9]/g, ''); calculateExp()" onchange="formatInput(this)" style="font-size:14px; font-family:'JetBrains Mono';">
+                        <input type="text" id="cur-total-exp" class="input-dark" placeholder="e.g. 10,000,000" oninput="calculateExp()" onchange="formatInput(this)" style="font-size:14px; font-family:'JetBrains Mono';">
                     </div>
 
                     <div class="calc-row" style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:15px; margin-bottom:20px;">
@@ -937,11 +937,14 @@
 
     // --- EXP CALCULATION CORE ---
     function formatInput(input) {
-        let val = input.value.replace(/,/g, '').replace(/\D/g, '');
-        if(val) {
-            input.value = parseInt(val).toLocaleString();
-            } else {
-            input.value = "";
+        let val = input.value.replace(/,/g, '');
+        let number = parseFloat(val);
+        if(!isNaN(number)) {
+                // 'maximumFractionDigits: 20' ensures we don't cut off your decimal places
+                input.value = number.toLocaleString('en-US', { maximumFractionDigits: 20 });
+        }
+            else {
+                input.value = "";
             }
         }
         
@@ -958,7 +961,7 @@
     }
 
     function calculateExp() {
-        const rawVal = document.getElementById('cur-total-exp').value.replace(/\D/g, '');
+        const rawVal = document.getElementById('cur-total-exp').value.replace(/,/g, '');
         const totalExp = parseFloat(rawVal) || 0; 
         const tgtLvl = parseInt(document.getElementById('tgt-lvl').value) || (currentMode==='char-exp'?200:50);
         const TABLE = currentMode === 'char-exp' ? CHAR_EXP_TABLE : EXPL_EXP_TABLE;
